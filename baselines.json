@@ -52,7 +52,16 @@
       "sha": "b842e06be19f04280a9e5e12f90da04d0c6f09a5",
       "commit_time": "2026-10-09T17:58:09+08:00",
       "observed_at": "2026-10-09",
-      "note": "本次 fetch 后的官方主干观察点；不等于所有章节已核验，也不代表未来持续最新。"
+      "note": "本次 fetch 后的官方主干观察点；不等于所有章节已核验，也不代表未来持续最新。",
+      "dependency_lock": {
+        "path": "backend/uv.lock",
+        "packages": {
+          "langchain": "1.3.14",
+          "langgraph": "1.2.9",
+          "langgraph-checkpoint": "4.2.0"
+        },
+        "verification": "已读该 commit 的锁文件；未逐项比对锁定包源码与两框架主干。"
+      }
     },
     "codex-20261009": {
       "repo": "codex",

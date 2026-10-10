@@ -13,7 +13,8 @@
         "pi-index",
         "pi-architecture",
         "pi-loop",
-        "pi-context"
+        "pi-context",
+        "pi-extensions"
       ],
       "migration_status": "partial-digestion",
       "archive": {
@@ -21,7 +22,30 @@
         "state": "retained",
         "bytes": 109448,
         "sha256": "69395706ca0d51b2e7fb4aeffc414e3ad90ac4f6beef2df9dab538e822161c92"
-      }
+      },
+      "coverage": [
+        {
+          "target": "pi-index",
+          "scope": "默认/实验/历史边界与当前阅读入口。"
+        },
+        {
+          "target": "pi-architecture",
+          "scope": "组合根、SDK 注入、AgentSession/Agent/SessionManager 所有权。"
+        },
+        {
+          "target": "pi-loop",
+          "scope": "默认模型与工具循环、控制阶段和执行点。"
+        },
+        {
+          "target": "pi-context",
+          "scope": "历史树、parent 链和模型上下文投影。"
+        },
+        {
+          "target": "pi-extensions",
+          "scope": "资源/注册/激活、输入与工具 hook、reload 运行绑定。"
+        }
+      ],
+      "remaining_scope": "TUI、全量资源冲突、认证、MCP、codemode 与平台机制。"
     },
     {
       "id": "pi-lane",
@@ -38,7 +62,22 @@
         "state": "retained",
         "bytes": 108365,
         "sha256": "9cbabd647e03f0767b86b09acd74ecbbcc2cbe8c3ff8c06cdf8681b7acd413ad"
-      }
+      },
+      "coverage": [
+        {
+          "target": "lane-index",
+          "scope": "冻结基线与历史附录入口。"
+        },
+        {
+          "target": "lane-architecture",
+          "scope": "Lane/Operation/work 的代表层次和执行链，非全量 RPC。"
+        },
+        {
+          "target": "pi-evolution",
+          "scope": "包 API 与官方生产默认的不同口径及 Lane→Pico5 演进。"
+        }
+      ],
+      "remaining_scope": "完整 Operation 状态分派、RPC/worker 协议与恢复状态机。"
     },
     {
       "id": "pi-chord",
@@ -53,7 +92,14 @@
         "state": "retained",
         "bytes": 24140,
         "sha256": "ae06c21fefe888f3cd45658797549a6de179c37af48a3292db55a9efcfb400b5"
-      }
+      },
+      "coverage": [
+        {
+          "target": "pi-components-migrated",
+          "scope": "Chord 与 Radius 的职责分层；未刷新当前完整实现。"
+        }
+      ],
+      "remaining_scope": "完整 Host/Facet 依赖解析、远程 Service/复制与当前 Pico5 Document 集成。"
     },
     {
       "id": "pi-radius",
@@ -68,14 +114,22 @@
         "state": "retained",
         "bytes": 10742,
         "sha256": "e750eac68d25dab7fb1341e06f56804fd6cc0a40128731b15d049bd777fad7c2"
-      }
+      },
+      "coverage": [
+        {
+          "target": "pi-components-migrated",
+          "scope": "Chord 与 Radius 的职责分层；未刷新当前完整实现。"
+        }
+      ],
+      "remaining_scope": "所有远程接入/复用/断线路径及外部网关的公开证据。"
     },
     {
       "id": "deerflow-middleware",
       "title": "DeerFlow Lead Agent Middleware 执行链：顺序、Hook、作用域与跨层影响",
       "revision": 8,
       "targets": [
-        "deerflow-migrated"
+        "deerflow-migrated",
+        "deerflow-middleware"
       ],
       "migration_status": "partial-digestion",
       "archive": {
@@ -83,7 +137,18 @@
         "state": "retained",
         "bytes": 59461,
         "sha256": "ba9102f7fe234fb513817ca4f4eb3aaea9386809caf1220c26cf209d713a093a"
-      }
+      },
+      "coverage": [
+        {
+          "target": "deerflow-migrated",
+          "scope": "两种入口、run/thread/graph、构造与主链路，以及代表存储/工具边界。"
+        },
+        {
+          "target": "deerflow-middleware",
+          "scope": "当前装配分组、prompt 动态消息、system 合并、SkillToolPolicy 效果阻断。"
+        }
+      ],
+      "remaining_scope": "每个中间件的实际 hooks、配置精确顺序及所有扩展贡献。"
     },
     {
       "id": "deerflow-runtime",
@@ -98,14 +163,22 @@
         "state": "retained",
         "bytes": 31856,
         "sha256": "fd0e078908c673188669304920a98df242aeaa0725a718a43c7232b96eb3cfe4"
-      }
+      },
+      "coverage": [
+        {
+          "target": "deerflow-migrated",
+          "scope": "两种入口、run/thread/graph、构造与主链路，以及代表存储/工具边界。"
+        }
+      ],
+      "remaining_scope": "多 worker 竞争、stream 重放与终态故障验证。"
     },
     {
       "id": "deerflow-prompt",
       "title": "DeerFlow Agent Prompt 设计方法论：分层、标签与作用域",
       "revision": 19,
       "targets": [
-        "deerflow-migrated"
+        "deerflow-migrated",
+        "deerflow-middleware"
       ],
       "migration_status": "partial-digestion",
       "archive": {
@@ -113,7 +186,18 @@
         "state": "retained",
         "bytes": 26581,
         "sha256": "15991be58903a42b34c299e8a61c40c036d4aeae9a083e0575183b17da862b86"
-      }
+      },
+      "coverage": [
+        {
+          "target": "deerflow-migrated",
+          "scope": "两种入口、run/thread/graph、构造与主链路，以及代表存储/工具边界。"
+        },
+        {
+          "target": "deerflow-middleware",
+          "scope": "当前装配分组、prompt 动态消息、system 合并、SkillToolPolicy 效果阻断。"
+        }
+      ],
+      "remaining_scope": "所有标签/技能/子 Agent 提示与完整动态场景。"
     },
     {
       "id": "deerflow-harness",
@@ -128,14 +212,22 @@
         "state": "retained",
         "bytes": 28398,
         "sha256": "1ba06d2af338693a08b1ecab99426fa39615cdcca673cd5633de3e1a9cdf432e"
-      }
+      },
+      "coverage": [
+        {
+          "target": "deerflow-migrated",
+          "scope": "两种入口、run/thread/graph、构造与主链路，以及代表存储/工具边界。"
+        }
+      ],
+      "remaining_scope": "全部工具、上下文压缩、Sandbox 与扩展策略。"
     },
     {
       "id": "claude-march",
       "title": "Claude Code 3月底源码架构与核心链路分析",
       "revision": 152,
       "targets": [
-        "claude-migrated"
+        "claude-migrated",
+        "claude-context"
       ],
       "migration_status": "partial-digestion",
       "archive": {
@@ -143,7 +235,18 @@
         "state": "retained",
         "bytes": 72707,
         "sha256": "f4af92cfdf50e60b4bb18a40401ebfa08c3906d06f0afdeca15acf3483180de2"
-      }
+      },
+      "coverage": [
+        {
+          "target": "claude-migrated",
+          "scope": "冻结原稿的会话/query/工具层次、权限与多 Agent 工作粒度；保留版本及显式分配未知。"
+        },
+        {
+          "target": "claude-context",
+          "scope": "请求减重、正式压缩、session memory 和长期 memory 的职责；缺失实现保留未知。"
+        }
+      ],
+      "remaining_scope": "Bridge/MCP 认证、全部 gates/工具、安全边界、缺失实现及原稿自身 TODO；需原 snapshot 补证。"
     },
     {
       "id": "claude-official",
@@ -158,7 +261,14 @@
         "state": "retained",
         "bytes": 18224,
         "sha256": "18a20cf20ae9dbc505bd9bd1ef87fdbe172575056dd8f46d6832391566ab7cb5"
-      }
+      },
+      "coverage": [
+        {
+          "target": "claude-migrated",
+          "scope": "冻结原稿的会话/query/工具层次、权限与多 Agent 工作粒度；保留版本及显式分配未知。"
+        }
+      ],
+      "remaining_scope": "官方观点的逐项归纳与历史发布时间核对；不用于当前私有实现。"
     },
     {
       "id": "claude-legacy",
@@ -173,7 +283,14 @@
         "state": "retained",
         "bytes": 14896,
         "sha256": "3d6d3b154ff6514f1d6d54be69f6da029abde4dceeb57ffde86b4b1081bc9818"
-      }
+      },
+      "coverage": [
+        {
+          "target": "claude-migrated",
+          "scope": "冻结原稿的会话/query/工具层次、权限与多 Agent 工作粒度；保留版本及显式分配未知。"
+        }
+      ],
+      "remaining_scope": "旧 QueryEngine/Bridge/命令/状态的逐项核对及版本关系。"
     },
     {
       "id": "codex-official",
@@ -188,7 +305,14 @@
         "state": "retained",
         "bytes": 22535,
         "sha256": "3d45cfa5ad102d90ddb60693dc6f14ce247c8504315ab57c8f532274fd683937"
-      }
+      },
+      "coverage": [
+        {
+          "target": "codex-official-migrated",
+          "scope": "官方实践主题与源码事实的不同证据类型；非最新产品行为核验。"
+        }
+      ],
+      "remaining_scope": "全部产品使用观点的历史归纳；与新 Rust core 逐项对应未完成。"
     },
     {
       "id": "hermes",
@@ -203,7 +327,14 @@
         "state": "retained",
         "bytes": 20209,
         "sha256": "40018ac8368f8af597bd8e86a8676b104c713672f83dfafea413aa8f14cfbae7"
-      }
+      },
+      "coverage": [
+        {
+          "target": "hermes-migrated",
+          "scope": "宿主构造、对话阶段、transport、工具分派与消息批次；不含完整平台/压缩验证。"
+        }
+      ],
+      "remaining_scope": "ACP、全部平台/provider、记忆、压缩提交 fence、cron、skills、多 Agent。"
     },
     {
       "id": "langchain-overview",
@@ -218,7 +349,14 @@
         "state": "retained",
         "bytes": 17245,
         "sha256": "77e4ebd7c9200f6958584cd96d10bb92a15cc91200a50b99a123cdd5acee80f0"
-      }
+      },
+      "coverage": [
+        {
+          "target": "langchain-migrated",
+          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+        }
+      ],
+      "remaining_scope": "学习路径细节与所有示例对主干的验证。"
     },
     {
       "id": "langchain-stage1",
@@ -233,7 +371,14 @@
         "state": "retained",
         "bytes": 16459,
         "sha256": "d6b69e9d2f24aba195985c6b67dc01f557c6cad03aa265a0c1a3a68f844dcec3"
-      }
+      },
+      "coverage": [
+        {
+          "target": "langchain-migrated",
+          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+        }
+      ],
+      "remaining_scope": "LCEL 运算组合与 streaming/batch 的完整示例。"
     },
     {
       "id": "langchain-stage2",
@@ -248,7 +393,14 @@
         "state": "retained",
         "bytes": 12413,
         "sha256": "ae3678128e8a5a8aed8602670a6f20f96ff5308c137e15ed86d695556f98a1aa"
-      }
+      },
+      "coverage": [
+        {
+          "target": "langchain-migrated",
+          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+        }
+      ],
+      "remaining_scope": "全部消息变形、provider 与 Tool 失败示例。"
     },
     {
       "id": "langchain-stage3",
@@ -263,7 +415,14 @@
         "state": "retained",
         "bytes": 10863,
         "sha256": "cb184c14d4a2df98d76183ff913b2eed6381fcda04228d1a26c3a48d0ff9b606"
-      }
+      },
+      "coverage": [
+        {
+          "target": "langchain-migrated",
+          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+        }
+      ],
+      "remaining_scope": "RAG 的检索/切分/索引/召回与示例实现。"
     },
     {
       "id": "langchain-stage4",
@@ -278,7 +437,14 @@
         "state": "retained",
         "bytes": 22825,
         "sha256": "688520ffb4f35f6551026f83257f1ee3c8171fdcf012cc82f68c121b6ad3a986"
-      }
+      },
+      "coverage": [
+        {
+          "target": "langgraph-migrated",
+          "scope": "超步、通道、checkpoint 字段、pending writes 和 interrupt 节点重跑；不含全部示例及稀疏历史算法。"
+        }
+      ],
+      "remaining_scope": "子图、DeltaChannel/Overwrite 与复杂恢复示例。"
     },
     {
       "id": "langchain-stage5",
@@ -293,7 +459,14 @@
         "state": "retained",
         "bytes": 15363,
         "sha256": "fb3c1722385176cd034bfeb4b757b378a5bac32a3aec689c375173cf79707bd3"
-      }
+      },
+      "coverage": [
+        {
+          "target": "langchain-migrated",
+          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+        }
+      ],
+      "remaining_scope": "LangSmith/tracer/评估完整链路和实操代码。"
     },
     {
       "id": "langchain-stage6",
@@ -308,14 +481,25 @@
         "state": "retained",
         "bytes": 14365,
         "sha256": "9097072a6f0c8c68c29e4a9c8802d0ea3248c814e90a9fd122515111212ded82"
-      }
+      },
+      "coverage": [
+        {
+          "target": "langchain-migrated",
+          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+        }
+      ],
+      "remaining_scope": "所有 Partner 包和完整测试/源码阅读练习。"
     },
     {
       "id": "comparison-legacy",
       "title": "通用 Agent 流程架构共性调研：意图理解、规划与执行",
       "revision": 4,
       "targets": [
-        "comparison-index"
+        "comparison-index",
+        "comparison-matrix",
+        "comparison-ownership",
+        "comparison-state",
+        "comparison-execution"
       ],
       "migration_status": "partial-digestion",
       "archive": {
@@ -323,7 +507,31 @@
         "state": "retained",
         "bytes": 29895,
         "sha256": "fd09a9b31c210371b8dd4849c47302f8c367c27f34cb7de783fec9539d0e1b7e"
-      }
+      },
+      "coverage": [
+        {
+          "target": "comparison-index",
+          "scope": "共同问题与证据层次；旧额外对象/应用候选不进入当前范围。"
+        },
+        {
+          "target": "comparison-matrix",
+          "scope": "本书九对象的层次与主链路定位。"
+        },
+        {
+          "target": "comparison-ownership",
+          "scope": "九对象的 owner、构造与实例范围。"
+        },
+        {
+          "target": "comparison-state",
+          "scope": "历史/工作/外部效果三种恢复对象与代表故障。"
+        },
+        {
+          "target": "comparison-execution",
+          "scope": "可见性/授权/效果、代表 hook 与观测边界。"
+        }
+      ],
+      "remaining_scope": "范围外对象、应用候选设计保留历史；原稿逐段取舍理由尚未全部整理。"
     }
-  ]
+  ],
+  "analysis_updated_at": "2026-10-10"
 }

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640" role="img" aria-labelledby="title desc">
+<title id="title">Codex：活跃 Thread、Turn/Step 与 rollout</title>
+<desc id="desc">接入 · TUI / exec / app-server：宿主解析请求和配置，再通过 ThreadManager 进入 core；线程运行 · CodexThread / Session：提交队列分派 Op；Session 持有历史、服务和活动 turn；执行 · SessionTask → run_turn：TurnContext 定义轮次；StepContext 固定当次模型请求环境；效果 · ModelClientSession / ToolRouter：请求 provider；工具 registry 分派到 handler / runtime；Thread 身份、进程内 Session、单次任务与持久历史是四个不同边界。</desc>
+<rect width="1000" height="640" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui,sans-serif" fill="#172554">
+<text x="28" y="37" font-size="22" font-weight="700">Codex：活跃 Thread、Turn/Step 与 rollout</text>
+<rect x="28" y="70" width="570" height="85" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="99" font-size="18" font-weight="700">接入 · TUI / exec / app-server</text>
+<text x="44" y="129" font-size="15">宿主解析请求和配置，再通过 ThreadManager 进入 core</text>
+<path d="M310,155 V181" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="28" y="185" width="570" height="85" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="214" font-size="18" font-weight="700">线程运行 · CodexThread / Session</text>
+<text x="44" y="244" font-size="15">提交队列分派 Op；Session 持有历史、服务和活动 turn</text>
+<path d="M310,270 V296" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="28" y="300" width="570" height="85" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="329" font-size="18" font-weight="700">执行 · SessionTask → run_turn</text>
+<text x="44" y="359" font-size="15">TurnContext 定义轮次；StepContext 固定当次模型请求环境</text>
+<path d="M310,385 V411" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="28" y="415" width="570" height="85" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="444" font-size="18" font-weight="700">效果 · ModelClientSession / ToolRouter</text>
+<text x="44" y="474" font-size="15">请求 provider；工具 registry 分派到 handler / runtime</text>
+<rect x="710" y="185" width="262" height="95" rx="8" fill="#f0fdf4" stroke="#166534" stroke-width="2"/>
+<text x="726" y="214" font-size="17" font-weight="700">RolloutRecorder</text>
+<text x="726" y="240" font-size="15">AddItems 入写入队列</text>
+<text x="726" y="265" font-size="15">persist / flush 等待写入确认</text>
+<path d="M598,225 H704" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="610" y="213" font-size="14">读写 / 绑定</text>
+<rect x="710" y="300" width="262" height="95" rx="8" fill="#f0fdf4" stroke="#166534" stroke-width="2"/>
+<text x="726" y="329" font-size="17" font-weight="700">ContextManager</text>
+<text x="726" y="355" font-size="15">内存历史及模型输入投影</text>
+<text x="726" y="380" font-size="15">压缩后替换有效上下文</text>
+<path d="M598,340 H704" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="610" y="328" font-size="14">读写 / 绑定</text>
+<text x="28" y="600" font-size="15">Thread 身份、进程内 Session、单次任务与持久历史是四个不同边界。</text>
+</g></svg>

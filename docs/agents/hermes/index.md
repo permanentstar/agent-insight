@@ -5,20 +5,19 @@ subject: "hermes"
 status: "index"
 baselines: ["hermes-20261009"]
 sources: ["hermes"]
-depends_on: []
-evidence: ["historical-document"]
-verified_scope: "已建立分册与目标基线；正文最新源码核验未完成。"
+depends_on: ["hermes-migrated"]
+evidence: []
+verified_scope: "分册入口与已核验章节对应；正文静态范围与未覆盖内容见下表。"
 ---
 
 # Hermes分册
 
-旧材料围绕 AIAgent：不同入口组合同一个 Agent 平台，provider transport 与工具 registry 分担模型和工具边界。
+Hermes 的 AIAgent 是共享编排门面，实例生命周期由 CLI/Gateway 等宿主决定。正文追到 conversation_loop 与 tool_executor 的真实阶段。
 
-本分册按照 [统一对象模板](../../templates/project.md) 组织。读 [初版整理](architecture.md) 时，先核对状态条；旧材料的具体机制尚未逐条复核最新基线。
+阅读顺序：[宿主、循环与存储边界](architecture.md)。先看图和词典，再跟主链路定位表进入执行点。
 
-| 章节方向 | 本版状态 |
+| 本版已解决 | 未解决 / 未验证 |
 |---|---|
-| 定位、层次、概念与所有权 | 已整理研究入口；正式词典待源码核验后补齐 |
-| 构造、一次请求与执行点 | 下页保存旧材料的主链路问题；最新源码待核验 |
-| 状态、上下文、工具与权限 | 不把旧实现自动认作当前行为 |
-| 故障、取消、恢复与独有机制 | 以统一边界表继续深化 |
+| CLI/Gateway 构造、原生模型工具循环及消息批次提交已静态核验。 | ACP、全部平台/provider、压缩 fence、cron 和多 Agent 共享规则未穷举。 |
+
+所有对象采用[统一模板](../../templates/project.md)。基线以正文 frontmatter 和[统一清单](../../guide/baselines.md)为准，源码观察日期是 2026-10-09；无真实模型或故障运行测试。

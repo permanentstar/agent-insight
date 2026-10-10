@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="640" viewBox="0 0 1000 640" role="img" aria-labelledby="title desc">
+<title id="title">DeepSeek：插件组合、会话事件与运行循环</title>
+<desc id="desc">入口 · dsh profile / SDK：profile 与 bundle 组合 Cordis 插件树；组合与生命周期 · AgentLoop：依赖服务注入；先准备 Session 和写句柄，再发布 Agent；运行 · ReactLoopAgent.turn → step：接纳 inbox，构造请求；模型与工具可形成多次 step；效果 · llm.stream / tools.execute：启用 checkpoint policy：效果前要求 flush；resume 补 tool/result 与边界关闭旧 turn；外部效果结果未知时不能盲目重做。</desc>
+<rect width="1000" height="640" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui,sans-serif" fill="#172554">
+<text x="28" y="37" font-size="22" font-weight="700">DeepSeek：插件组合、会话事件与运行循环</text>
+<rect x="28" y="70" width="570" height="85" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="99" font-size="18" font-weight="700">入口 · dsh profile / SDK</text>
+<text x="44" y="129" font-size="15">profile 与 bundle 组合 Cordis 插件树</text>
+<path d="M310,155 V181" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="28" y="185" width="570" height="85" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="214" font-size="18" font-weight="700">组合与生命周期 · AgentLoop</text>
+<text x="44" y="244" font-size="15">依赖服务注入；先准备 Session 和写句柄，再发布 Agent</text>
+<path d="M310,270 V296" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="28" y="300" width="570" height="85" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="329" font-size="18" font-weight="700">运行 · ReactLoopAgent.turn → step</text>
+<text x="44" y="359" font-size="15">接纳 inbox，构造请求；模型与工具可形成多次 step</text>
+<path d="M310,385 V411" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="28" y="415" width="570" height="85" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="444" font-size="18" font-weight="700">效果 · llm.stream / tools.execute</text>
+<text x="44" y="474" font-size="15">启用 checkpoint policy：效果前要求 flush</text>
+<rect x="710" y="185" width="262" height="95" rx="8" fill="#f0fdf4" stroke="#166534" stroke-width="2"/>
+<text x="726" y="214" font-size="17" font-weight="700">SessionHandle</text>
+<text x="726" y="240" font-size="15">写入所有权 / append / flush</text>
+<text x="726" y="265" font-size="15">JSONL 后端另加跨进程 lease</text>
+<path d="M598,225 H704" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="610" y="213" font-size="14">读写 / 绑定</text>
+<rect x="710" y="300" width="262" height="95" rx="8" fill="#f0fdf4" stroke="#166534" stroke-width="2"/>
+<text x="726" y="329" font-size="17" font-weight="700">Session / surface</text>
+<text x="726" y="355" font-size="15">连续 seq 事件是历史事实</text>
+<text x="726" y="380" font-size="15">surface 派生模型消息</text>
+<path d="M598,340 H704" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="610" y="328" font-size="14">读写 / 绑定</text>
+<text x="28" y="600" font-size="15">resume 补 tool/result 与边界关闭旧 turn；外部效果结果未知时不能盲目重做。</text>
+</g></svg>

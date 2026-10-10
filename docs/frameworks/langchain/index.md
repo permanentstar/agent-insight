@@ -5,20 +5,19 @@ subject: "langchain"
 status: "index"
 baselines: ["langchain-20261009"]
 sources: ["langchain-overview", "langchain-stage1", "langchain-stage2", "langchain-stage3", "langchain-stage5", "langchain-stage6"]
-depends_on: []
-evidence: ["historical-document"]
-verified_scope: "已建立分册与目标基线；正文最新源码核验未完成。"
+depends_on: ["langchain-migrated"]
+evidence: []
+verified_scope: "分册入口与已核验章节对应；正文静态范围与未覆盖内容见下表。"
 ---
 
 # LangChain分册
 
-框架分册解释 create_agent、middleware 和 Runnable。教程实例不能替代源码实现；与应用的依赖锁分开记录。
+LangChain 提供 Runnable、消息、模型和工具协议，并用 create_agent 构图。它与负责运行/恢复的 LangGraph 分册配合阅读。
 
-本分册按照 [统一对象模板](../../templates/project.md) 组织。读 [初版整理](architecture.md) 时，先核对状态条；旧材料的具体机制尚未逐条复核最新基线。
+阅读顺序：[统一协议、Agent 构图与 hook 顺序](architecture.md)。先看图和词典，再跟主链路定位表进入执行点。
 
-| 章节方向 | 本版状态 |
+| 本版已解决 | 未解决 / 未验证 |
 |---|---|
-| 定位、层次、概念与所有权 | 已整理研究入口；正式词典待源码核验后补齐 |
-| 构造、一次请求与执行点 | 下页保存旧材料的主链路问题；最新源码待核验 |
-| 状态、上下文、工具与权限 | 不把旧实现自动认作当前行为 |
-| 故障、取消、恢复与独有机制 | 以统一边界表继续深化 |
+| 统一调用接口、model/tools 路由和主干 middleware 顺序已静态核验。 | 旧六阶段教程只归并主题；RAG、tracer 及所有 Partner/练习代码未逐项运行。 |
+
+所有对象采用[统一模板](../../templates/project.md)。基线以正文 frontmatter 和[统一清单](../../guide/baselines.md)为准，源码观察日期是 2026-10-09；无真实模型或故障运行测试。

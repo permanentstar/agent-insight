@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="680" viewBox="0 0 1000 680" role="img" aria-labelledby="title desc">
+<title id="title">DeerFlow：装配列表与运行阶段分开</title><desc id="desc">工厂组合 runtime、product、extension 三组中间件。create_agent 按不同 hook 阶段使用实例。原生 system 模板、动态 state 消息和一次 request 变换分开。</desc>
+<rect width="1000" height="680" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui,sans-serif" fill="#172554">
+<text x="28" y="38" font-size="22" font-weight="700">DeerFlow：装配列表与运行阶段分开</text>
+<rect x="28" y="75" width="510" height="107" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="105" font-size="18" font-weight="700">构造 · build_middlewares</text>
+<text x="44" y="132" font-size="15">runtime builder → lead 产品追加</text>
+<text x="44" y="158" font-size="15">最后 compose_with_extensions(LEAD)</text>
+<rect x="28" y="225" width="510" height="107" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="255" font-size="18" font-weight="700">构图 · create_agent</text>
+<text x="44" y="282" font-size="15">绑定 middleware 实例、state schema、system</text>
+<text x="44" y="308" font-size="15">此阶段不执行模型 / 工具</text>
+<rect x="28" y="375" width="510" height="107" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="405" font-size="18" font-weight="700">运行 · 图节点与调用 wrapper</text>
+<text x="44" y="432" font-size="15">before hooks 更新 state；wrap 改 request 或阻断</text>
+<text x="44" y="458" font-size="15">model / tools 节点进入实际 handler</text>
+<rect x="665" y="75" width="307" height="107" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="105" font-size="18" font-weight="700">基础 prompt</text>
+<text x="681" y="132" font-size="15">apply_prompt_template</text>
+<text x="681" y="158" font-size="15">构图时传入 system_prompt</text>
+<rect x="665" y="255" width="307" height="107" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="285" font-size="18" font-weight="700">动态上下文</text>
+<text x="681" y="312" font-size="15">before_agent → 消息更新</text>
+<text x="681" y="338" font-size="15">带标记 SystemMessage</text>
+<rect x="665" y="435" width="307" height="107" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="465" font-size="18" font-weight="700">最终模型快照</text>
+<text x="681" y="492" font-size="15">coalescing → request.override</text>
+<text x="681" y="518" font-size="15">模型 tools 过滤与执行门禁分开</text>
+<path d="M280,182 V220" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M280,332 V370" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M665,135 H640 V280 H543" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="564" y="127" font-size="14">模板</text>
+<path d="M665,312 H617 V423 H543" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="573" y="304" font-size="14">state</text>
+<path d="M538,463 H660" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="564" y="455" font-size="14">request</text>
+<text x="28" y="625" font-size="15">图实例作用域：Gateway 每 run 构造；Client 可按 key 复用。</text>
+<text x="28" y="650" font-size="15">最终链受配置和扩展插入规则影响；上图不是所有 hook 的固定顺序。</text>
+</g></svg>

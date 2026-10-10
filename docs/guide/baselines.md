@@ -30,6 +30,8 @@ verified_scope: "本页维护书籍组织与阅读契约，不声明目标 Agent
 
 所有 current 基线的观察日期为 2026-10-09。Local HEAD 和 fetch 后的 origin 对应相同提交；DeerFlow、Hermes 和 LangChain 的既有 WIP 保留。本书的已核验源码结论引用 Git 固定版本，不将 WIP 当作上游实现。
 
-没有 SHA 的 Claude 资料仅冻结到文档 revision，不伪造源码基线。DeerFlow 实际使用的 LangChain/LangGraph 依赖组合仍待登记：当前框架各自主干不能自动当成 DeerFlow 运行依赖。
+没有 SHA 的 Claude 资料仅冻结到文档 revision，不伪造源码基线。DeerFlow 此基线的 backend/uv.lock 锁定 LangChain 1.3.14、LangGraph 1.2.9、langgraph-checkpoint 4.2.0，已登记在该基线 dependency_lock。只核验锁文件，没有将这组包逐项映射到框架源码 SHA；框架各自主干不自动等于应用运行组合。
 
 每次更新新增带日期或 SHA 的基线 ID，保留仍被历史章节引用的旧基线。逐页核验后迁移页面引用；未检查的页面保留旧 ID，不通过改一个全局 SHA 把整本书“刷新”。
+
+本轮分析整理日期为 2026-10-10；没有重新 fetch 或改变上述观察点。七个源码仓库的代表主链路已形成静态章节，核验限制以逐页 verified_scope 为准。Claude 保持冻结原稿，Lane 保持历史基线；全部对象都没有运行模型、工具或崩溃测试。

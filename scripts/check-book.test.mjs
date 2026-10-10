@@ -4,6 +4,7 @@ import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { checkBook } from './check-book.mjs';
+import { markdownFiles } from './book-lib.mjs';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
 function withBookFixture(run) {
@@ -64,8 +65,7 @@ test('requires references to be cleared before removing a digested original', ()
   rmSync(join(scratch, doc.archive.path));
   writeFileSync(registryPath, JSON.stringify(registry));
   assert.ok(checkBook(scratch).errors.some(error => error.includes('archive_still_required')));
-  for (const target of ['docs/agents/pi/index.md', 'docs/agents/pi/architecture.md', 'docs/agents/pi/loop.md', 'docs/agents/pi/context.md']) {
-    const path = join(scratch, target);
+  for (const path of markdownFiles(join(scratch, 'docs'))) {
     const text = readFileSync(path, 'utf8').replace(/^sources: (.+)$/m, (_, value) => 'sources: ' + JSON.stringify(JSON.parse(value).filter(id => id !== doc.id)));
     writeFileSync(path, text);
   }

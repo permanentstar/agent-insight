@@ -5,20 +5,19 @@ subject: "deerflow"
 status: "index"
 baselines: ["deerflow-20261009"]
 sources: ["deerflow-runtime", "deerflow-middleware", "deerflow-prompt", "deerflow-harness"]
-depends_on: []
-evidence: ["historical-document"]
-verified_scope: "已建立分册与目标基线；正文最新源码核验未完成。"
+depends_on: ["deerflow-migrated", "deerflow-middleware"]
+evidence: []
+verified_scope: "分册入口与已核验章节对应；正文静态范围与未覆盖内容见下表。"
 ---
 
 # DeerFlow分册
 
-应用在上层选择 Agent 产品语义与 Harness 能力，LangChain 构图，LangGraph/Pregel 驱动执行。旧分析重点是 Gateway run 与 graph instance 分离。
+DeerFlow 是产品应用与 Harness，LangChain 构图，LangGraph 执行。最新主链路已经按 run、thread、graph instance 和存储分层。
 
-本分册按照 [统一对象模板](../../templates/project.md) 组织。读 [初版整理](architecture.md) 时，先核对状态条；旧材料的具体机制尚未逐条复核最新基线。
+阅读顺序：[架构、构造与主链路](architecture.md) → [中间件、Prompt 与门禁](middleware.md)。先看图和词典，再跟主链路定位表进入执行点。
 
-| 章节方向 | 本版状态 |
+| 本版已解决 | 未解决 / 未验证 |
 |---|---|
-| 定位、层次、概念与所有权 | 已整理研究入口；正式词典待源码核验后补齐 |
-| 构造、一次请求与执行点 | 下页保存旧材料的主链路问题；最新源码待核验 |
-| 状态、上下文、工具与权限 | 不把旧实现自动认作当前行为 |
-| 故障、取消、恢复与独有机制 | 以统一边界表继续深化 |
+| 两种入口、图复用、代表工具 policy 与 prompt 已静态核验。 | 完整压缩、所有扩展排序与多 worker 故障未验证；锁定框架组合见基线页。 |
+
+所有对象采用[统一模板](../../templates/project.md)。基线以正文 frontmatter 和[统一清单](../../guide/baselines.md)为准，源码观察日期是 2026-10-09；无真实模型或故障运行测试。
