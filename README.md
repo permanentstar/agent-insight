@@ -30,7 +30,7 @@ npm run preview
 
 维护资料与阅读内容分开存放，不进入书籍构建或搜索：
 
-- [更新流程](maintenance/update.md)与[元数据契约](maintenance/contracts.md)：后续研究与换机入口。
+- [教学深化与更新计划](maintenance/update.md)与[元数据契约](maintenance/contracts.md)：教学补充顺序、源码更新与换机入口。
 - [对象模板](templates/project.md)、[机制模板](templates/mechanism.md)与[比较模板](templates/comparison.md)：统一研究问题和章节结构。
 - [构建工具说明](maintenance/tooling.md)：VitePress、依赖及本地服务配置。
 - [参考材料登记](maintenance/provenance.md)与[历史研究资料](archive/README.md)：保留引用依据及文件校验信息。

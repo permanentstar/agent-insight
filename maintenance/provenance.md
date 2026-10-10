@@ -18,27 +18,27 @@ verified_scope: "21 份原稿重要主题已提炼并登记；校验原文不变
 
 | 原稿 ID / revision | 主要正文去向 | 已处理的剩余主题与边界 |
 |---|---|---|
-| `pi-session` / 67 | [AgentSession / pi-platform](../agents/pi/platform.md)、[AgentSession / pi-context](../agents/pi/context.md)、[AgentSession / pi-extensions](../agents/pi/extensions.md) | 所有外部 MCP/provider/认证和 TUI 交互未运行；逐工具效果按执行契约，不复制同类功能清单。 |
-| `pi-lane` / 127 | [Lane 历史 / lane-runtime](../history/pi-lane/runtime.md)、[Pi 路线演进与“转正”口径 / pi-evolution](../history/pi-lane/evolution.md) | 冻结历史栈未运行；默认超时/计时常量保留源码，不提升成跨版本契约。 |
-| `pi-chord` / 31 | [Chord 与 Radius / pi-components-migrated](../history/pi-lane/components.md) | 旧与当前 Chord 分别固定基线；未运行远端复制或 generation 替换。 |
-| `pi-radius` / 4 | [Chord 与 Radius / pi-components-migrated](../history/pi-lane/components.md) | 公开 checkout 中缺外部 Radius 服务实现，认证/HA/服务端存储不作结论；接入与恢复源码已整理。 |
-| `deerflow-middleware` / 8 | [DeerFlow / deerflow-middleware](../agents/deerflow/middleware.md) | 候选顺序与直接 hooks 全部登记；配置/扩展会改变最终列表，所有组合没有运行验证。 |
-| `deerflow-runtime` / 6 | [DeerFlow / deerflow-runtime](../agents/deerflow/runtime.md) | 多 worker/重启/lease 故障未运行；事件批次 best effort，不声明完整交付。 |
-| `deerflow-prompt` / 19 | [DeerFlow / deerflow-context](../agents/deerflow/context-prompt.md) | 真实 provider 缓存命中与抗注入未测；标签建议作为候选契约。 |
-| `deerflow-harness` / 23 | [DeerFlow / deerflow-capabilities](../agents/deerflow/capabilities.md)、[DeerFlow / deerflow-context](../agents/deerflow/context-prompt.md) | 同类工具合并按效果边界解释；所有后端与 sandbox 平台未运行。 |
-| `claude-march` / 152 | [Claude Code / claude-migrated](../agents/claude/architecture.md)、[Claude Code / claude-context](../agents/claude/context.md)、[Claude Code / claude-capabilities](../agents/claude/capabilities.md) | 原 snapshot SHA 未知，snip/collapse、部分 gates 和显式 teammate 接单缺原实现，保持冻结未知。 |
-| `claude-official` / 33 | [Claude / claude-practices](../agents/claude/practices.md) | 官方实践作为历史转述；Code/API/Managed Agents 分开，不核验当前页面或服务。 |
-| `claude-legacy` / 4 | [Claude Code / claude-capabilities](../agents/claude/capabilities.md)、[Claude Code / claude-migrated](../agents/claude/architecture.md) | 旧 QueryEngine/IDE Bridge 与 3 月 snapshot 的版本关系未知，不拼成一种当前实现。 |
-| `codex-official` / 8 | [Codex / codex-plan](../agents/codex/architecture.md)、[Codex / codex-context](../agents/codex/context-capabilities.md)、[Codex / codex-official-migrated](../agents/codex/official-practices.md) | 历史建议对应当前固定源码执行点；模型价格/参数、30 天安排和模板建议不转成当前 API 契约。 |
-| `hermes` / 10 | [Hermes / hermes-context](../agents/hermes/context.md)、[Hermes / hermes-capabilities](../agents/hermes/capabilities.md)、[Hermes / hermes-migrated](../agents/hermes/architecture.md) | 所有平台/provider 与 cron/压缩取消交接未运行；隔离 worker 契约不泛化到所有任务。 |
-| `langchain-overview` / 40 | [LangChain / LangGraph / langchain-learning](../frameworks/langchain/learning.md) | 外部课程、按天安排与无统计比例留归档；学习目标已归并，练习未执行。 |
-| `langchain-stage1` / 19 | [LangChain / langchain-components](../frameworks/langchain/components.md) | 例子保留学习目标而非重复大段旧代码；stream/batch 机制已核验，未跑练习。 |
-| `langchain-stage2` / 6 | [LangChain / langchain-components](../frameworks/langchain/components.md) | message/text/tool 旧概括已校正；所有模型集成能力未运行。 |
-| `langchain-stage3` / 7 | [LangChain / langchain-retrieval](../frameworks/langchain/retrieval.md) | 检索链与固定/Agentic/混合 RAG 已整理；切分、召回、权限过滤和答案质量无实测。 |
-| `langchain-stage4` / 25 | [LangGraph / langgraph-migrated](../frameworks/langgraph/architecture.md)、[LangGraph / langgraph-advanced](../frameworks/langgraph/advanced.md) | LastValue/Command/middleware 旧错误已校正，Delta/Overwrite/子图已整理；真实 saver 与恢复练习未运行。 |
-| `langchain-stage5` / 4 | [LangChain / langchain-observability](../frameworks/langchain/observability.md) | tracer/组树与两种 callback 集成路径已整理；外部后端未连接，某应用实证仅留原稿。 |
-| `langchain-stage6` / 4 | [LangChain / langchain-observability](../frameworks/langchain/observability.md)、[LangChain / langchain-migrated](../frameworks/langchain/architecture.md) | OpenAI 代表 Partner/standard-tests/DeerFlow 工厂已整理；不逐包重复协议，集成练习未运行。 |
-| `comparison-legacy` / 4 | [比较 / comparison-control](../comparisons/control-delegation.md)、[比较 / comparison-observability](../comparisons/observability-delivery.md)、[横向比较入口与范围 / comparison-index](../comparisons/index.md) | 范围外对象和某应用章节留归档；Router/Planner/验收/ACK 为候选设计，性能无实测。 |
+| `pi-session` / 67 | [AgentSession / pi-platform](../docs/agents/pi/platform.md)、[AgentSession / pi-context](../docs/agents/pi/context.md)、[AgentSession / pi-extensions](../docs/agents/pi/extensions.md) | 所有外部 MCP/provider/认证和 TUI 交互未运行；逐工具效果按执行契约，不复制同类功能清单。 |
+| `pi-lane` / 127 | [Lane 历史 / lane-runtime](../docs/history/pi-lane/runtime.md)、[Pi 路线演进与“转正”口径 / pi-evolution](../docs/history/pi-lane/evolution.md) | 冻结历史栈未运行；默认超时/计时常量保留源码，不提升成跨版本契约。 |
+| `pi-chord` / 31 | [Chord 与 Radius / pi-components-migrated](../docs/history/pi-lane/components.md) | 旧与当前 Chord 分别固定基线；未运行远端复制或 generation 替换。 |
+| `pi-radius` / 4 | [Chord 与 Radius / pi-components-migrated](../docs/history/pi-lane/components.md) | 公开 checkout 中缺外部 Radius 服务实现，认证/HA/服务端存储不作结论；接入与恢复源码已整理。 |
+| `deerflow-middleware` / 8 | [DeerFlow / deerflow-middleware](../docs/agents/deerflow/middleware.md) | 候选顺序与直接 hooks 全部登记；配置/扩展会改变最终列表，所有组合没有运行验证。 |
+| `deerflow-runtime` / 6 | [DeerFlow / deerflow-runtime](../docs/agents/deerflow/runtime.md) | 多 worker/重启/lease 故障未运行；事件批次 best effort，不声明完整交付。 |
+| `deerflow-prompt` / 19 | [DeerFlow / deerflow-context](../docs/agents/deerflow/context-prompt.md) | 真实 provider 缓存命中与抗注入未测；标签建议作为候选契约。 |
+| `deerflow-harness` / 23 | [DeerFlow / deerflow-capabilities](../docs/agents/deerflow/capabilities.md)、[DeerFlow / deerflow-context](../docs/agents/deerflow/context-prompt.md) | 同类工具合并按效果边界解释；所有后端与 sandbox 平台未运行。 |
+| `claude-march` / 152 | [Claude Code / claude-migrated](../docs/agents/claude/architecture.md)、[Claude Code / claude-context](../docs/agents/claude/context.md)、[Claude Code / claude-capabilities](../docs/agents/claude/capabilities.md) | 原 snapshot SHA 未知，snip/collapse、部分 gates 和显式 teammate 接单缺原实现，保持冻结未知。 |
+| `claude-official` / 33 | [Claude / claude-practices](../docs/agents/claude/practices.md) | 官方实践作为历史转述；Code/API/Managed Agents 分开，不核验当前页面或服务。 |
+| `claude-legacy` / 4 | [Claude Code / claude-capabilities](../docs/agents/claude/capabilities.md)、[Claude Code / claude-migrated](../docs/agents/claude/architecture.md) | 旧 QueryEngine/IDE Bridge 与 3 月 snapshot 的版本关系未知，不拼成一种当前实现。 |
+| `codex-official` / 8 | [Codex / codex-plan](../docs/agents/codex/architecture.md)、[Codex / codex-context](../docs/agents/codex/context-capabilities.md)、[Codex / codex-official-migrated](../docs/agents/codex/official-practices.md) | 历史建议对应当前固定源码执行点；模型价格/参数、30 天安排和模板建议不转成当前 API 契约。 |
+| `hermes` / 10 | [Hermes / hermes-context](../docs/agents/hermes/context.md)、[Hermes / hermes-capabilities](../docs/agents/hermes/capabilities.md)、[Hermes / hermes-migrated](../docs/agents/hermes/architecture.md) | 所有平台/provider 与 cron/压缩取消交接未运行；隔离 worker 契约不泛化到所有任务。 |
+| `langchain-overview` / 40 | [LangChain / LangGraph / langchain-learning](../docs/frameworks/langchain/learning.md) | 外部课程、按天安排与无统计比例留归档；学习目标已归并，练习未执行。 |
+| `langchain-stage1` / 19 | [LangChain / langchain-components](../docs/frameworks/langchain/components.md) | 例子保留学习目标而非重复大段旧代码；stream/batch 机制已核验，未跑练习。 |
+| `langchain-stage2` / 6 | [LangChain / langchain-components](../docs/frameworks/langchain/components.md) | message/text/tool 旧概括已校正；所有模型集成能力未运行。 |
+| `langchain-stage3` / 7 | [LangChain / langchain-retrieval](../docs/frameworks/langchain/retrieval.md) | 检索链与固定/Agentic/混合 RAG 已整理；切分、召回、权限过滤和答案质量无实测。 |
+| `langchain-stage4` / 25 | [LangGraph / langgraph-migrated](../docs/frameworks/langgraph/architecture.md)、[LangGraph / langgraph-advanced](../docs/frameworks/langgraph/advanced.md) | LastValue/Command/middleware 旧错误已校正，Delta/Overwrite/子图已整理；真实 saver 与恢复练习未运行。 |
+| `langchain-stage5` / 4 | [LangChain / langchain-observability](../docs/frameworks/langchain/observability.md) | tracer/组树与两种 callback 集成路径已整理；外部后端未连接，某应用实证仅留原稿。 |
+| `langchain-stage6` / 4 | [LangChain / langchain-observability](../docs/frameworks/langchain/observability.md)、[LangChain / langchain-migrated](../docs/frameworks/langchain/architecture.md) | OpenAI 代表 Partner/standard-tests/DeerFlow 工厂已整理；不逐包重复协议，集成练习未运行。 |
+| `comparison-legacy` / 4 | [比较 / comparison-control](../docs/comparisons/control-delegation.md)、[比较 / comparison-observability](../docs/comparisons/observability-delivery.md)、[横向比较入口与范围 / comparison-index](../docs/comparisons/index.md) | 范围外对象和某应用章节留归档；Router/Planner/验收/ACK 为候选设计，性能无实测。 |
 
 ## 什么被保留、校正或归档
 
