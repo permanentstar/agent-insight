@@ -51,6 +51,39 @@ DeepSeek Harness 是以 Cordis 插件树装配的 Agent 运行环境，当前上
 
 证据：[turn/step](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/agent.ts#L298)、[请求快照](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/agent.ts#L616)、[工具记录点](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/tool-calls.ts#L264)。模型流帧与持久事件分别命名；看到 assistant delta 不能据此认定已完成持久写入。
 
+## phase 状态机与 step 反馈不要混在一起
+
+![DeepSeek 驱动器 phase 为 idle、running、maintenance，running 内再推进 turn 与 step；模型工具反馈在 step 层，Session surface 决定模型可见资料，恢复只修复旧工作边界](../../assets/deepseek-phase-flow.svg)
+
+phase 是 ReactLoopAgent 在进程内的活动状态：idle 表示没有活跃工作；唤醒后变为 running，kick 可以连续推进 turn；driver 收口时回 idle。手工 maintenance 只允许从 idle 进入，工作完成后也回 idle。维护期间接到唤醒可以先登记，随后再启动驱动。这不是保存到日志、等重启继续执行的任务状态机。[phase 与唤醒](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/agent.ts#L183)、[driver 收口](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/agent.ts#L253)。
+
+| 转移 | 主线条件 | 主要动作 |
+|---|---|---|
+| idle → running | 收到启动驱动的唤醒 | 建立 AbortController，开启 driver |
+| running → idle | driver 正常、错误或取消收口 | 保存 lastTurn，处理已经登记的后续唤醒 |
+| idle → maintenance | 请求手工维护且无活跃工作 | 暂时保有工作归属 |
+| maintenance → idle | 维护结束 | 释放归属，必要时处理排队唤醒 |
+
+running 内的 turn/step 才表达任务推进。turn 首次 preStep 面向 next-turn 输入；后续 step 面向 next-step。模型调用工具以后，工具观察参与后续模型输入，继续决定动作；无工具或工具 conclude 可以产生完成原因，但新输入和 turn-stopping 处理仍可能要求继续。类名 ReactLoopAgent 与这样的反馈机制相符，不能单凭名称推定它采用某个固定推理文本格式。
+
+## 同一修复任务怎样成为事件和模型消息
+
+以“读取代码、修复 CSV、验证、回答”为例，第一次 followup 把用户要求送到 next-turn 并唤醒驱动。turn/start 与 step/start 先记录工作边界；请求准备把角色、上下文和工具定义组合好。模型返回 tool-call 后，工具执行器记录调用与结果；结果进入 surface，再由下次请求派生为模型消息。
+
+| 正常轨迹 | Session 事实 | 下一请求为什么需要它 |
+|---|---|---|
+| 提交修复要求 | user/message 与工作边界 | 告诉模型目标；turn/step 号供运行记录定位 |
+| 模型请求读取 | assistant/message 内的 tool-call | 保存动作请求及模型正文 |
+| 实际读取 | tool/call、tool/result | 保存执行与观察；结果供模型决定修改 |
+| 修改、验证与回答 | 后续 step 的同类事件 | 随新观察继续推进，最终形成回答 |
+| 收口 | step/end、turn/end 与 reason | 标明工作边界；不是把全部事件都发给模型 |
+
+这里同时存在两个次序：事件日志保留发生过的运行事实，surface 选择模型要看到的贡献。request/header、工作边界、临时流帧和最终 assistant 不能统称为“聊天消息”。请求通过 deriveMessages 从 surface 投影，并冻结当次消息快照；压缩改变可见贡献而不是将审计历史与消息数组视为同一份资料。[单步消息与模型响应](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/agent.ts#L400)、[调用和结果记录](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/tool-calls.ts#L264)。
+
+工具内容与用户目标保持开放的语义表达；event type、seq、call 关系和 surfaceOp 为程序提供明确接口。一个插件可以在 pre-step 改变准备或受理条件，另一个插件提供具体工具，但插件层次本身不意味着存在独立计划执行器。显式 P&E 需要在这些扩展口上另外组织计划消费关系。
+
+学习自检：为什么 phase=running 与存在一个未闭合 turn 是两种状态？assistant-stream 与 assistant/message 的职责有什么不同？事件仍在日志里，却不进入当前 surface，模型是否一定能看见它？
+
 ## 存储、压缩与故障边界
 
 Session.append 接纳事件与投影；persistence 的 append 承诺有序可见，flush 才是跨崩溃存活的统一契约。启用 checkpoint-policy 时，它在模型 stream、顶层 tools/execute 和下一 pre-step 发起 session flush；失败则不进入相应下游效果。嵌套工具复用外层调用的持久边界，不能声称每个嵌套动作都有独立 durable intent。

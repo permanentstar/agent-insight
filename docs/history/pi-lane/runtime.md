@@ -43,6 +43,34 @@ verified_scope: "冻结提交核验 Drive 分派与 Radius 接入口；进程协
 
 证据：[Drive 状态分派](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/agent/src/harness/runtime/drive.ts#L29)、[工具准备/执行/结算](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/agent/src/harness/execution/tools.ts#L78)。工具执行前固定最终参数和意图，结束后核销；中断后的未知效果不直接重做。steer、followUp、nextRun 分别作用于运行/轮次/下一 run 边界，abort 结束工作、finish 完成终态、resume 重建推进权，不能互换。
 
+## 一项 run Operation 的正常推进
+
+![Lane 命令经 Session 提交 Operation，内存 Drive 按持久位置推进 starting、checkpoint、assistant 与 tools；无工具返回结束边界，恢复重新读取 Operation，不延续旧调用栈](../../assets/lane-operation-flow.svg)
+
+以 CSV 修复为例，外部调用者通过 Harness 取得命名 Lane，再提交用户输入。Session 接纳 run 意图与历史条目，Operation 获得可持久引用的身份。Drive 是本进程推进者；它先确认自己对应 Lane 当前的 Operation，再反复读取已经提交的 state.at，调用相应处理过程。
+
+starting 的 startRun 读取输入条目、调用 before_run，将注入消息与初始 checkpoint 一起提交。checkpoint 是阶段交接处：接纳待放置输入、判断摘要是否需要、决定继续 assistant 或进入结束检查。普通情况下 need_assistant 转入 assistant.ready，模型生成阶段保存请求意图，再执行外部请求；有调用时进入工具处理，结果核销以后重新回 checkpoint。
+
+| 位置 | 对同一任务的意义 | 哪一层负责 |
+|---|---|---|
+| 命令提交 | “请修复 CSV”被接纳为 run 意图 | Session mutation 与 planner |
+| checkpoint → assistant | 固定当前历史与下一次生成依据 | 已提交 Operation；Drive 调用边界过程 |
+| assistant → tools | 模型选择读取、修改或验证 | 模型产生调用；程序保存调用并执行 |
+| tools → checkpoint | 新观察已核销，决定后续生成 | 工具过程与下一持久边界 |
+| may_finish → settled | 无新工作且收口条件通过 | 结束 mediation/hook 与提交 |
+
+上述走向来自正常主线；重试、摘要、deferred 和 navigation 各有额外分支。`checkpoint` 这个名称在这里表示 Operation 推进边界，不是 LangGraph 的整图快照，也不是 Pico5 每种 Task 私有的 checkpoint 数据。先确认归属，再解释同名概念，才不会把不同架构混在一起。[开始与 checkpoint 判定](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/agent/src/harness/runtime/drive/checkpoint.ts#L25)。
+
+## 为什么层次看起来比反馈循环更深
+
+最内层仍是模型根据消息和工具观察选择下一动作；外层多出来的是工作身份、提交边界、恢复位置及进程协作。自然语言输入和工具结果保存在 Entry 的消息贡献中，state.at 与 continuation 则让程序知道“目前需要生成、执行工具还是可以结束”。前者解释任务，后者解释怎样安全推进当前工作。
+
+Drive 丢失以后，新的 Drive 依据 Operation 重新分派；若位置为 effect_pending，需要恢复判断，不能把旧 Promise 的结果当作仍在内存。再外一层的 Chord 提供调用与状态复制，Radius 处理连接和传输；它们都不替模型规划任务，也不拥有 Session 中的持久 Operation。
+
+这说明“持久运行”增加的是任务推进的可重建表示。它可以承载反馈循环，也能容纳其他操作种类；持久 Operation 本身不等于显式 Planner/Executor。后续 Pico5 如何换成通用 Task、Entry 与 Document，见[架构路线](evolution.md)。
+
+学习自检：为什么一个 Operation 内会有多次模型轮次？谁保存当前推进位置，谁执行它？Chord 的状态复制为什么不能当作 Session 存储？
+
 ## 从命令入口到 Worker
 
 历史 server 入口确保 Coordinator，持有启动锁与逻辑 serverId，创建 generation Backend、SessionWorkerManager、服务 Host，监听并注册，再接管已有 Worker、发布 Session 目录。两个锁分别协调本机服务启动和 Session 写入，不提供跨主机共享 storage 的高可用。

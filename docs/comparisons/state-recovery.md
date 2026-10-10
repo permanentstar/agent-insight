@@ -16,6 +16,29 @@ verified_scope: "比较历史、工作、效果三个层次及代表提交点；
 
 ![比较恢复的三个对象：历史重建模型视图、工作记录决定后续推进、外部效果需要幂等或核对；三者不能互相替代](../assets/comparison-recovery.svg)
 
+## 主线状态有层次，不能只找一个 status
+
+沿 CSV 修复任务，最外层会话可以一直存在，本次工作从接纳到结束，工作内部反复生成与执行工具。代码读取、修改与验证完成时，外层任务未必结束。判断状态前，先确定自己在观察哪一层。
+
+| 所在层 | 要回答的问题 | 本书代表实现 |
+|---|---|---|
+| 会话／线程 | 哪些历史和配置属于同一交互身份？ | Pi SessionManager、Codex Thread、Hermes session_id |
+| 当前工作 | 本次输入是否已经开始、等待或结束？ | DeerFlow run、Pico5 Submission 与 Task、Lane Operation |
+| 推进阶段 | 现在准备请求、等待工具，还是准备收口？ | Pico5 checkpoint.phase；Hermes 原生阶段；DeepSeek step |
+| 请求／效果 | 本次模型与工具使用了哪份输入，结果在哪？ | Codex StepContext、AIMessage／ToolMessage、tool intent／outcome |
+| 观察／存储 | 展示的是临时进度、已提交状态还是耐久记录？ | pi.live、流事件、checkpoint、rollout 与 flush |
+
+各对象不必声明相同枚举。Pico5 的 pending/running/waiting 是调度状态，prepare/request/tools 是 generation 的私有阶段；DeepSeek 的 idle/running/maintenance 表示进程是否有活跃工作。Codex 和 Hermes 可以从控制函数解释主线，不需要为了表格齐整虚构一份统一状态机。[Pico5 分层状态](../agents/pi-durable/architecture.md)、[DeepSeek 驱动状态](../agents/deepseek/architecture.md)。
+
+## 用正常结束区分历史恢复与工作恢复
+
+一次修复结束后，下一次提问“刚才修改了哪里”，只要有历史和请求重建就可以接着交流。如果程序在工具过程中停止，问题则变成“同一工作下一步从哪里推进”。这时除了对话内容，还需要描述当前工作和执行阶段的资料。
+
+Pico5 将 Task checkpoint 交给当前代码继续调度，LangGraph 将图状态、任务与写入资料交给图执行器。DeepSeek 的恢复修复旧 turn 边界，再承接后续工作。AgentSession、Codex、Hermes 的会话重建路径则首先恢复历史与上下文，不能据此推定任意活跃工具都可续跑。
+
+外部效果还有自己的事实：即使任务状态没保存，文件也可能已经被修改。因而恢复设计需要区分“下一步可定位”与“这个动作是否已经发生”；相同消息可以重新读取，不代表相同写入可以无条件重做。下面的表按三层资料比较实现，再用一个必要的中断案例解释差异。
+
+
 | 对象 | 权威状态与所有者 | 构造与生命周期 | 实际机制与执行点 | 提供的能力 | 机制边界 | 深入阅读 |
 |---|---|---|---|---|---|---|
 | AgentSession | SessionManager 历史树 / Agent 消息 | 重建分支 parent 链及模型投影；活动执行在内存 | compaction/context edit 后构造输入；事件与 append 先后分开 | 分支历史与请求上下文关系可追 | 未证明任意活工具跨崩溃续跑或 fsync | [Pi](../agents/pi/architecture.md) |

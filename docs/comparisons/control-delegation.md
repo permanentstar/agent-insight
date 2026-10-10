@@ -5,7 +5,7 @@ subject: "comparison"
 status: "index"
 baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-frozen-documents"]
 sources: ["comparison-legacy"]
-depends_on: ["pi-platform", "durable-documents", "deerflow-context", "deerflow-capabilities", "claude-capabilities", "codex-context", "hermes-capabilities", "langchain-components", "langgraph-advanced", "deepseek-capabilities"]
+depends_on: ["comparison-modes", "pi-platform", "durable-documents", "deerflow-context", "deerflow-capabilities", "claude-capabilities", "codex-context", "hermes-capabilities", "langchain-components", "langgraph-advanced", "deepseek-capabilities"]
 evidence: ["source", "historical-document", "static-inference", "proposal"]
 verified_scope: "九对象固定基线的静态机制比较；Claude 是冻结转述，候选设计明确标注；未做运行或性能测量。"
 ---
@@ -16,7 +16,7 @@ verified_scope: "九对象固定基线的静态机制比较；Claude 是冻结�
 
 ![身份与能力接纳进入模型循环，模型可回答或请求工具及子 Agent；每次效果先经过控制，观察结果后继续决策，最终验收和交付分开](../assets/comparison-control.svg)
 
-九个对象的定位见 [对象矩阵](matrix.md)。下表比较谁决定动作、谁拥有活动工作，以及结果回到哪里；具体行为仍受所选配置约束。
+执行策略的概念和支持入口先读[执行模式比较](execution-modes.md)，再进入本章的接纳、委派与控制。九个对象的定位见 [对象矩阵](matrix.md)。下表比较谁决定动作、谁拥有活动工作，以及结果回到哪里；具体行为仍受所选配置约束。
 
 | 对象 | 权威状态与所有者 | 构造与生命周期 | 实际机制与执行点 | 提供的能力 | 机制边界 | 深入阅读 |
 |---|---|---|---|---|---|---|

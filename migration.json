@@ -338,7 +338,8 @@
         "claude-migrated",
         "claude-context",
         "claude-capabilities",
-        "claude-index"
+        "claude-index",
+        "comparison-modes"
       ],
       "migration_status": "digested",
       "archive": {
@@ -363,6 +364,10 @@
         {
           "target": "claude-index",
           "scope": "Claude Code（冻结）分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+        },
+        {
+          "target": "comparison-modes",
+          "scope": "执行模式主线与支持方式比较；历史材料用于机制参照，各对象结论按固定源码核验，Claude 保留历史证据范围。"
         }
       ],
       "remaining_scope": "",
@@ -801,7 +806,8 @@
         "comparison-state",
         "comparison-execution",
         "comparison-control",
-        "comparison-observability"
+        "comparison-observability",
+        "comparison-modes"
       ],
       "migration_status": "digested",
       "archive": {
@@ -838,6 +844,10 @@
         {
           "target": "comparison-observability",
           "scope": "比较：观测、终态与交付确认；九对象固定基线的静态机制比较；Claude 是冻结转述，候选设计明确标注；未做运行或性能测量。"
+        },
+        {
+          "target": "comparison-modes",
+          "scope": "执行模式主线与支持方式比较；历史材料用于机制参照，各对象结论按固定源码核验，Claude 保留历史证据范围。"
         }
       ],
       "remaining_scope": "",

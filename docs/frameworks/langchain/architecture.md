@@ -47,6 +47,57 @@ create_agent 收集工具、middleware 的额外工具与 schema，形成 ToolNo
 
 依据：[模型节点与真实调用](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1493)、[构图](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1611)、[工具返回路由](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L2072)。
 
+## 沿一项任务看 messages 怎样驱动图
+
+![用户消息进入模型节点；AIMessage 的待执行 tool_calls 路由到工具；ToolMessage 按 call ID 回填，模型再决策；没有待续工作时走结束](../../assets/langchain-loop-flow.svg)
+
+用“修复 CSV 导出”说明默认 Agent 图。调用者把用户要求交给 compiled graph，模型节点从 AgentState.messages 读取消息，构造当次 ModelRequest。system_message、工具定义和调用环境也在这一层绑定；运行进入模型终端 handler 后才调用 provider。
+
+第一轮可以产生读取文件的 AIMessage。它的自然语言 content 解释动作，tool_calls 则承载程序可处理的调用。例如下面的节选表达一个调用，省略其他消息属性：
+
+```python
+AIMessage(
+    content="先查看导出实现。",
+    tool_calls=[{"name": "read_source", "args": {"path": "src/export.ts"},
+                 "id": "read-1", "type": "tool_call"}],
+)
+```
+
+`read_source` 是教学假设的应用工具。工厂不按 content 中的句子解析行动，而依据 tool_calls 及已经存在的 ToolMessage 判断哪些调用尚未执行。当前实现将待执行调用送给 tools；工具返回与 read-1 对应的 ToolMessage，消息 state 经 reducer 更新后，再由路由进入下一次模型节点。[模型节点构造请求](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1579)、[待执行调用路由](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L2008)。
+
+```python
+ToolMessage(content="exportCsv 直接拼接字段，已有验证覆盖普通字段。",
+            tool_call_id="read-1")
+```
+
+下一轮模型看到原目标、上一次动作和返回事实，可能选择修改，也可能再查测试。**模型决定做什么，图规定怎样承接和反馈这份决定。** 固定的是 model/tools 的协作骨架，工具种类和轮数随任务变化。
+
+| 推进时点 | messages 的新增贡献 | 结构化控制 |
+|---|---|---|
+| 用户提交 | HumanMessage：目标、条件、资料引用 | 调用配置与 Runtime.context |
+| 请求读取 | AIMessage：说明与 tool_calls | 工具名、args、call ID |
+| 读取结束 | ToolMessage：代码观察 | tool_call_id 关联原请求 |
+| 请求修改与验证 | 新的 AIMessage／ToolMessage | 继续按同一协议组织 |
+| 正常回答 | 无待执行调用的 AIMessage | 路由到退出节点，受 middleware 等条件影响 |
+
+这也是自然语言组织方式：框架不把所有正文变成一个固定 intent_class，而用消息角色、内容块和调用关联约束材料的解释。结构化输出又是另一种返回契约；它可以影响工厂结束条件，不能和“工具调用结果”混称。
+
+## middleware 怎样改变同一条主线
+
+before_model/after_model 作为图中的节点，可返回状态更新或允许的跳转；wrap_model_call 是模型调用的包裹，可以改当次请求或结果。比如只想为这次请求附上时间信息，可以 override request，而不必把时间永久追加为用户消息。
+
+工具层同理。wrap_tool_call 可以在 handler 之前决定是否调用、怎样调用，或规范化结果。它是实际工具效果路径的一部分；而把某工具移出模型 schema，只影响这次请求的可见性。更完整的 hook 顺序见下表。
+
+TodoListMiddleware 添加 write_todos 和 todos 状态，工具以 Command 更新清单并返回 ToolMessage。它让任务进度成为结构资料，下一步动作仍由模型与路由决定，不能将清单误读为自动逐项执行的调度器。[Todo 状态更新](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/middleware/todo.py#L140)。
+
+## 用框架组织 Plan & Execute
+
+如果应用要把规划和执行分开，可以定义 Planner 的结构化输出、Executor 接受的步骤，以及 Replanner 消费的完成结果。Planner 本身可以是一份模型调用；Executor 可以是一份 create_agent；外层再用 StateGraph 连接它们。这是框架的组合方式，不是 create_agent 默认主线自动拥有的三份模块。
+
+在本案例中，外层计划可以保存“实现转义”这一项，而 Executor 内部独立读取、修改、测试多次。外层计划项与内层 tool call 是不同粒度。只有将输入输出契约和状态位置写清楚，组合后才不会出现两层都以为对方负责推进的情况。
+
+学习自检：AIMessage.content、tool_calls 与 ToolMessage 各承担什么？如果同一图开始新请求，哪些对象复用、哪些 request 新建？为什么 Runnable 的统一调用接口不等于业务状态机？
+
 ## Hook 顺序与状态更新
 
 | Hook | 编排方式 | 列表 A、B 的顺序 | 返回值影响 |
@@ -70,11 +121,11 @@ LCEL 适合明确的输入输出组合；create_agent 适合模型动态决定�
 
 | 组件层次 | 连接关系 | 机制边界 |
 |---|---|---|
-| Stage 1 Runnable/LCEL | 本章通用协议；链式与并行组合 | 不把全部 Runnable 的 stream 都看作真正增量生成 |
-| Stage 2 Messages/Model/Tool | 本章协议与执行边界 | 内容块、参数校验、injected 参数须读对应类型 |
-| Stage 3 RAG | 独有应用模式：先检索再生成，或把检索做成模型工具 | retriever/vectorstore 是检索组件，不自动成为 agent loop |
-| Stage 4 Graph/Agent | 独立 LangGraph 分册及本章 factory | 图节点不是必然一个 Agent |
-| Stage 5 tracing | RunnableConfig callbacks 形成父子观测链 | trace span 成功不等于外部业务效果成功 |
-| Stage 6 partner/包边界 | core 定义协议，langchain 组装，partner 接 provider | 具体 provider 的 SDK/HTTP 路径需单独核验 |
+| Runnable/LCEL | 本章通用协议；链式与并行组合 | 不把全部 Runnable 的 stream 都看作真正增量生成 |
+| Messages/Model/Tool | 本章协议与执行边界 | 内容块、参数校验、injected 参数须读对应类型 |
+| RAG | 独有应用模式：先检索再生成，或把检索做成模型工具 | retriever/vectorstore 是检索组件，不自动成为 agent loop |
+| Graph/Agent | 独立 LangGraph 分册及本章 factory | 图节点不是必然一个 Agent |
+| tracing | RunnableConfig callbacks 形成父子观测链 | trace span 成功不等于外部业务效果成功 |
+| partner/包边界 | core 定义协议，langchain 组装，partner 接 provider | 具体 provider 的 SDK/HTTP 路径需单独核验 |
 
 Runnable 提供统一调用接口，create_agent 生成控制图，LangGraph 推进节点；消息、工具和 provider 的契约则约束每个节点如何处理数据。按这条链理解组件，比按包名判断能力更准确。[学习路线](learning.md)给出逐层练习与自检问题。

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="690" viewBox="0 0 960 690" role="img" aria-labelledby="title desc">
+<title id="title">LangGraph：并行超步与状态可见性</title><desc id="desc">共同 snapshot 在超步 N 被两个节点读取；各自产生 writes，合并后成为下一步状态；超步 N 内不会看到对方尚未合并的 writes，模型决策在后续节点。</desc>
+<rect width="960" height="690" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">LangGraph：并行超步与状态可见性</text>
+<rect x="30" y="75" width="900" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="103" font-size="18" fill="#172554" font-weight="700">超步 N 的同一状态快照</text>
+<text x="46" y="130" font-size="16" fill="#172554">goal 已保存；observations 尚无本次读取结果</text>
+<path d="M480,169 V207 H240 V244" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M480,207 H730 V244" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="248" width="430" height="116" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="276" font-size="18" fill="#172554" font-weight="700">读取需求节点</text>
+<text x="46" y="303" font-size="16" fill="#172554">读同一 snapshot</text>
+<text x="46" y="327" font-size="16" fill="#172554">产生 observations=[需求事实]</text>
+<rect x="500" y="248" width="430" height="116" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="516" y="276" font-size="18" fill="#172554" font-weight="700">读取代码节点</text>
+<text x="516" y="303" font-size="16" fill="#172554">读同一 snapshot</text>
+<text x="516" y="327" font-size="16" fill="#172554">产生 observations=[代码事实]</text>
+<path d="M240,364 V413 H480 V453" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M730,364 V413 H480" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="457" width="900" height="86" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="485" font-size="18" fill="#172554" font-weight="700">更新与 checkpoint 边界</text>
+<text x="46" y="512" font-size="16" fill="#172554">reducer 合并 writes；下一超步看到两份 observations</text>
+<rect x="30" y="591" width="900" height="74" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="46" y="619" font-size="18" fill="#172554" font-weight="700">超步 N+1：决策节点</text>
+<text x="46" y="646" font-size="16" fill="#172554">模型读合并事实；程序根据节点返回和图边选择后续工作</text>
+<path d="M480,543 V587" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+</g></svg>

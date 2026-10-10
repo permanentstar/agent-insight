@@ -7,7 +7,7 @@ baselines: []
 sources: []
 depends_on: []
 evidence: []
-verified_scope: "初版九对象分层专题与七个比较维度已完成；21 原稿已提炼，冻结/缺失证据与运行未知明确登记。"
+verified_scope: "九对象的架构、主线、执行模式与比较入口；静态分析与教学示意分开，不声明目标运行验证。"
 ---
 
 # Agent Insight
@@ -25,6 +25,7 @@ Agent 的一次回答可能包含多次模型请求、工具调用和状态更�
 | 研究问题 | 阅读入口 |
 |---|---|
 | 会话、运行实例和持久记录由谁拥有？ | [所有权与生命周期](comparisons/ownership.md) |
+| ReAct、Plan & Execute 与产品 Plan Mode 怎样区分？ | [执行模式与模型决策](comparisons/execution-modes.md) |
 | 模型理解、计划、工具调用和子 Agent 如何衔接？ | [决策、委派与控制](comparisons/control-delegation.md) |
 | 模型读到哪些资料，压缩摘要何时生效？ | [Prompt、压缩与长期记忆](comparisons/context-compaction.md) |
 | 中断后恢复的是历史、程序进度，还是外部效果？ | [状态、持久化与恢复](comparisons/state-recovery.md) |

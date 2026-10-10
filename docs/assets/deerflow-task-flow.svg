@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="790" viewBox="0 0 960 790" role="img" aria-labelledby="title desc">
+<title id="title">DeerFlow：平台 run、产品图与模型反馈</title><desc id="desc">请求建立 thread 和 run；worker 取得执行归属后装配 Lead 图与 middleware；图内的模型与工具循环更新消息和 state，结束后 worker 收口 run。</desc>
+<rect width="960" height="790" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">DeerFlow：平台 run、产品图与模型反馈</text>
+<rect x="30" y="75" width="900" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="103" font-size="18" fill="#172554" font-weight="700">Gateway 接纳请求</text>
+<text x="46" y="130" font-size="16" fill="#172554">thread 标识会话；run 标识本次执行；worker 取得执行归属</text>
+<rect x="30" y="213" width="900" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="241" font-size="18" fill="#172554" font-weight="700">产品工厂 make_lead_agent</text>
+<text x="46" y="268" font-size="16" fill="#172554">Prompt + tools + 有序 middleware + ThreadState → create_agent</text>
+<rect x="30" y="362" width="550" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="390" font-size="18" fill="#172554" font-weight="700">Lead 模型节点</text>
+<text x="46" y="417" font-size="16" fill="#172554">读取本次消息与临时请求资料</text>
+<text x="46" y="441" font-size="16" fill="#172554">决定调用工具、委派、更新清单或回答</text>
+<rect x="30" y="513" width="550" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="541" font-size="18" fill="#172554" font-weight="700">工具节点</text>
+<text x="46" y="568" font-size="16" fill="#172554">校验 / 策略 → 实际效果 → ToolMessage</text>
+<rect x="670" y="513" width="260" height="94" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="686" y="541" font-size="18" fill="#172554" font-weight="700">结束候选</text>
+<text x="686" y="568" font-size="16" fill="#172554">Todo/其他 hook 可续跑</text>
+<text x="686" y="592" font-size="16" fill="#172554">通过条件后结束图</text>
+<path d="M480,165 V209" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M480,307 V338 H305 V358" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M305,456 V509" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M30,560 H12 V409 H26" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M580,409 H800 V509" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="666" width="900" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="694" font-size="18" fill="#172554" font-weight="700">worker 收口 run</text>
+<text x="46" y="721" font-size="16" fill="#172554">checkpointer 保管图状态；产品事件组织展示；run 写入终态</text>
+<path d="M800,607 V662" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+</g></svg>

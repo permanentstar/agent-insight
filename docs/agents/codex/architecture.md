@@ -12,7 +12,7 @@ verified_scope: "Rust core 的线程构造、提交分派、run_turn、工具路
 
 # Codex：线程运行、轮次快照与执行边界
 
-Codex 开源 core 把活跃线程、一次用户轮次、一次模型请求和持久历史分别建模。宿主通过 ThreadManager 创建或加载 CodexThread，core Session 接收操作并驱动 SessionTask；run_turn 再驱动模型与工具循环。旧官方使用实践只能说明使用约定，本章以固定 Rust 源码重建这些关系。
+Codex 开源 core 把活跃线程、一次用户轮次、一次模型请求和持久历史分别建模。宿主通过 ThreadManager 创建或加载 CodexThread，core Session 接收操作并驱动 SessionTask；run_turn 再驱动模型与工具循环。本章沿 Rust core 的构造和执行路径解释这些关系。
 
 ![Codex 接入层经 ThreadManager 创建活跃 Thread 与 Session，任务经 turn/step 进入模型和工具，rollout 与 ContextManager 分担持久与请求投影](../../assets/codex.svg)
 
@@ -47,6 +47,54 @@ ThreadManager 的 spawn_thread 调 Session::spawn，注入配置、认证、模�
 | 收口 | 任务结束、事件与持久写入 | 事件展示、history 更新和 rollout 确认各有边界 |
 
 依据：[spawn_thread](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/thread_manager.rs#L2022)、[操作分派](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/handlers.rs#L439)、[任务安装](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tasks/mod.rs#L272)、[run_turn](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L164)、[provider 请求](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L2565)。等待界面的结束不自动等于 task 中止；控制必须进入 Op/取消路径。
+
+## 用一项修复任务理解 Turn 与 Step
+
+![Codex 的一个用户 Turn 包含多次 Step；每次捕获请求快照、采样并回填工具结果，待处理输入和 Stop hooks 可以继续推进，当前任务结束后线程仍可存活](../../assets/codex-turn-flow.svg)
+
+设用户提出“读 CSV 导出代码，修复转义，运行验证并说明结果”。core 接收的是一份用户操作，建立当前任务及 TurnContext。第一次采样之前准备历史和上下文，捕获 StepContext；模型可能先请求读取文件。工具执行后，代码与结果进入活跃历史，下一 Step 据此判断如何修改。修复和验证可能再需要多次 Step，直到没有工具反馈或待接纳输入要求继续，Stop hooks 也允许收口。
+
+下表是正常任务的教学轨迹，工具名与请求次数由实际模型决定，并非源码硬编码的必经步骤。
+
+| 工作边界 | 当前输入与决定 | 程序保存和控制什么 |
+|---|---|---|
+| 用户 Turn 开始 | 修复目标、已有会话、当前协作约定 | 安装任务，绑定 TurnContext 与取消控制 |
+| Step 1：获取事实 | 模型请求读取需求和代码 | 同一 StepContext 固定工具与环境；执行结果加入历史 |
+| Step 2：形成修改 | 模型根据代码生成修改调用 | router 选择 handler，效果编排处理审批与执行 |
+| Step 3：利用验证结果 | 模型请求验证，依据输出修订或回答 | 结果回填；需要后续工作则再次采样 |
+| Turn 收口 | 模型给出说明，队列与 hooks 无续跑要求 | 当前任务结束，Session 可承接下一用户 Turn |
+
+因此，Thread 是长期交互身份，Turn 是一次用户工作边界，Step 是其中一次采样的配置视图。StepContext 不是新会话；工具调用也不必一对一地建立新 Turn。这些区别解释了为什么用户在运行中补充一句要求，可以在允许的后续请求边界进入当前工作，却不应改变已经发出的请求。
+
+## 请求快照为什么需要单独一层
+
+下面保留 run_turn 的控制骨架，省略预算、重试、hook 细节，是教学伪代码而非可编译 Rust：
+
+```rust
+loop {
+    let pending = drain_input_when_allowed();
+    record_accepted_inputs(pending);
+    let step = capture_step_context();
+    let input = history.for_prompt(step.model.input_modalities);
+    let result = run_sampling_request(step, input).await;
+    let continue_work = result.needs_follow_up || input_queue.has_pending_input();
+    if continue_work { continue; }
+    if stop_hooks_require_continuation() { continue; }
+    break;
+}
+```
+
+一次捕获的 StepContext 同时用于组装上下文、公布工具和处理这次工具请求。这使“模型看见的工具”与“执行器使用的配置”处于同一请求视图；下一 Step 才能接纳新的配置与输入。`history.for_prompt` 则说明模型输入是经过投影的资料，不是将全部 rollout JSON 原封不动发送。[请求快照及历史投影](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L460)、[继续条件与 Stop hooks](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L548)。
+
+自然语言负责承载“为什么修改、资料说明什么”；工具调用的名字、参数、调用关系及结果由协议对象组织。程序不需要预先枚举全部修复意图，但必须识别调用并选择 handler。文件内容中的建议也不会因为被读取就成为执行授权；实际控制还要走工具的审批和 runtime。
+
+## Plan 协作模式与进度清单
+
+Codex 有内置的 Default/Plan 协作模式。模式内容进入上下文，Plan 说明要求先探索和形成可讨论的方案。它改变当前协作目标，但本章的模型反馈循环仍然成立，不能据此推断已经换成一个独立 Planner 驱动 Executor 的图。
+
+`update_plan` 则是另一件事：模型提交结构化清单，handler 解析后发出 PlanUpdate 事件。源码在 Plan 模式明确拒绝这个 TODO/checklist 工具。这个直接分支说明产品规划约定与执行中的进度清单不能混称；也说明应逐个检查工具规则，不能只从 Plan 文本推定所有修改效果都被底层 sandbox 拦住。[模式内容构造](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/context/world_state/collaboration_mode.rs#L25)、[清单 handler](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/handlers/plan.rs#L65)。
+
+学习自检：用户的一次修复要求为什么能对应多个 Step？工具和模型配置在何时固定？Plan 模式、update_plan 和 ToolOrchestrator 分别控制什么？
 
 ## 历史、压缩与持久确认
 

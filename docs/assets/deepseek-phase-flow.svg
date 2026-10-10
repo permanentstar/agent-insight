@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="745" viewBox="0 0 960 745" role="img" aria-labelledby="title desc">
+<title id="title">DeepSeek：驱动器 phase 与 turn/step</title><desc id="desc">idle 收到唤醒后进入 running，驱动一个或多个 turn；每个 turn 包含 step 模型与工具反馈；maintenance 只能从 idle 进入，完成返回 idle，排队唤醒可随后启动。</desc>
+<rect width="960" height="745" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">DeepSeek：驱动器 phase 与 turn/step</text>
+<rect x="30" y="87" width="255" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="115" font-size="18" fill="#172554" font-weight="700">idle</text>
+<text x="46" y="142" font-size="16" fill="#172554">没有活跃工作</text>
+<text x="46" y="166" font-size="16" fill="#172554">记录 lastTurn</text>
+<rect x="395" y="87" width="535" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="411" y="115" font-size="18" fill="#172554" font-weight="700">running</text>
+<text x="411" y="142" font-size="16" fill="#172554">一个 driver：kick → turn → preStep → step</text>
+<text x="411" y="166" font-size="16" fill="#172554">phase 内带 turn、step 与 AbortController</text>
+<path d="M285,133 H391" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="303" y="119" font-size="15" fill="#172554">唤醒</text>
+<path d="M663,181 V225 H155 V185" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="371" y="214" font-size="15" fill="#172554">driver 收口后返回 idle</text>
+<rect x="30" y="308" width="255" height="116" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="336" font-size="18" fill="#172554" font-weight="700">maintenance</text>
+<text x="46" y="363" font-size="16" fill="#172554">仅 idle 可进入</text>
+<text x="46" y="387" font-size="16" fill="#172554">执行手工维护；结束回 idle</text>
+<text x="46" y="411" font-size="16" fill="#172554">期间唤醒可以排队</text>
+<path d="M97,181 V304" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M247,308 V185" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="395" y="308" width="535" height="116" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="411" y="336" font-size="18" fill="#172554" font-weight="700">running 内的 step 反馈</text>
+<text x="411" y="363" font-size="16" fill="#172554">prepareRequest → surface 投影 → 模型</text>
+<text x="411" y="387" font-size="16" fill="#172554">tool-call → tool/result → 下一 step</text>
+<text x="411" y="411" font-size="16" fill="#172554">无工具 / conclude → turn/end</text>
+<path d="M663,181 V304" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M930,366 H947 V280 H931" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="528" width="900" height="144" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="556" font-size="18" fill="#172554" font-weight="700">三套资料表达不同问题</text>
+<text x="46" y="583" font-size="16" fill="#172554">phase：进程内是否忙；turn/step：事件中的工作边界</text>
+<text x="46" y="607" font-size="16" fill="#172554">Session surface：模型看哪些事件；持久日志：保存哪些事实</text>
+<text x="46" y="631" font-size="16" fill="#172554">恢复修复旧边界，不把 running phase 或旧 Promise 重新执行</text>
+</g></svg>

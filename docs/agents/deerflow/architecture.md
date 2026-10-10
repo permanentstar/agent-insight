@@ -46,6 +46,42 @@ Gateway worker 取得执行所有权后，组合 RunContext 与 Runtime，调用
 
 证据：[worker 执行与收口](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/runtime/runs/worker.py#L891)、[create_agent 装配点](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/agent.py#L1391)、[Client 图调用](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/client.py#L955)。流发布与 checkpoint 写入、外部效果完成分别判断；SSE metadata 中的 run/thread ID 本身不能证明业务成功。
 
+## 把请求、消息和工具反馈串成一项任务
+
+![DeerFlow 接纳 run 后装配 Lead 图；模型前的 middleware 组织请求，模型产生调用，工具 wrapper 执行并反馈，图结束后由 worker 收口 run](../../assets/deerflow-task-flow.svg)
+
+沿“修复 CSV 导出”的案例看 Gateway 主线：请求定位到 thread，并创建 run；worker 取得执行归属后组合 Runtime.context 和 graph 输入。thread 表示一段可恢复业务状态，run 表示这一次执行请求，graph 是本次使用的代码和实例；一个用户任务不会因为每次模型调用而重新创建一个 Gateway run。
+
+产品装配把模型、授权后的工具、system prompt、ThreadState schema 和 middleware 交给 create_agent。调用 graph.astream 后才开始执行。模型前的 hook 和 wrap 组织消息与能力，模型输出动作请求，工具路径运行 wrapper 与 handler，再将观察送回图中的消息状态。模型可以据新事实继续请求工具或回答。[产品装配点](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/agent.py#L1391)、[worker 运行入口](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/runtime/runs/worker.py#L891)。
+
+假设模型先读需求和代码，接着修改，再验证。其间消息保留目标、动作和观察；Runtime.context 提供本次身份与环境；ThreadState 则可以保存 messages、todos、sandbox 等业务资料。它们共同服务本次工作，但没有相同的生命周期。
+
+| 案例材料 | 所属层 | 为什么这样组织 |
+|---|---|---|
+| 用户需求、代码文本、工具结果 | 图 messages / 请求消息 | 模型理解与修订动作所需的语义材料 |
+| 角色、SOUL、skills、子 Agent 使用说明 | 产品 Prompt 及相应请求注入 | 描述工作方式和可用知识 |
+| 用户／run／工具能力和执行环境 | Runtime.context 等调用环境 | 程序判断身份、能力与环境 |
+| todos、sandbox 等结构字段 | ThreadState | 保存可解释的业务状态 |
+| pending/运行归属/终态 | RunManager 和 RunStore | 管理这一次平台执行 |
+
+并不是所有 middleware 都拥有 system prompt。产品先形成基底，middleware 再按自身职责改变请求或状态；将 tool result 注入为消息也不表示这段内容升级成系统规则。详细顺序与作用域见[中间件](middleware.md)和[Prompt 专题](context-prompt.md)。
+
+## Plan 模式：清单会参与控制，但没有独立 Planner
+
+开启 is_plan_mode 时，装配 TodoMiddleware，提供 write_todos。模型可以保存“读取、修改、验证”的 pending/in_progress/completed 清单。当前实现还做两项配合：清单原始调用被压缩出上下文时，before_model 补充清单提示；模型准备最终回答而清单仍未完成时，after_model 在规定条件内跳回 model，并由 wrap_model_call 加入临时提醒。
+
+因此它超出了纯 UI 清单，但仍在同一 Lead 模型循环里推进：没有一个独立执行器按 todo 的每项描述自动派发步骤。提醒存在次数与结束条件限制，也不能代替对文件和验证结果的验收。[清单保留与提醒](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/todo_middleware.py#L146)、[继续控制与临时请求注入](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/todo_middleware.py#L352)。
+
+这是自然语言与结构化资料的具体协作：todo.content 描述目标，todo.status 让程序判断是否有未完成项，提示消息将这种状态重新传给模型。程序要求继续关注目标，实际该读哪个文件、怎样修复，仍由模型结合工具结果选择。
+
+## 图的结束与 run 的收口
+
+图运行中的 token、updates、values 和 custom 流分别对应消息、状态与自定义观察，worker 将它们组织成产品事件；图状态则由 checkpointer 管理。图正常结束以后，worker 还需要更新 run 终态。运行管理与会话状态存储是合作关系，外部工具效果也不因 run 标记结束而自动验证。
+
+主线状态可理解为“run 等待执行→取得归属并运行→正常、错误或中断收口”；准确终态与取消、租约关系见[Run 专题](runtime.md)。这里没有再给全部层次强造同一个状态枚举：模型反馈循环、图调度、平台 run 各有自己的终点。
+
+学习自检：一个 run 内为什么可以有多个模型调用？TodoMiddleware 怎样让模型继续，却没有直接替模型选择下一工具？如果 SSE 读连接断开，哪个执行对象仍可能继续运行？
+
 ## Prompt、工具与扩展的层次
 
 产品 `apply_prompt_template` 负责 system prompt 的基底，包含角色、SOUL、skills、子 Agent 等按配置组合的内容。DynamicContext 等 middleware 再按生命周期加入记忆、时间或请求事实；DurableContext 用可恢复业务状态生成当次请求内容。因此“某段文本由 middleware 注入”不等于“该 middleware 拥有整个 system prompt”。

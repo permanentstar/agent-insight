@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="665" viewBox="0 0 960 665" role="img" aria-labelledby="title desc">
+<title id="title">Pico5 摘要：生成文字与采用范围分开</title><desc id="desc">CompactionTask 选择范围并总结；generation-owned 阻塞摘要直接追加，conversation-owned 背景摘要通过 write Submission 排队或放置，采用后改变 ContextView。</desc>
+<rect width="960" height="665" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pico5 摘要：生成文字与采用范围分开</text>
+<rect x="30" y="70" width="900" height="92" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="98" font-size="18" fill="#172554" font-weight="700">select → summarize</text>
+<text x="46" y="125" font-size="16" fill="#172554">确定范围和 firstKept；模型在事务外生成摘要文字</text>
+<path d="M480,162 V207 H250 V240" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M480,207 H715 V240" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="244" width="430" height="130" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="272" font-size="18" fill="#172554" font-weight="700">阻塞摘要</text>
+<text x="46" y="299" font-size="16" fill="#172554">generation-owned child</text>
+<text x="46" y="323" font-size="16" fill="#172554">父 generation 持有 run 并等待</text>
+<text x="46" y="347" font-size="16" fill="#172554">在受控边界直接追加 summary Entry</text>
+<rect x="500" y="244" width="430" height="130" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="516" y="272" font-size="18" fill="#172554" font-weight="700">背景摘要</text>
+<text x="516" y="299" font-size="16" fill="#172554">conversation-owned Task</text>
+<text x="516" y="323" font-size="16" fill="#172554">主工作可以继续</text>
+<text x="516" y="347" font-size="16" fill="#172554">以 write Submission 接纳候选</text>
+<path d="M250,374 V470" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M715,374 V416 H480 V470" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="521" y="411" font-size="15" fill="#172554">空闲直接放；忙时等边界</text>
+<rect x="30" y="474" width="900" height="106" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="46" y="502" font-size="18" fill="#172554" font-weight="700">采用后的模型视图</text>
+<text x="46" y="529" font-size="16" fill="#172554">summary Entry 的 head 指向 firstKept</text>
+<text x="46" y="553" font-size="16" fill="#172554">摘要贡献 + 保留范围 + 后续消息；范围过期则按 stale 收口</text>
+<text x="30" y="628" font-size="18" fill="#172554" font-weight="700">LLM 返回摘要 ≠ 摘要已进入当前请求。</text>
+</g></svg>

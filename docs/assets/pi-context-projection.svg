@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" role="img" aria-labelledby="title desc">
+<title id="title">Pi 压缩投影：摘要、保留段与新增内容</title><desc id="desc">原始路径 A、B、C、D 后追加 compaction S，再追加 E；S 指定 firstKept=C，模型投影为摘要加 C、D、E，原始记录仍保留。</desc>
+<rect width="960" height="470" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pi 压缩投影：摘要、保留段与新增内容</text>
+<rect x="30" y="86" width="130" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="114" font-size="18" fill="#172554" font-weight="700">A</text>
+<text x="46" y="141" font-size="16" fill="#172554">历史条目</text>
+<path d="M160,128 H180" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="184" y="86" width="130" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="200" y="114" font-size="18" fill="#172554" font-weight="700">B</text>
+<text x="200" y="141" font-size="16" fill="#172554">历史条目</text>
+<path d="M314,128 H334" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="338" y="86" width="130" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="354" y="114" font-size="18" fill="#172554" font-weight="700">C</text>
+<text x="354" y="141" font-size="16" fill="#172554">历史条目</text>
+<path d="M468,128 H488" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="492" y="86" width="130" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="508" y="114" font-size="18" fill="#172554" font-weight="700">D</text>
+<text x="508" y="141" font-size="16" fill="#172554">历史条目</text>
+<path d="M622,128 H642" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="646" y="86" width="130" height="85" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="662" y="114" font-size="18" fill="#172554" font-weight="700">S</text>
+<text x="662" y="141" font-size="16" fill="#172554">摘要</text>
+<path d="M776,128 H796" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="800" y="86" width="130" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="816" y="114" font-size="18" fill="#172554" font-weight="700">E</text>
+<text x="816" y="141" font-size="16" fill="#172554">新增</text>
+<text x="30" y="211" font-size="17" fill="#172554">S.summary 概括较老语义；S.firstKeptEntryId=C 指定详细保留区间。</text>
+<path d="M711,171 V247 H185 V276" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="280" width="900" height="110" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="46" y="308" font-size="18" fill="#172554" font-weight="700">模型可见投影</text>
+<text x="46" y="335" font-size="16" fill="#172554">S 的摘要 + C、D 的详细贡献 + S 后新增的 E</text>
+<text x="46" y="359" font-size="16" fill="#172554">A、B 仍在历史文件；模型请求无需再次读取其全部细节</text>
+<text x="30" y="437" font-size="16" fill="#172554">先选 parent 路径，再解释覆盖边界；不能按文件行号或时间戳拼接。</text>
+</g></svg>

@@ -46,6 +46,51 @@ LangGraph 负责把图定义变成可执行的状态计算。StateGraph 是构�
 
 依据：[异步执行主线](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3426)、[超步与 sync 等待](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3504)、[任务选择](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/_loop.py#L623)。同一超步内节点读稳定通道值；一个节点完成不表示同行节点立刻读到它的更新。
 
+## 超步：先用一个并行读取例子理解
+
+![超步 N 的两个节点都读状态 S_N，分别产出需求与代码观察；到 after_tick 才合并为 S_N+1，下一超步的决策节点读取两份结果](../../assets/langgraph-superstep.svg)
+
+假设应用定义三个节点：读取需求、读取代码、根据两份结果决定修改。前两个可以在同一个超步执行。它们读到的是该超步开始时的稳定状态；读代码节点不会因为读需求节点先完成，就在本次调用中自动看到它的新输出。
+
+每个节点返回 writes，runner 管理这批任务。超步结束后，loop.after_tick 将 writes 按 channel 规则合并；下一超步的决策节点才读取合并后的状态。这个边界让并发读取的含义明确，不依赖哪个网络请求先返回。[超步不可变读视图](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3504)。
+
+下面是应用状态的教学定义。节点名及字段来自案例，非 LangGraph 内置业务字段；伪代码只表达 schema 与 reducer 的分工：
+
+```python
+class WorkState(TypedDict):
+    request: str
+    observations: Annotated[list[str], operator.add]
+    decision: str
+```
+
+初始状态的 observations 为空；需求节点返回 `["字段可能包含逗号、引号、换行"]`，代码节点返回 `["当前直接连接字段"]`。因为 observations 声明了列表合并规则，下一状态可以同时保留两份观察。若两个并行节点写同一个无合并规则的单值字段，就不能靠“最后完成的一方”默默决定业务结果。
+
+| 时点 | 可读状态 | 新产生的资料 | 谁可以看到 |
+|---|---|---|---|
+| 超步 N 开始 | request、旧 observations | 尚无本步写入 | 两个读取节点共享稳定起点 |
+| 节点 A 完成 | 仍是 S_N | 需求观察 writes | 流可以报告更新，同行节点读视图不变 |
+| 节点 B 完成 | 仍是 S_N | 代码观察 writes | 同上 |
+| after_tick 合并 | 形成 S_N+1 | reducer 应用两份写入 | 后续超步读取新值 |
+| 超步 N+1 | 两份观察都可用 | decision 节点产出行动 | 再按图边推进 |
+
+这个“超步”是执行框架概念，既不是一次用户输入，也不必等于一次模型请求。一个模型循环可以跨多个超步，多个非模型节点也可以处于同一超步。[任务选择 tick](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/_loop.py#L623)。
+
+## 状态图怎样表达动态模型选择
+
+StateGraph 注册节点与边；compile 后运行才开始计算。节点可以是程序、工具或模型，也可以调用一个子图。应用定义条件边，根据节点产出的状态选择下一节点；Command 可以结合状态更新与控制。这些机制提供路由能力，业务语义仍来自应用。
+
+如果 decision 节点调用模型，并把结果解析为“继续读取／修改／结束”，图就能表达动态策略；如果应用写死“读取→转换→测试”，就是固定流程；如果连接 plan、execute、replan，则是显式规划执行。框架不会因节点叫 plan 就验证它形成了有效计划，也不会替应用决定哪个结果足以交付。
+
+在 LangChain create_agent 的模型／工具图中，条件路由主要处理 tool_calls 与返回结果。学习两套代码时，先把 LangChain 视为图的生产者，再把 LangGraph 视为状态推进者，避免将它们理解为两套串联的 Agent loop。
+
+## checkpoint 为什么需要值与版本
+
+checkpoint 不只是保存一个 messages 数组。channel_values 让运行重建数据，channel_versions 与 versions_seen 帮助判断哪些节点已经消费哪些更新，pending writes 保存已经产生的节点输出。图对象保存定义，checkpoint 保存恢复资料，PregelLoop 在一次调用中将二者结合。
+
+例如，一个超步中需求节点成功、代码节点失败，已经保存的 pending writes 可以让恢复区分“已经有结果”和“仍需执行”。这不同于恢复 Python 栈；节点 interrupt 后恢复同样可能从节点开头重跑。副作用的幂等和保存时机因此属于应用设计，而非 checkpoint 字段自动解决。
+
+学习自检：同一超步的节点为何不能立即读取同行输出？自然语言观察与 reducer 的职责各是什么？从 checkpoint 恢复时，程序凭什么知道下一批可执行任务，而不只看状态字段是否非空？
+
 ## 状态 schema 与持久单元
 
 | 字段 / 资料 | 含义 | 使用者 |
@@ -74,4 +119,4 @@ messages 若使用 add_messages reducer，会有 ID 替换/删除等语义；不
 
 ## 取舍与独有内容
 
-显式 graph/channel 能表达多节点状态与恢复点，代价是 reducer、task 重跑和存储寻址必须成为应用契约。它提供运行机制，不自动替应用决定 prompt、工具授权或长期记忆。旧 Stage 4 中 create_agent、middleware 和 subagent 的产品例子分别归回 LangChain 与应用；本分册保留超步、通道、checkpoint、Command 和 interrupt 的运行层分析。
+显式 graph/channel 能表达多节点状态与恢复点，代价是 reducer、task 重跑和存储寻址必须成为应用契约。它提供运行机制，不自动替应用决定 prompt、工具授权或长期记忆。create_agent 负责生产模型与工具图，middleware 与子 Agent 的产品策略由上层定义；本分册研究超步、通道、checkpoint、Command 和 interrupt 如何推进这些定义。

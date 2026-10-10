@@ -44,6 +44,49 @@ Hermes 的共用编排门面是 AIAgent，但其生命周期由宿主决定：CL
 
 依据：[原生循环](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1547)。`api_mode == codex_app_server` 是明显旁路：可把完整 turn 交给 Codex 子进程，不走上述每个本地模型/工具阶段。不能因类名仍是 AIAgent，就把该旁路解释成纯协议转换。
 
+## 把一个用户 Turn 分解成多次 iteration
+
+![Hermes 宿主取得 AIAgent 后初始化本轮消息和局部状态，每次 iteration 组装请求、通过前置检查、调用模型并规范化结果，有工具则执行回填；Codex app-server 是接管整轮的旁路](../../assets/hermes-turn-flow.svg)
+
+以 CSV 修复任务为例，Gateway 先加载会话历史并取得 AIAgent，将用户要求和宿主回调交给 run_conversation。build_turn_context 准备本轮消息及有效 Prompt，_LoopState 保存循环使用的局部资料。第一轮 API 请求可能产生读取工具，第二轮利用代码结果提出修改，后续轮次执行验证和回答。这里每轮重新准备请求，却不需要重建整份 AIAgent。
+
+读源码时沿以下三个输入输出面观察，就能把自然语言、工具协议和宿主存储分开：
+
+| 输入输出面 | CSV 任务中的资料 | 消费者 |
+|---|---|---|
+| 语义消息 | 用户修复目标、代码正文、验证输出、回答 | 模型；在每次 iteration 中据此重新选择动作 |
+| 规范化协议 | assistant_message.tool_calls、参数、结果及调用关系 | 原生循环和 tool_executor；决定进入工具轮还是文本收口 |
+| 宿主边界 | session_id、原始用户内容、展示内容、回调及 SessionDB | CLI/Gateway/ACP；持久、投递、展示与下一轮加载 |
+
+ProviderTransport 的价值正在于第二层：不同 API 返回格式先变成统一 assistant 结果，原生循环再检查是否有 tool_calls。下述伪代码贴近实际阶段顺序，但省去重试和预算旁路：
+
+```python
+state = build_turn_context(agent, user_input, history)
+while iteration_budget_allows():
+    begin_iteration(state)
+    prepare_iteration(state)
+    assemble_api_request(state)
+    check_preflight(state)
+    response = request_model_with_retry(state)
+    assistant = normalize_model_response(response)
+    if assistant.tool_calls:
+        run_tool_round(assistant, state)  # results enter subsequent messages
+    else:
+        finish_text_response(assistant, state)
+        break  # normal final-response path
+return finalize_and_export_turn_boundary(state)
+```
+
+实际 preflight 和响应处理返回控制动作，因此不总是沿伪代码一路走到底；这属于程序控制。下一次该读、改还是验证，则由模型结合消息判断。这两种控制合作构成原生反馈循环，而不是一份预先固定的任务脚本。[循环阶段与响应分流](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1645)。
+
+## 长期对象与本轮状态为什么分开
+
+Gateway 可以缓存 AIAgent，客户端连接与能力配置因此具有跨轮生命周期；本轮 API 计数、重试资料、即时评论去重和消息边界则不能泄漏到下一次用户输入。源码在初始化后重置相关 turn 状态，再建立 _LoopState。把“Agent 对象仍存在”误解为“上个工作仍在执行”，会同时误判资源复用和运行状态。[本轮初始化与状态重置](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1593)。
+
+prelude 可以在模型前安排规定动作，delegate 可以让另一个 Agent 内部运行自己的反馈循环。两者分别是前奏编排与执行拓扑；当前原生主线并没有因此自动成为 Planner→Executor→Replanner。若要显式计划执行，还需要定义计划资料、步骤输入、结果和重规划关系。
+
+学习自检：为什么会话 ID、AIAgent 和 API iteration 不是同一个生命周期？ProviderTransport 为什么不是整个会话的 owner？工具输出如何进入下一次模型判断，又由谁负责保存为宿主历史？
+
 ## 模型、工具与扩展
 
 ProviderTransport 的契约把消息、工具、kwargs 和 NormalizedResponse 处理集中在协议层；provider 选择、凭据与模型元数据另有责任。这比让每个 loop 分支直接理解所有 API 更容易替换，但 fallback、streaming 与 app-server 旁路仍要单独追。

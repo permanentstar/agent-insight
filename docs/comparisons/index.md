@@ -5,9 +5,9 @@ subject: "comparison"
 status: "index"
 baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-frozen-documents"]
 sources: ["comparison-legacy"]
-depends_on: ["comparison-matrix", "comparison-ownership", "comparison-control", "comparison-context", "comparison-state", "comparison-execution", "comparison-observability"]
+depends_on: ["comparison-matrix", "comparison-modes", "comparison-ownership", "comparison-control", "comparison-context", "comparison-state", "comparison-execution", "comparison-observability"]
 evidence: ["source", "historical-document", "static-inference"]
-verified_scope: "九对象七个共同维度已整理；源码静态机制、冻结转述与候选设计分开，无运行或性能排名。"
+verified_scope: "九对象的定位与七个机制专题；源码静态机制、历史转述与候选设计分开，无运行或性能排名。"
 ---
 
 # 横向比较入口与范围
@@ -17,6 +17,7 @@ verified_scope: "九对象七个共同维度已整理；源码静态机制、冻
 | 共同问题 | 页面 | 覆盖 |
 |---|---|---|
 | 应用、框架、实验分别处于哪层 | [对象矩阵](matrix.md) | 定位、入口、驱动器与基线 |
+| ReAct、规划执行和固定编排如何区分 | [执行模式](execution-modes.md) | 同一任务、模式层次、实际入口与支持程度 |
 | 谁构造谁、谁持有活动工作 | [所有权](ownership.md) | owner、复用、长期身份与运行实例 |
 | 理解、规划和委派由谁决定 | [决策与控制](control-delegation.md) | 显式接纳、模型循环、child/activation、候选 Router 取舍 |
 | 模型读到什么，摘要何时生效 | [Prompt 与压缩](context-compaction.md) | 历史/投影/memory、逻辑覆盖、提交资格 |

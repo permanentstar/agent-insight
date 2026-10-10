@@ -32,6 +32,10 @@
         "path": "comparisons/matrix.md"
       },
       {
+        "title": "比较：执行模式与模型决策",
+        "path": "comparisons/execution-modes.md"
+      },
+      {
         "title": "比较：所有权与生命周期",
         "path": "comparisons/ownership.md"
       },
@@ -104,6 +108,10 @@
       {
         "title": "Pico5：事务、任务与副作用恢复",
         "path": "agents/pi-durable/architecture.md"
+      },
+      {
+        "title": "Pico5：输入接纳、生成状态机与工具协作",
+        "path": "agents/pi-durable/loop.md"
       },
       {
         "title": "Pico5：Document、上下文投影与异步摘要",

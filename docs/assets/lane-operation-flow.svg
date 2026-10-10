@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="900" viewBox="0 0 960 900" role="img" aria-labelledby="title desc">
+<title id="title">Lane 历史：持久 Operation，内存 Drive 推进</title><desc id="desc">命令经 Session 提交持久 Operation；Drive 按当前 at 分派；正常生成准备、effect pending、工具和 checkpoint 循环，may_finish 进入结束判断；摘要等分支不扩写正常主线。</desc>
+<rect width="960" height="900" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Lane 历史：持久 Operation，内存 Drive 推进</text>
+<rect x="30" y="75" width="900" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="103" font-size="18" fill="#172554" font-weight="700">Harness → 命名 Lane → Session 提交命令</text>
+<text x="46" y="130" font-size="16" fill="#172554">历史条目 + Operation intent / state；commit 后采用 Lane.state</text>
+<rect x="30" y="221" width="560" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="249" font-size="18" fill="#172554" font-weight="700">starting → checkpoint</text>
+<text x="46" y="276" font-size="16" fill="#172554">startRun 接纳 before_run 内容</text>
+<text x="46" y="300" font-size="16" fill="#172554">checkpoint 判定下一动作与新输入</text>
+<rect x="30" y="380" width="560" height="116" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="408" font-size="18" fill="#172554" font-weight="700">assistant.ready → effect_pending</text>
+<text x="46" y="435" font-size="16" fill="#172554">准备模型输入，保存 intent</text>
+<text x="46" y="459" font-size="16" fill="#172554">事务外生成；提交 assistant outcome</text>
+<rect x="30" y="555" width="560" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="583" font-size="18" fill="#172554" font-weight="700">tools</text>
+<text x="46" y="610" font-size="16" fill="#172554">保存最终调用，执行并核销结果</text>
+<text x="46" y="634" font-size="16" fill="#172554">回到 checkpoint 继续判断</text>
+<rect x="690" y="555" width="240" height="100" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="706" y="583" font-size="18" fill="#172554" font-weight="700">may_finish</text>
+<text x="706" y="610" font-size="16" fill="#172554">结束 hook / 新输入</text>
+<text x="706" y="634" font-size="16" fill="#172554">通过后 settled</text>
+<path d="M480,169 V197 H310 V217" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M310,321 V376" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M310,496 V551" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M30,605 H13 V271 H26" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M590,438 H648 V271 H594" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="662" y="369" font-size="15" fill="#172554">无工具回边界</text>
+<path d="M590,296 H810 V551" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="741" width="900" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="769" font-size="18" fill="#172554" font-weight="700">Drive 重建：读持久位置再分派</text>
+<text x="46" y="796" font-size="16" fill="#172554">Operation 身份可延续；Drive 和 JavaScript 调用栈重新构造</text>
+<text x="46" y="820" font-size="16" fill="#172554">effect_pending 进入恢复处理；摘要、deferred、navigation 有各自分支</text>
+<text x="30" y="879" font-size="15" fill="#172554">一项 run Operation 可经过多次模型轮；这里展示正常主线，不是全部转移。</text>
+</g></svg>

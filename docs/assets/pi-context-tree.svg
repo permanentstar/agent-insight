@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" role="img" aria-labelledby="title desc">
+<title id="title">Pi 历史树：保存全部，选择当前路径</title><desc id="desc">A 到 B 后分成 C 与 D；当前 leaf 为 D，模型沿 parent 取 A、B、D；C 仍在历史，但不属于当前路径。</desc>
+<rect width="960" height="520" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pi 历史树：保存全部，选择当前路径</text>
+<rect x="30" y="83" width="230" height="80" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="111" font-size="18" fill="#172554" font-weight="700">A · 用户要求</text>
+<text x="46" y="138" font-size="16" fill="#172554">读取需求、修改导出</text>
+<rect x="335" y="83" width="230" height="80" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="351" y="111" font-size="18" fill="#172554" font-weight="700">B · 已读代码</text>
+<text x="351" y="138" font-size="16" fill="#172554">接收工具观察</text>
+<rect x="685" y="83" width="245" height="80" rx="9" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+<text x="701" y="111" font-size="18" fill="#172554" font-weight="700">C · 第一种方向</text>
+<text x="701" y="138" font-size="16" fill="#172554">仍保存在历史里</text>
+<rect x="685" y="240" width="245" height="80" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="701" y="268" font-size="18" fill="#172554" font-weight="700">D · 新方向</text>
+<text x="701" y="295" font-size="16" fill="#172554">当前 leaf 指向这里</text>
+<path d="M260,123 H331" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M565,123 H681" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M450,163 V280 H681" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="31" y="206" font-size="16" fill="#172554">连线表示 parent 关系形成的历史走向；不是工具执行顺序。</text>
+<rect x="30" y="380" width="900" height="98" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="408" font-size="18" fill="#172554" font-weight="700">当前请求的选择</text>
+<text x="46" y="435" font-size="16" fill="#172554">全部记录 A、B、C、D → 当前路径 A、B、D → 压缩 / edit / 消息转换</text>
+<text x="46" y="459" font-size="16" fill="#172554">C 未被删除，但不进入这条路径的当前输入</text>
+</g></svg>

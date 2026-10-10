@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="915" viewBox="0 0 960 915" role="img" aria-labelledby="title desc">
+<title id="title">AgentSession：输入、轮次与续跑边界</title><desc id="desc">产品输入准备进入请求，工具结果和 steering 驱动内层循环，自然结束后检查 followUp；finishTurn end 和错误可以提前结束。</desc>
+<rect width="960" height="915" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">AgentSession：输入、轮次与续跑边界</text>
+<rect x="30" y="65" width="590" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="93" font-size="18" fill="#172554" font-weight="700">产品输入 · AgentSession.prompt</text>
+<text x="46" y="120" font-size="16" fill="#172554">命令 / input hook / skill / template</text>
+<text x="46" y="144" font-size="16" fill="#172554">模型、认证、压缩、before_agent_start</text>
+<rect x="30" y="218" width="590" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="246" font-size="18" fill="#172554" font-weight="700">请求准备</text>
+<text x="46" y="273" font-size="16" fill="#172554">prepareNextTurn / prepareRequest → 消息转换</text>
+<rect x="30" y="356" width="590" height="92" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="384" font-size="18" fill="#172554" font-weight="700">模型响应 · streamAssistantResponse</text>
+<text x="46" y="411" font-size="16" fill="#172554">自然语言内容 + 可选的结构化 toolCall</text>
+<rect x="30" y="508" width="590" height="112" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="536" font-size="18" fill="#172554" font-weight="700">工具批次（有调用时）</text>
+<text x="46" y="563" font-size="16" fill="#172554">prepare / hook → execute → result</text>
+<text x="46" y="587" font-size="16" fill="#172554">串行或并行；结果加入消息上下文</text>
+<rect x="30" y="678" width="590" height="88" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="706" font-size="18" fill="#172554" font-weight="700">轮次收口</text>
+<text x="46" y="733" font-size="16" fill="#172554">finishTurn / steering / 自然结束检查</text>
+<rect x="690" y="218" width="240" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="706" y="246" font-size="18" fill="#172554" font-weight="700">下一轮材料</text>
+<text x="706" y="273" font-size="16" fill="#172554">工具结果 / steering</text>
+<path d="M325,169 V214" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M325,308 V352" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M325,448 V504" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="340" y="483" font-size="15" fill="#172554">有工具调用</text>
+<path d="M325,620 V674" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M620,400 H650 V722 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="661" y="481" font-size="15" fill="#172554">无工具</text>
+<path d="M620,709 H810 V312" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="707" y="650" font-size="15" fill="#172554">继续</text>
+<path d="M690,262 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="690" y="678" width="240" height="88" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="706" y="706" font-size="18" fill="#172554" font-weight="700">自然结束后</text>
+<text x="706" y="733" font-size="16" fill="#172554">有 followUp 则外层续跑</text>
+<path d="M620,744 H686" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M810,678 V114 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="699" y="166" font-size="15" fill="#172554">followUp 回到内层</text>
+<rect x="30" y="813" width="590" height="72" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="46" y="841" font-size="18" fill="#172554" font-weight="700">agent_end</text>
+<text x="46" y="868" font-size="16" fill="#172554">无后续输入，或明确停止</text>
+<path d="M325,766 V809" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="355" y="797" font-size="15" fill="#172554">结束</text>
+<text x="30" y="903" font-size="15" fill="#172554">这是实际控制流的阶段图，不是源码声明的统一状态枚举。</text>
+</g></svg>

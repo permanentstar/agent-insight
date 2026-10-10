@@ -44,6 +44,37 @@ QueryEngine 与 query.ts 的职责需要分别阅读：前者面向会话与调�
 
 模型在给定上下文和工具中选择动作；runtime 准备请求，执行权限检查，安排并发并回填反馈。一次用户输入因此可以包含多个模型请求和工具批次。 参见：[核心链路](https://github.com/permanentstar/agent-insight/blob/9ecf6e00b17caa5c8930c538978b208300d3b19c/archive/claude-march.md#L114)。
 
+## 沿一项任务阅读 query 的循环
+
+![Claude 会话将输入交 query，预算处理后流式请求模型；tool_use 经校验、权限和调用产生 tool_result，下一轮利用结果；无工具时 Stop hooks 决定收口或继续](../../assets/claude-query-flow.svg)
+
+假设用户要求修复 CSV 导出。会话层先处理输入与文件引用，query 获得当前 messages、systemPrompt、工具集合及 canUseTool。模型可以先请求 Read，读取结果返回后再请求修改和验证；每轮动作取决于已获得的事实。图里的“准备、生成、工具、结束检查”是理解该循环的阶段划分，不是另造的一套持久状态枚举。
+
+工具调用把自由文本判断和可执行动作连接起来。下面是说明内容块关系的教学样例，并非某次真实 transcript：
+
+```json
+{"role":"assistant","content":[
+  {"type":"tool_use","id":"call_read_1","name":"Read",
+   "input":{"file_path":"/workspace/export.csv.ts"}}
+]}
+{"role":"user","content":[
+  {"type":"tool_result","tool_use_id":"call_read_1",
+   "content":"导出函数当前直接用逗号拼接字段……"}
+]}
+```
+
+tool_use_id 让程序知道反馈对应哪次调用；content 承载代码和观察，并不预先归入有限的业务状态。下一轮模型用这些语义资料决定怎么修改，工具执行器则依据具体工具定义处理校验和权限。tool_result 使用 user 消息包装也不表示其正文成了新的用户授权，这两层仍需分清。[输入、query 与执行反馈](https://github.com/permanentstar/agent-insight/blob/9ecf6e00b17caa5c8930c538978b208300d3b19c/archive/claude-march.md#L114)。
+
+## 循环产出和会话状态怎样协作
+
+query 是 async generator：会话消费其产出的流事件、assistant、tool result 和压缩边界。它因此能在一项工作尚未结束时更新界面，也能把最终资料接回会话。界面事件、请求所用 messagesForQuery 和 transcript 的存储资料分属不同用途；看到一段流式文本不意味着整个工作已经结束或所有效果已经持久化。
+
+无 tool_use 是结束候选，仍需检查 stop hooks。hook 若追加继续所需的信息，就重新请求模型；若没有后续要求才收口。上下文治理则发生在请求边界：过大的结果、旧消息与摘要可以改变下一次 messagesForQuery，模型不必反复接收全部原始文本。关于预算治理的内部层次，见[上下文与记忆](context.md)。
+
+这种主线可以对照 ReAct 的反馈思想：行动产生观察，观察影响后续动作。历史材料中的 Plan、Todo 和 Task 功能应分别沿工具或运行资料研究；不能只凭“先写计划再调用工具”就将 query 判定为独立 Plan & Execute。
+
+学习自检：query 与 QueryEngine 分别在哪一层？为什么自然语言计划、tool_use 和执行权限不是同一个东西？没有工具请求时，什么机制仍可能让循环继续？
+
 ## 工具发现、执行与授权
 
 | 边界 | 运行机制 | 作用与边界 |

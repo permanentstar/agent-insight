@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="750" viewBox="0 0 960 750" role="img" aria-labelledby="title desc">
+<title id="title">Pico5 工具：正常执行与恢复入口</title><desc id="desc">call 解析 assistant 调用，校验最终参数，先提交 execute intent，再事务外执行，最后提交结果；重开 execute 阶段检查历史和当前 replay。</desc>
+<rect width="960" height="750" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pico5 工具：正常执行与恢复入口</text>
+<rect x="30" y="75" width="590" height="92" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="103" font-size="18" fill="#172554" font-weight="700">call 阶段</text>
+<text x="46" y="130" font-size="16" fill="#172554">解析工具 → 准备参数 → 校验 → beforeTool</text>
+<rect x="30" y="222" width="590" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="250" font-size="18" fill="#172554" font-weight="700">commit 工具意图</text>
+<text x="46" y="277" font-size="16" fill="#172554">checkpoint.phase=execute；保存 arguments 与 replay</text>
+<rect x="30" y="373" width="590" height="92" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="401" font-size="18" fill="#172554" font-weight="700">事务外效果</text>
+<text x="46" y="428" font-size="16" fill="#172554">tool.execute；输出进度通过后续 commit 发布</text>
+<rect x="30" y="525" width="590" height="110" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="46" y="553" font-size="18" fill="#172554" font-weight="700">commit 工具结果</text>
+<text x="46" y="580" font-size="16" fill="#172554">追加 tool result Entry，更新 pi.live slot</text>
+<text x="46" y="604" font-size="16" fill="#172554">提交 Task outcome</text>
+<path d="M325,167 V218" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M325,316 V369" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M325,465 V521" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="675" y="222" width="255" height="142" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="691" y="250" font-size="18" fill="#172554" font-weight="700">恢复 execute 阶段</text>
+<text x="691" y="277" font-size="16" fill="#172554">历史 replay=safe</text>
+<text x="691" y="301" font-size="16" fill="#172554">且当前工具 replay=safe</text>
+<text x="691" y="325" font-size="16" fill="#172554">才重新执行</text>
+<path d="M675,315 H650 V419 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="30" y="689" font-size="17" fill="#172554">正常 call handler 跨过 intent 后直接执行；execute handler 主要用于恢复。</text>
+<text x="30" y="727" font-size="16" fill="#172554">事务保存本系统记录；外部效果不会随 Session 回滚。</text>
+</g></svg>

@@ -25,6 +25,21 @@ Gateway 的 RunManager 管执行归属与准入，LangGraph checkpointer 管图�
 | thread store / artifact | 产品资料 | 标题、权限、产物与历史，不替代 channel reducer |
 | reservation | RunManager 非 run 操作 | 独立 checkpoint/artifact/branch/delete 的写入资格 |
 
+## 先区分运行状态与图内阶段
+
+![DeerFlow 的 Run 经 pending、running 走向 success 或 error，取消可以使活跃工作 interrupted；owner、lease 和 ownership_lost 独立管理提交资格，timeout 另为声明的终态类型](../../assets/deerflow-run-state.svg)
+
+CSV 修复任务从接纳到回答可以是一份 run，其间 Lead 多次请求模型、读取代码、修改和验证。run.status 不记录每次工具或模型轮次；这些过程由图状态和消息表达。RunManager 关心本次工作是否启动、谁有执行资格、怎样收口，checkpointer 则保存图内进度。
+
+| 主要转移 | 条件与动作 | 对学习者的含义 |
+|---|---|---|
+| pending → running | try_start 确认未取消并协调存储启动 | 取得开始执行的资格，不是仅向 UI 发开始事件 |
+| pending → error | worker 启动安装失败，仍处于 pending | 接纳成功不等于已经有执行者 |
+| running → success / error | worker 完成执行及相应交付收尾 | 图结束与平台运行收口分别进行 |
+| pending / running → interrupted | 对应取消／中断控制生效 | 终止继续推进；已发生工具效果另需判断 |
+
+RunStatus 同时声明 timeout 类型；是否采用及何时触发，需要沿具体调用入口确定，不能只从枚举猜一套默认计时策略。ownership_lost 也不是新增 status：它说明当前 worker 已无法确认或保有提交资格。这样分开建模，才能解释“本地函数返回了结果，却不能再写持久 success”的情况。[运行状态声明](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/runtime/runs/schemas.py#L17)、[启动与启动失败](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/runtime/runs/manager.py#L930)。
+
 ## 从 pending 到终态
 
 `try_start` 在 record.start_lock 内先核验 pending/abort，再调用持久 store.start_run，最后重新核验本地取消竞争才采用 running。失败具名为 startup error 或 cancelled，不能继续构图。worker 随后固定 checkpoint mode、context、metadata、工厂参数，再构图并 astream。
