@@ -1,0 +1,21 @@
+{
+  "name": "agent-insight",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev docs --host 127.0.0.1",
+    "build": "npm run check && vitepress build docs",
+    "preview": "vitepress preview docs --host 127.0.0.1",
+    "check": "node scripts/check-book.mjs",
+    "sources": "node scripts/source-status.mjs",
+    "test:contracts": "node --test scripts/check-book.test.mjs"
+  },
+  "devDependencies": {
+    "yaml": "2.9.1",
+    "vitepress": "1.6.4"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

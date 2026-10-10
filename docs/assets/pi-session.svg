@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="600" viewBox="0 0 920 600" role="img" aria-labelledby="title desc">
+  <title id="title">Pi AgentSession：默认调用链与独立历史存储</title>
+  <desc id="desc">CLI 或 SDK 构造 AgentSession。AgentSession 调用 Agent 和 agent-loop，再调用模型和工具。SessionManager 与执行链并列，由 AgentSession 读取上下文、追加历史；它不是工具调用的下一层。</desc>
+  <rect width="920" height="600" fill="#ffffff"/>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#334155"/></marker></defs>
+  <g font-family="system-ui, sans-serif" fill="#172554">
+    <text x="30" y="40" font-size="22" font-weight="700">Pi AgentSession：默认调用链与独立历史存储</text>
+    <rect x="30" y="62" width="860" height="78" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+    <text x="48" y="90" font-size="17" font-weight="700">入口与组合根 · CLI main / SDK</text>
+    <text x="48" y="117" font-size="15">创建或注入 Agent、SessionManager、模型与资源；runtime 可替换活动 session</text>
+    <path d="M290,140 V183" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="30" y="186" width="500" height="94" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+    <text x="48" y="214" font-size="17" font-weight="700">产品编排层 · AgentSession</text>
+    <text x="48" y="240" font-size="15">管理输入、扩展、压缩、消息队列与事件</text>
+    <text x="48" y="263" font-size="15">从历史构造上下文；处理消息结束时追加历史</text>
+    <rect x="640" y="186" width="250" height="142" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+    <text x="658" y="214" font-size="17" font-weight="700">历史 · SessionManager</text>
+    <text x="658" y="240" font-size="15">保存消息与 parent 历史树</text>
+    <text x="658" y="264" font-size="15">分支 / 压缩 / context edit</text>
+    <text x="658" y="288" font-size="15">投影出下一次模型上下文</text>
+    <text x="658" y="312" font-size="15">独立于进程内活动工具</text>
+    <path d="M530,229 H637" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="538" y="218" font-size="14">追加历史</text>
+    <path d="M640,265 H533" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="541" y="292" font-size="14">读取上下文</text>
+    <path d="M290,280 V329" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="30" y="332" width="500" height="84" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+    <text x="48" y="360" font-size="17" font-weight="700">执行层 · Agent → agent-loop</text>
+    <text x="48" y="386" font-size="15">进程内运行状态；循环请求模型并按策略执行工具</text>
+    <text x="48" y="408" font-size="15">Agent 向 AgentSession 发布运行事件</text>
+    <path d="M290,416 V461" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="30" y="464" width="500" height="80" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+    <text x="48" y="492" font-size="17" font-weight="700">效果层 · ModelRuntime / tool.execute</text>
+    <text x="48" y="518" font-size="15">streamFunction 路由模型请求；工具执行外部操作</text>
+    <text x="30" y="578" font-size="15">箭头表示调用或状态读写；历史文件保存不代表活动工具能在崩溃后自动恢复。</text>
+  </g>
+</svg>

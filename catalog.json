@@ -1,0 +1,214 @@
+[
+  {
+    "title": "阅读与基线",
+    "items": [
+      {
+        "title": "Agent Insight",
+        "path": "index.md"
+      },
+      {
+        "title": "研究对象与阅读地图",
+        "path": "guide/map.md"
+      },
+      {
+        "title": "源码基线与核验范围",
+        "path": "guide/baselines.md"
+      },
+      {
+        "title": "证据等级与层次阅读",
+        "path": "guide/reading.md"
+      }
+    ]
+  },
+  {
+    "title": "维护与模板",
+    "items": [
+      {
+        "title": "文档与元数据契约",
+        "path": "maintenance/contracts.md"
+      },
+      {
+        "title": "增量更新与换机流程",
+        "path": "maintenance/update.md"
+      },
+      {
+        "title": "仓库与 Markdown 书籍选型",
+        "path": "maintenance/tooling.md"
+      },
+      {
+        "title": "每个对象的固定模板",
+        "path": "templates/project.md"
+      },
+      {
+        "title": "深入机制的固定模板",
+        "path": "templates/mechanism.md"
+      },
+      {
+        "title": "横向比较的固定模板",
+        "path": "templates/comparison.md"
+      },
+      {
+        "title": "旧文迁移清单与剩余范围",
+        "path": "maintenance/migration.md"
+      }
+    ]
+  },
+  {
+    "title": "各对象分册",
+    "items": [
+      {
+        "title": "DeerFlow分册",
+        "path": "agents/deerflow/index.md"
+      },
+      {
+        "title": "Claude Code（冻结）分册",
+        "path": "agents/claude/index.md"
+      },
+      {
+        "title": "Codex分册",
+        "path": "agents/codex/index.md"
+      },
+      {
+        "title": "Hermes分册",
+        "path": "agents/hermes/index.md"
+      },
+      {
+        "title": "LangChain分册",
+        "path": "frameworks/langchain/index.md"
+      },
+      {
+        "title": "LangGraph分册",
+        "path": "frameworks/langgraph/index.md"
+      },
+      {
+        "title": "DeepSeek Harness分册",
+        "path": "agents/deepseek/index.md"
+      },
+      {
+        "title": "Codex：源码重建边界",
+        "path": "agents/codex/architecture.md"
+      },
+      {
+        "title": "DeepSeek Harness：新增研究范围",
+        "path": "agents/deepseek/architecture.md"
+      }
+    ]
+  },
+  {
+    "title": "旧文整理",
+    "items": [
+      {
+        "title": "DeerFlow：旧材料消化与核验入口",
+        "path": "agents/deerflow/architecture.md"
+      },
+      {
+        "title": "Claude Code：冻结架构材料",
+        "path": "agents/claude/architecture.md"
+      },
+      {
+        "title": "Codex：旧官方实践整理",
+        "path": "agents/codex/official-practices.md"
+      },
+      {
+        "title": "Hermes：旧材料的对象与链路",
+        "path": "agents/hermes/architecture.md"
+      },
+      {
+        "title": "LangChain：框架与教程分层",
+        "path": "frameworks/langchain/architecture.md"
+      },
+      {
+        "title": "LangGraph：构图、调度与持久状态",
+        "path": "frameworks/langgraph/architecture.md"
+      }
+    ]
+  },
+  {
+    "title": "Pi 当前主线",
+    "items": [
+      {
+        "title": "Pi AgentSession 分册",
+        "path": "agents/pi/index.md"
+      },
+      {
+        "title": "AgentSession 概念词典",
+        "path": "agents/pi/glossary.md"
+      },
+      {
+        "title": "AgentSession：层次、构造与生命周期",
+        "path": "agents/pi/architecture.md"
+      },
+      {
+        "title": "AgentSession：一次输入到实际执行",
+        "path": "agents/pi/loop.md"
+      },
+      {
+        "title": "AgentSession：历史树与模型上下文",
+        "path": "agents/pi/context.md"
+      }
+    ]
+  },
+  {
+    "title": "Pi 持久架构（实验）",
+    "items": [
+      {
+        "title": "Pico5 / pi-durable 分册",
+        "path": "agents/pi-durable/index.md"
+      },
+      {
+        "title": "Pico5 概念词典",
+        "path": "agents/pi-durable/glossary.md"
+      },
+      {
+        "title": "Pico5：事务、任务与副作用恢复",
+        "path": "agents/pi-durable/architecture.md"
+      }
+    ]
+  },
+  {
+    "title": "Pi 历史附录",
+    "items": [
+      {
+        "title": "Lane Harness 历史附录",
+        "path": "history/pi-lane/index.md"
+      },
+      {
+        "title": "Lane：概念层次与一条工作主线",
+        "path": "history/pi-lane/architecture.md"
+      },
+      {
+        "title": "Pi 路线演进与“转正”口径",
+        "path": "history/pi-lane/evolution.md"
+      },
+      {
+        "title": "Chord 与 Radius：保留的独有专题",
+        "path": "history/pi-lane/components.md"
+      }
+    ]
+  },
+  {
+    "title": "横向比较",
+    "items": [
+      {
+        "title": "横向比较入口与范围",
+        "path": "comparisons/index.md"
+      },
+      {
+        "title": "对象矩阵：同一问题与不同阶段",
+        "path": "comparisons/matrix.md"
+      },
+      {
+        "title": "比较：所有权与生命周期",
+        "path": "comparisons/ownership.md"
+      },
+      {
+        "title": "比较：上下文、持久化与恢复",
+        "path": "comparisons/state-recovery.md"
+      },
+      {
+        "title": "比较：工具、扩展与执行边界",
+        "path": "comparisons/execution.md"
+      }
+    ]
+  }
+]

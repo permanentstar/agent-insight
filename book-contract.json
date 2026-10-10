@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "statuses": {
+    "index": "目录与范围已建立",
+    "verified-source": "标明范围已做源码静态核验",
+    "frozen-source": "冻结历史源码核验",
+    "migrated-unverified": "旧文消化稿，尚未核验最新源码",
+    "frozen-document": "历史文档冻结，非当前源码结论",
+    "pending": "待分析，目录不代表能力结论",
+    "contract": "维护契约与模板"
+  },
+  "subjects": [
+    "book",
+    "comparison",
+    "pi-session",
+    "pi-durable",
+    "pi-lane",
+    "deerflow",
+    "claude",
+    "codex",
+    "hermes",
+    "langchain",
+    "langgraph",
+    "deepseek"
+  ],
+  "evidence": [
+    "source",
+    "official",
+    "historical-document",
+    "static-inference",
+    "runtime",
+    "proposal"
+  ]
+}

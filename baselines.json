@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "repos": {
+    "pi": {
+      "url": "https://github.com/earendil-works/pi",
+      "branch": "main",
+      "local_dir": "pi"
+    },
+    "deerflow": {
+      "url": "https://github.com/bytedance/deer-flow",
+      "branch": "main",
+      "local_dir": "deer-flow"
+    },
+    "codex": {
+      "url": "https://github.com/openai/codex",
+      "branch": "main",
+      "local_dir": "codex"
+    },
+    "hermes": {
+      "url": "https://github.com/NousResearch/hermes-agent",
+      "branch": "main",
+      "local_dir": "hermes-agent"
+    },
+    "langchain": {
+      "url": "https://github.com/langchain-ai/langchain",
+      "branch": "master",
+      "local_dir": "langchain"
+    },
+    "langgraph": {
+      "url": "https://github.com/langchain-ai/langgraph",
+      "branch": "main",
+      "local_dir": "langgraph"
+    },
+    "deepseek": {
+      "url": "https://github.com/deepseek-ai/deepseek-harness",
+      "branch": "master",
+      "local_dir": "deepseek-harness"
+    }
+  },
+  "baselines": {
+    "pi-20261009": {
+      "repo": "pi",
+      "role": "current",
+      "sha": "f1b2e77f5b13b2a199b1052cb79c235451afe7d7",
+      "commit_time": "2026-10-09T09:40:08+02:00",
+      "observed_at": "2026-10-09",
+      "note": "本次 fetch 后的官方主干观察点；不等于所有章节已核验，也不代表未来持续最新。"
+    },
+    "deerflow-20261009": {
+      "repo": "deerflow",
+      "role": "current",
+      "sha": "b842e06be19f04280a9e5e12f90da04d0c6f09a5",
+      "commit_time": "2026-10-09T17:58:09+08:00",
+      "observed_at": "2026-10-09",
+      "note": "本次 fetch 后的官方主干观察点；不等于所有章节已核验，也不代表未来持续最新。"
+    },
+    "codex-20261009": {
+      "repo": "codex",
+      "role": "current",
+      "sha": "2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4",
+      "commit_time": "2026-10-09T05:12:54Z",
+      "observed_at": "2026-10-09",
+      "note": "本次 fetch 后的官方主干观察点；不等于所有章节已核验，也不代表未来持续最新。"
+    },
+    "hermes-20261009": {
+      "repo": "hermes",
+      "role": "current",
+      "sha": "8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f",
+      "commit_time": "2026-10-09T02:59:16-07:00",
+      "observed_at": "2026-10-09",
+      "note": "本次 fetch 后的官方主干观察点；不等于所有章节已核验，也不代表未来持续最新。"
+    },
+    "langchain-20261009": {
+      "repo": "langchain",
+      "role": "current",
+      "sha": "34489d61433cbf5044a630de2e7797e361672900",
+      "commit_time": "2026-10-08T18:11:07-04:00",
+      "observed_at": "2026-10-09",
+      "note": "本次 fetch 后的官方主干观察点；不等于所有章节已核验，也不代表未来持续最新。"
+    },
+    "langgraph-20261009": {
+      "repo": "langgraph",
+      "role": "current",
+      "sha": "bfcfea554ed5c7f7be562cebf8825e911b493ab1",
+      "commit_time": "2026-10-08T16:10:55-07:00",
+      "observed_at": "2026-10-09",
+      "note": "本次 fetch 后的官方主干观察点；不等于所有章节已核验，也不代表未来持续最新。"
+    },
+    "deepseek-20261009": {
+      "repo": "deepseek",
+      "role": "current",
+      "sha": "d743267388641bc76f17c45ce8b4c231aed1d32c",
+      "commit_time": "2026-10-09T17:31:32+08:00",
+      "observed_at": "2026-10-09",
+      "note": "本次 fetch 后的官方主干观察点；不等于所有章节已核验，也不代表未来持续最新。"
+    },
+    "pi-lane-20260916": {
+      "repo": "pi",
+      "role": "historical",
+      "sha": "6671c604766b3670ed95f405aa7856835d0ca702",
+      "commit_time": "2026-09-16T12:11:16+02:00",
+      "observed_at": "2026-10-09",
+      "note": "原飞书 Lane/Chord/Radius 共同基线；源码提交日期不是文档分析日期。仅历史研究，不作为当前默认实现。"
+    },
+    "claude-frozen-documents": {
+      "repo": null,
+      "role": "historical",
+      "sha": null,
+      "commit_time": null,
+      "observed_at": "2026-10-09",
+      "note": "三份旧分析文档冻结；源码 snapshot 的精确版本、来源和哈希尚未登记，禁止推定为官方当前实现。"
+    }
+  }
+}
