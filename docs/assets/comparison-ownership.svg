@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
+<title id="title">比较：构造、身份与实际所有者</title>
+<desc id="desc">图示是对照问题，九对象的 owner 与复用方式不同，表格给出固定基线的实际机制。
+长期 Session/Thread 身份不能证明当前 worker 拥有写入资格或外部效果可恢复。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#334155"/></marker></defs>
+<rect width="1000" height="660" fill="#ffffff"/>
+<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">比较：构造、身份与实际所有者</text>
+<polyline points="460,135 540,135" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="122" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">构造</text>
+<polyline points="750,190 750,220.0 250,220.0 250,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="213.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">寻址</text>
+<polyline points="750,190 750,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="758" y="220.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">启动</text>
+<polyline points="750,360 750,390.0 250,390.0 250,420" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="383.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">推进</text>
+<polyline points="460,475 540,475" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="462" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">结果</text>
+<rect x="40" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">产品 / 组合根</text>
+<text x="58" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">CLI、Gateway、SDK 或 Profile</text>
+<text x="58" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">构造配置、能力与宿主资源</text>
+<rect x="540" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">运行实例 / 调度门面</text>
+<text x="558" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">AgentSession、AIAgent、图或 Agent</text>
+<text x="558" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">每 run 创建或按配置缓存复用</text>
+<rect x="40" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">长期身份与持久事实</text>
+<text x="58" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">Session / Thread / Event / Task</text>
+<text x="58" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">ID 不等于活实例或当前执行资格</text>
+<rect x="540" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">本次工作所有者</text>
+<text x="558" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">run / turn / generation / activation</text>
+<text x="558" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">lease、admission 或进程内控制</text>
+<rect x="40" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">模型与工具效果</text>
+<text x="58" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">执行使用当前工作配置</text>
+<text x="58" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">外部系统有自己的事务/资源</text>
+<rect x="540" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">终态 / 回收 / 后续恢复</text>
+<text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">核销工作、释放句柄或环境</text>
+<text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">重建实例与重放效果分开</text>
+<text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">图示是对照问题，九对象的 owner 与复用方式不同，表格给出固定基线的实际机制。</text>
+<text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">长期 Session/Thread 身份不能证明当前 worker 拥有写入资格或外部效果可恢复。</text>
+</svg>

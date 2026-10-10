@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
+<title id="title">比较：语义决策与实际控制</title>
+<desc id="desc">模型理解可随结果改变；具体执行授权不能由 intent 标签代替。
+此图是比较问题地图，是否设置单独 Router / Planner 需按实际场景与测量决定。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#334155"/></marker></defs>
+<rect width="1000" height="660" fill="#ffffff"/>
+<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">比较：语义决策与实际控制</text>
+<polyline points="460,135 540,135" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="122" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">接纳</text>
+<polyline points="750,190 750,220.0 250,220.0 250,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="213.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">调用</text>
+<polyline points="460,305 540,305" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="292" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">允许</text>
+<polyline points="750,360 750,390.0 250,390.0 250,420" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="383.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">观察</text>
+<polyline points="40,475 18,475 18,65 750,65 750,80" stroke-dasharray="6 4" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="58" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">继续</text>
+<polyline points="460,475 540,475" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="462" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">验收后</text>
+<rect x="40" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">接纳身份与显式信号</text>
+<text x="58" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">principal / session / 能力 / 模式</text>
+<text x="58" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">可验证输入，候选设计</text>
+<rect x="540" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">主模型循环</text>
+<text x="558" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">理解 → 观察 → 修订计划</text>
+<text x="558" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">按需澄清、工具调用或委派</text>
+<rect x="40" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">动作控制</text>
+<text x="58" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">参数、资源、审批与环境</text>
+<text x="58" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">实际 handler 前验证</text>
+<rect x="540" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">工具 / 子 Agent</text>
+<text x="558" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">外部效果或独立执行</text>
+<text x="558" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">回传具体结果与 typed status</text>
+<rect x="40" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">继续循环 / 业务验收</text>
+<text x="58" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">成功、失败、未知分别核验</text>
+<text x="58" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">计划和最终文字不是验收证据</text>
+<rect x="540" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">交付 / ACK</text>
+<text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">目标身份、投递与确认</text>
+<text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">候选产品能力，非九对象共有</text>
+<text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">模型理解可随结果改变；具体执行授权不能由 intent 标签代替。</text>
+<text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">此图是比较问题地图，是否设置单独 Router / Planner 需按实际场景与测量决定。</text>
+</svg>

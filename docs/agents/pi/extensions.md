@@ -7,7 +7,7 @@ baselines: ["pi-20261009"]
 sources: ["pi-session"]
 depends_on: ["pi-architecture", "pi-loop"]
 evidence: ["source", "historical-document"]
-verified_scope: "已静态核验资源加载、注册/激活、prompt 输入 hook、工具 hook 和 reload 的运行绑定；未穷举全部资源冲突、TUI 与 provider 实现。"
+verified_scope: "已静态核验资源加载、注册/激活、prompt 输入 hook、工具 hook 和 reload 的运行绑定；更多资源冲突、TUI 与 MCP 见平台专题，全部 provider 未运行。"
 ---
 
 # AgentSession：资源、扩展与运行绑定

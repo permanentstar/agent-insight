@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="490" viewBox="0 0 960 490" role="img">
+<title>框架调用层次：组合 → 数据 → 执行</title>
+<rect width="960" height="490" fill="#ffffff"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker></defs>
+<text x="32" y="40" font-family="sans-serif" font-size="24" font-weight="700" fill="#172554">框架调用层次：组合 → 数据 → 执行</text>
+<rect x="32" y="65" width="896" height="110" rx="12" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="54" y="94" font-family="sans-serif" font-size="21" font-weight="700" fill="#172554">调用组合</text>
+<text x="54" y="124" font-family="sans-serif" font-size="19" fill="#172554">Sequence：顺序输出 / Parallel：同输入多分支</text>
+<text x="54" y="154" font-family="sans-serif" font-size="17" fill="#334155">invoke、batch 与 stream 是协议；流式取决于 transform</text>
+<path d="M480 177V195" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="32" y="197" width="896" height="110" rx="12" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="54" y="226" font-family="sans-serif" font-size="21" font-weight="700" fill="#172554">数据契约</text>
+<text x="54" y="256" font-family="sans-serif" font-size="19" fill="#172554">PromptValue / Messages / ToolCall / RunnableConfig</text>
+<text x="54" y="286" font-family="sans-serif" font-size="17" fill="#334155">content 原始负载；text 与 reasoning 分开；配置不是 state</text>
+<path d="M480 309V327" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="32" y="329" width="896" height="110" rx="12" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="54" y="358" font-family="sans-serif" font-size="21" font-weight="700" fill="#172554">实际执行</text>
+<text x="54" y="388" font-family="sans-serif" font-size="19" fill="#172554">ChatModel → Partner SDK；BaseTool → 校验 → handler</text>
+<text x="54" y="418" font-family="sans-serif" font-size="17" fill="#334155">统一接口不保证工具支持，也不提供执行授权</text>
+<text x="32" y="478" font-family="sans-serif" font-size="16" fill="#334155">固定源码基线的静态分析；没有运行模型、索引服务或 tracing 后端。</text>
+</svg>

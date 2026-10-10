@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
+<title id="title">Hermes：压缩计算与提交资格分开</title>
+<desc id="desc">外部 MemoryManager 在压缩前另做 provider checkpoint；必需检查点失败会阻止压缩。
+ACP 外部 handle 与内部 SessionDB ID 分开；此图没有运行故障测量。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#334155"/></marker></defs>
+<rect width="1000" height="660" fill="#ffffff"/>
+<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">Hermes：压缩计算与提交资格分开</text>
+<polyline points="460,135 540,135" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="122" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">快照</text>
+<polyline points="750,190 750,220.0 250,220.0 250,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="213.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">候选</text>
+<polyline points="460,305 540,305" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="292" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">拒绝</text>
+<polyline points="250,360 250,420" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="258" y="390.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">允许</text>
+<polyline points="460,475 540,475" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="462" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">结果</text>
+<rect x="40" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">宿主 / 当前 turn</text>
+<text x="58" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">会话快照、attempt generation</text>
+<text x="58" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">取消时 revoke 提交资格</text>
+<rect x="540" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">背景 worker</text>
+<text x="558" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">ContextCompressor 生成候选</text>
+<text x="558" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">模型调用不在数据库事务内</text>
+<rect x="40" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">CompressionCommitFence</text>
+<text x="58" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">begin_commit 检查有效资格</text>
+<text x="58" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">失败：commit_fence_cancelled</text>
+<rect x="540" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">候选被拒绝</text>
+<text x="558" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">恢复输入和压缩器快照</text>
+<text x="558" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">不采用，不切换会话 ID</text>
+<rect x="40" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">SessionDB 实际提交</text>
+<text x="58" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">in-place 或 rotated 会话</text>
+<text x="58" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">已进入的提交不能凭 revoke 回滚</text>
+<rect x="540" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">宿主采用与结束</text>
+<text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">finish boundary / 更新 internal ID</text>
+<text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">Codex 路由由 Codex 自行 compact</text>
+<text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">外部 MemoryManager 在压缩前另做 provider checkpoint；必需检查点失败会阻止压缩。</text>
+<text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">ACP 外部 handle 与内部 SessionDB ID 分开；此图没有运行故障测量。</text>
+</svg>

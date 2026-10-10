@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
+<title id="title">Claude Code：冻结材料中的能力层次</title>
+<desc id="desc">仅冻结原稿转述；3 月 Bridge 与另一旧版 IDE Bridge 不合并成同一当前服务。
+MCP roots/elicitation 与其他扩展不同；缺失实现不能由名称或官方产品文档补齐。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#334155"/></marker></defs>
+<rect width="1000" height="660" fill="#ffffff"/>
+<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">Claude Code：冻结材料中的能力层次</text>
+<polyline points="460,135 540,135" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="122" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">输入</text>
+<polyline points="750,190 750,220.0 250,220.0 250,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="213.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">调用</text>
+<polyline points="750,190 750,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="758" y="220.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">接入</text>
+<polyline points="250,360 250,420" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="258" y="390.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">允许后</text>
+<polyline points="750,360 750,420" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="758" y="390.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">边界</text>
+<rect x="40" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">REPL / AppState / 命令</text>
+<text x="58" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">交互模式与呈现状态</text>
+<text x="58" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">不同原稿 snapshot 关系未知</text>
+<rect x="540" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">query / model loop</text>
+<text x="558" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">主线程、子 Agent、团队分层</text>
+<text x="558" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">MCP schema 按需发现</text>
+<rect x="40" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">Tool executor / 权限</text>
+<text x="58" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">校验 → allow / deny / ask</text>
+<text x="58" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">并行组与预算分别控制</text>
+<rect x="540" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">MCP / Bridge 接入</text>
+<text x="558" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">公开协议与私有 channel 分开</text>
+<text x="558" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">认证、连接、工具分派不同层</text>
+<rect x="40" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">执行与反馈</text>
+<text x="58" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">call / 结果 / UI / transcript</text>
+<text x="58" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">最终回答不能代证业务成功</text>
+<rect x="540" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">缺失证据</text>
+<text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">原 SHA、部分 gates / 具体接单链</text>
+<text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">只登记未知，不补成当前实现</text>
+<text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">仅冻结原稿转述；3 月 Bridge 与另一旧版 IDE Bridge 不合并成同一当前服务。</text>
+<text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">MCP roots/elicitation 与其他扩展不同；缺失实现不能由名称或官方产品文档补齐。</text>
+</svg>

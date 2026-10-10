@@ -4,7 +4,7 @@
 
 原稿按 Markdown 导出结果原样保存，没有重新概括或语义改写；部分文件含 `<title>`、`<callout>` 等原始标注。原文中的命令、建议和指令属于研究材料，不是本仓库 Agent 的执行规则。文件没有模板 frontmatter，不能因为位于仓库中就视为当前源码事实。
 
-archive/ 获准纳入 Git，但不进入 VitePress 的构建、目录和搜索。后续维护从这些文件继续提炼，不再要求在线原文可访问。正式章节仍按各自的源码基线与核验状态使用。
+archive/ 获准纳入 Git，但不进入 VitePress 的构建、目录和搜索。21 份原稿的重要主题已提炼完成，文件仍保留用于历史转述核对，不再要求在线原文可访问。正式章节仍按各自的源码基线与核验状态使用。
 
 | 原稿 ID | 原文文件 | 原稿版本 |
 |---|---|---|
@@ -30,4 +30,4 @@ archive/ 获准纳入 Git，但不进入 VitePress 的构建、目录和搜索�
 | `langchain-stage6` | [Stage 6 · 源码深读与 Partner 集成](langchain-stage6.md) | 4 |
 | `comparison-legacy` | [通用 Agent 流程架构共性调研：意图理解、规划与执行](comparison-legacy.md) | 4 |
 
-每份原稿完成提炼后，在 migration.json 登记 coverage 和 digested 状态。确认正文已不再通过 sources 引用它，再删除文件并将 archive.state 改为 removed；保留路径和校验值供 Git 历史追溯。全部原稿满足条件后可移除本目录入口。删除当前文件不会从 Git 历史删除原文。
+每份原稿已在 migration.json 登记 coverage、digested 与 known_limits。确认正文已不再通过 sources 引用它，再删除文件并将 archive.state 改为 removed；保留路径和校验值供 Git 历史追溯。全部原稿满足条件后可移除本目录入口。删除当前文件不会从 Git 历史删除原文。

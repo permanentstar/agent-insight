@@ -7,7 +7,7 @@ baselines: ["deerflow-20261009"]
 sources: ["deerflow-middleware", "deerflow-prompt"]
 depends_on: ["deerflow-migrated"]
 evidence: ["source", "historical-document"]
-verified_scope: "已静态核验装配分组、动态上下文、system 合并和 Skill 工具阻断；未穷举全部扩展排序及应用锁定框架的所有 hook 语义。"
+verified_scope: "已静态核验装配分组、动态上下文、system 合并和 Skill 工具阻断；补齐当前候选槽位及实际 hook 索引；未运行具体配置或比对应用锁定框架全部语义。"
 ---
 
 # DeerFlow：中间件装配、Prompt 与执行门禁
@@ -75,4 +75,70 @@ LangChain 主干分析中的 before 正向、after 反向、wrap 首成员在外
 
 中间件将产品策略从模型工具节点抽出，便于不同宿主组合；代价是同一 state、request、Runtime.context 被多个阶段读取时，所有权与顺序必须明确。分析任何新增中间件，固定记录：构造者、实例复用范围、参与 hook、读写字段、提前返回与真实效果点。
 
-原稿中的完整旧顺序、prompt 标签范式和应用候选策略保留在归档。本章覆盖当前装配与三个代表机制；DurableContext、全部 Summarization/Memory 算法、每个扩展插入点仍需独立补证，不能据本章宣布全文迁移完成。
+原稿的装配、hook、实例/租户、默认开关和 Prompt 方法已分别落入本页及 [上下文章](context-prompt.md)、[能力章](capabilities.md)、[runtime 章](runtime.md)。旧槽位不沿用为当前列表；历史风险描述需按当前作用域重新判断。
+
+## 当前候选槽位的完整顺序
+
+下表是 compose 前的候选顺序，括号说明条件；配置关闭时对应项不存在。它不是任意配置的最终实例名单。同步/异步 hook 的覆盖范围还要按下节签名检查。
+
+| 位置组 | 有序成员 | 构造入口 |
+|---|---|---|
+| 基础外层 | InputSanitization → KnowledgeScope → ToolOutputBudget → ToolResultSanitization → PiiRedaction（条件） | build_runtime_middlewares |
+| 环境 | ThreadData → Uploads（参数） → Sandbox | 同上 |
+| 基础尾部 | DanglingToolCall → LLMErrorHandling → ToolReceipt（条件） → ArtifactResolution（条件） → Guardrail（配置） → SandboxAudit（条件） → ReadBeforeWrite（条件） → ToolProgress（条件） → ToolErrorHandling → ArtifactCapture（条件） | 同上；guardrail backend/config 分支分别构造 |
+| 产品入口 | DynamicContext → SkillActivation → ToolPromotionAudit（deferred/审计条件） → SkillToolPolicy（授权条件） | build_middlewares |
+| 产品状态 | DurableContext（条件） → Summarization（条件） → Todo（条件） → TokenUsage → Title → Memory（条件） → ViewImage（条件） → McpRouting（条件） → DeferredToolFilter（条件） → SystemMessageCoalescing | 同上 |
+| 产品控制 | SubagentLimit（条件） → LoopDetection（条件） → TokenBudget（条件） → CompletedSubagentUsage（条件） → config/custom middleware | 同上 |
+| 终态 | TerminalResponse → ModelLengthFinishReason → SafetyFinishReason（条件） → Clarification | 同上 |
+| 最后合并 | 按 scope/placement anchor 注入 extensions，记录 diagnostics，再 assert_ordering | compose_with_extensions |
+
+[当前槽位构造](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/agent.py#L565)、[基础三组](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/tool_error_handling_middleware.py#L344)、[扩展最后合并](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/extensions/stack.py#L134)。扩展要求每条 hook 链的位置，不只要求列表 index；没有 override 某 hook 的实例不会因此参加那条链。与原稿相比，新增/移除成员按当前基线登记，不保留旧列表的默认数量。
+
+## hook 索引与实例安全
+
+以下从固定提交的实际函数定义整理；`a` 前缀是异步对应接口，合并展示。只列本目录直接实现，不把继承方法误算为源码不存在。Sandbox 与框架/外部 guardrail 在各自模块；完整配置生成结果还需记录启用条件。
+
+| 实现文件 | 直接实现的 hook | 首个执行位置 |
+|---|---|---|
+| `artifact_capture_middleware.py` | `before_model` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/artifact_capture_middleware.py#L38) |
+| `artifact_resolution_middleware.py` | `wrap_tool_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/artifact_resolution_middleware.py#L40) |
+| `clarification_middleware.py` | `wrap_tool_call`, `after_model` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/clarification_middleware.py#L524) |
+| `dangling_tool_call_middleware.py` | `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/dangling_tool_call_middleware.py#L506) |
+| `deferred_tool_filter_middleware.py` | `wrap_model_call`, `wrap_tool_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/deferred_tool_filter_middleware.py#L84) |
+| `durable_context_middleware.py` | `before_model`, `after_model`, `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/durable_context_middleware.py#L358) |
+| `dynamic_context_middleware.py` | `before_agent`, `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/dynamic_context_middleware.py#L304) |
+| `input_sanitization_middleware.py` | `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/input_sanitization_middleware.py#L493) |
+| `knowledge_scope_middleware.py` | `before_agent`, `wrap_model_call`, `wrap_tool_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/knowledge_scope_middleware.py#L44) |
+| `llm_error_handling_middleware.py` | `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/llm_error_handling_middleware.py#L894) |
+| `loop_detection_middleware.py` | `before_agent`, `after_model`, `after_agent`, `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/loop_detection_middleware.py#L846) |
+| `mcp_routing_middleware.py` | `before_model` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/mcp_routing_middleware.py#L140) |
+| `memory_middleware.py` | `after_agent` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/memory_middleware.py#L197) |
+| `model_length_finish_reason_middleware.py` | `after_model` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/model_length_finish_reason_middleware.py#L168) |
+| `pii_redaction_middleware.py` | `wrap_model_call`, `wrap_tool_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/pii_redaction_middleware.py#L465) |
+| `read_before_write_middleware.py` | `wrap_tool_call`, `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/read_before_write_middleware.py#L226) |
+| `safety_finish_reason_middleware.py` | `after_model` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/safety_finish_reason_middleware.py#L436) |
+| `sandbox_audit_middleware.py` | `wrap_tool_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/sandbox_audit_middleware.py#L511) |
+| `skill_activation_middleware.py` | `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/skill_activation_middleware.py#L907) |
+| `skill_tool_policy_middleware.py` | `wrap_model_call`, `wrap_tool_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/skill_tool_policy_middleware.py#L444) |
+| `subagent_limit_middleware.py` | `after_model` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/subagent_limit_middleware.py#L176) |
+| `summarization_middleware.py` | `before_model` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/summarization_middleware.py#L640) |
+| `system_message_coalescing_middleware.py` | `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/system_message_coalescing_middleware.py#L147) |
+| `terminal_response_middleware.py` | `after_model` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/terminal_response_middleware.py#L69) |
+| `thread_data_middleware.py` | `before_agent` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/thread_data_middleware.py#L82) |
+| `title_middleware.py` | `after_model` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/title_middleware.py#L373) |
+| `todo_middleware.py` | `before_model`, `before_agent`, `after_model`, `wrap_model_call`, `after_agent` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/todo_middleware.py#L146) |
+| `token_budget_middleware.py` | `before_agent`, `after_agent`, `after_model`, `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/token_budget_middleware.py#L179) |
+| `token_usage_middleware.py` | `after_model` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/token_usage_middleware.py#L374) |
+| `tool_error_handling_middleware.py` | `wrap_tool_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/tool_error_handling_middleware.py#L308) |
+| `tool_output_budget_middleware.py` | `wrap_tool_call`, `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/tool_output_budget_middleware.py#L1181) |
+| `tool_progress_middleware.py` | `wrap_tool_call`, `wrap_model_call`, `before_agent` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/tool_progress_middleware.py#L660) |
+| `tool_promotion_audit_middleware.py` | `wrap_tool_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/tool_promotion_audit_middleware.py#L124) |
+| `tool_receipt_middleware.py` | `wrap_tool_call`, `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/tool_receipt_middleware.py#L98) |
+| `tool_result_sanitization_middleware.py` | `wrap_tool_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/tool_result_sanitization_middleware.py#L143) |
+| `uploads_middleware.py` | `before_agent` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/uploads_middleware.py#L221) |
+| `view_image_middleware.py` | `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/view_image_middleware.py#L539) |
+
+
+需要区分“默认启用四维”：配置默认是否开、依赖能力是否满足、本次构造是否选择、hook 是否有实际输入。标题/记忆/图片/子 Agent 等 conditional 逻辑不能由是否在列表中推出发生效果。实例生命周期按 Gateway run 与 Client graph cache 分开，state/Runtime.context 的 user/thread/run 才是当前身份；共享 `self` 缓存与 recorder 要核验 key 及清理边界。
+
+新增 middleware 的检查问题固定为：参与哪些 hook，读写哪个 owner 的字段，排序依赖是什么，短路后是否还执行 handler，恢复后是否会重复副作用。日志/审计/trace 属观察，除非在真实效果点阻断，否则不称权限边界。

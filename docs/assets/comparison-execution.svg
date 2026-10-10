@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
+<title id="title">比较：定义到副作用的执行边界</title>
+<desc id="desc">图示是比较维度；不声明全部对象都有统一的审批或安全系统。
+定义、可见性、授权、效果和结果保存分别核验；各页给出代表实际执行点。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#334155"/></marker></defs>
+<rect width="1000" height="660" fill="#ffffff"/>
+<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">比较：定义到副作用的执行边界</text>
+<polyline points="460,135 540,135" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="122" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">选择</text>
+<polyline points="750,190 750,220.0 250,220.0 250,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="213.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">调用</text>
+<polyline points="460,305 540,305" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="292" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">校验后</text>
+<polyline points="750,360 750,390.0 250,390.0 250,420" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="383.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">允许</text>
+<polyline points="460,475 540,475" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="462" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">核销</text>
+<rect x="40" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">工具定义 / 可发现目录</text>
+<text x="58" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">schema、描述、代码与能力清单</text>
+<text x="58" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">注册不等于本次激活或授权</text>
+<rect x="540" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">本次模型可见集合</text>
+<text x="558" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">active / deferred / policy / Profile</text>
+<text x="558" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">工具搜索与知识披露分开</text>
+<rect x="40" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">调用参数与 runtime 输入</text>
+<text x="58" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">ToolCall 解析、校验、注入字段</text>
+<text x="58" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">hook 改参后是否再次校验</text>
+<rect x="540" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">实际执行控制</text>
+<text x="558" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">policy / approval / sandbox</text>
+<text x="558" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">阻断必须在 handler 前生效</text>
+<rect x="40" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">handler / 外部效果</text>
+<text x="58" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">工具、进程、网络或子执行</text>
+<text x="58" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">并发次序不等于提交次序</text>
+<rect x="540" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">结果、进度与持久记录</text>
+<text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">after hooks / 结果变换 / 写入</text>
+<text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">取消观察不回滚外部效果</text>
+<text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">图示是比较维度；不声明全部对象都有统一的审批或安全系统。</text>
+<text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">定义、可见性、授权、效果和结果保存分别核验；各页给出代表实际执行点。</text>
+</svg>

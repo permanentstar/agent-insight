@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
+<title id="title">DeerFlow：规则、事实投影与压缩</title>
+<desc id="desc">临时请求投影、持久 ThreadState 与外部 memory 分开；客户端请求不能任意决定 memory authority。
+手工操作与活跃 Run 互斥；Overwrite 字段更新本身不提供跨 worker 锁。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#334155"/></marker></defs>
+<rect width="1000" height="660" fill="#ffffff"/>
+<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">DeerFlow：规则、事实投影与压缩</text>
+<polyline points="220,190 220,210 720,210 720,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="203" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">规则</text>
+<polyline points="780,190 780,230 280,230 280,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="223" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">捕获</text>
+<polyline points="460,305 540,305" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500.0" y="292" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">投影</text>
+<polyline points="250,360 250,420" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="258" y="390.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">预算</text>
+<polyline points="250,360 250,390.0 750,390.0 750,420" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="383.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">维护</text>
+<rect x="40" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">稳定 Prompt / 规则</text>
+<text x="58" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">模板、索引、行为与工具策略</text>
+<text x="58" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">System 契约由产品构造</text>
+<rect x="540" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">运行事实 / 知识资料</text>
+<text x="558" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">uploads、skills、委派、memory</text>
+<text x="558" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">捕获 source、scope 和来源</text>
+<rect x="40" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">DurableContext / ThreadState</text>
+<text x="58" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">持久捕获必要上下文</text>
+<text x="58" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">不是任意追加更高权限指令</text>
+<rect x="540" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">ModelRequest 副本</text>
+<text x="558" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">override 注入 System 契约</text>
+<text x="558" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">Human 事实投影，随后合并 System</text>
+<rect x="40" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="58" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">自动摘要 / 长期 memory</text>
+<text x="58" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">不同目标、存储和调用 owner</text>
+<text x="58" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">标签不能代替 role 与授权</text>
+<rect x="540" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
+<text x="558" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">手工压缩</text>
+<text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">reservation → checkpoint read</text>
+<text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">summary → Overwrite → new checkpoint</text>
+<text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">临时请求投影、持久 ThreadState 与外部 memory 分开；客户端请求不能任意决定 memory authority。</text>
+<text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">手工操作与活跃 Run 互斥；Overwrite 字段更新本身不提供跨 worker 锁。</text>
+</svg>

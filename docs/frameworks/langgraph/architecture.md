@@ -57,7 +57,7 @@ LangGraph 负责把图定义变成可执行的状态计算。StateGraph 是构�
 | pending_writes | 某 checkpoint 下已产生的任务输出 | 整个超步尚未全部成功时保留进度 |
 | checkpoint_ns / id | 子图命名空间及具体恢复点 | 多层图与历史寻址 |
 
-messages 若使用 add_messages reducer，会有 ID 替换/删除等语义；不能将所有 channel 都看作 append-only list。Overwrite、DeltaChannel 等又有额外替换和稀疏历史规则，本章仅定位，完整兼容/分支语义尚未核验。依据：[checkpoint 类型](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/checkpoint/langgraph/checkpoint/base/__init__.py)、[消息 reducer](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/graph/message.py)。
+messages 若使用 add_messages reducer，会有 ID 替换/删除等语义；不能将所有 channel 都看作 append-only list。Overwrite、DeltaChannel 等又有额外替换和稀疏历史规则，本章先定位，[进阶章](advanced.md)再解释合并与恢复边界；各 saver 未运行。依据：[checkpoint 类型](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/checkpoint/langgraph/checkpoint/base/__init__.py)、[消息 reducer](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/graph/message.py)。
 
 ## 同一个故障案例：节点发请求后暂停或崩溃
 

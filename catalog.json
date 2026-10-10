@@ -36,12 +36,24 @@
         "path": "comparisons/ownership.md"
       },
       {
+        "title": "比较：理解、规划、委派与控制",
+        "path": "comparisons/control-delegation.md"
+      },
+      {
+        "title": "比较：Prompt、压缩与长期记忆",
+        "path": "comparisons/context-compaction.md"
+      },
+      {
         "title": "比较：上下文、持久化与恢复",
         "path": "comparisons/state-recovery.md"
       },
       {
         "title": "比较：工具、扩展与执行边界",
         "path": "comparisons/execution.md"
+      },
+      {
+        "title": "比较：观测、终态与交付确认",
+        "path": "comparisons/observability-delivery.md"
       }
     ]
   },
@@ -71,6 +83,10 @@
       {
         "title": "AgentSession：资源、扩展与运行绑定",
         "path": "agents/pi/extensions.md"
+      },
+      {
+        "title": "AgentSession：MCP、codemode、资源冲突与终端宿主",
+        "path": "agents/pi/platform.md"
       }
     ]
   },
@@ -88,6 +104,10 @@
       {
         "title": "Pico5：事务、任务与副作用恢复",
         "path": "agents/pi-durable/architecture.md"
+      },
+      {
+        "title": "Pico5：Document、上下文投影与异步摘要",
+        "path": "agents/pi-durable/documents.md"
       }
     ]
   },
@@ -105,6 +125,18 @@
       {
         "title": "DeerFlow：中间件装配、Prompt 与执行门禁",
         "path": "agents/deerflow/middleware.md"
+      },
+      {
+        "title": "DeerFlow：Run 归属、事件读取与独立写入",
+        "path": "agents/deerflow/runtime.md"
+      },
+      {
+        "title": "DeerFlow：Prompt 作用域、持久上下文与压缩",
+        "path": "agents/deerflow/context-prompt.md"
+      },
+      {
+        "title": "DeerFlow：能力发现、Sandbox 与子 Agent",
+        "path": "agents/deerflow/capabilities.md"
       }
     ]
   },
@@ -122,6 +154,14 @@
       {
         "title": "Claude Code：冻结材料中的压缩与记忆层次",
         "path": "agents/claude/context.md"
+      },
+      {
+        "title": "Claude Code：冻结工具、权限、MCP 与 Bridge",
+        "path": "agents/claude/capabilities.md"
+      },
+      {
+        "title": "Claude：冻结官方材料的观点与适用边界",
+        "path": "agents/claude/practices.md"
       }
     ]
   },
@@ -137,7 +177,11 @@
         "path": "agents/codex/architecture.md"
       },
       {
-        "title": "Codex：旧官方实践整理",
+        "title": "Codex：规则、工具快照、压缩与子线程",
+        "path": "agents/codex/context-capabilities.md"
+      },
+      {
+        "title": "Codex：历史实践与源码对应表",
         "path": "agents/codex/official-practices.md"
       }
     ]
@@ -152,6 +196,14 @@
       {
         "title": "Hermes：宿主生命周期、对话循环与存储边界",
         "path": "agents/hermes/architecture.md"
+      },
+      {
+        "title": "Hermes：记忆、压缩与提交许可",
+        "path": "agents/hermes/context.md"
+      },
+      {
+        "title": "Hermes：ACP、平台、Skills、委派与定时宿主",
+        "path": "agents/hermes/capabilities.md"
       }
     ]
   },
@@ -165,6 +217,22 @@
       {
         "title": "LangChain：统一调用协议与 Agent 构图",
         "path": "frameworks/langchain/architecture.md"
+      },
+      {
+        "title": "LangChain：组合、消息、模型与工具契约",
+        "path": "frameworks/langchain/components.md"
+      },
+      {
+        "title": "LangChain：检索链与 Agentic RAG",
+        "path": "frameworks/langchain/retrieval.md"
+      },
+      {
+        "title": "LangChain：回调树、Partner 与集成验证",
+        "path": "frameworks/langchain/observability.md"
+      },
+      {
+        "title": "LangChain / LangGraph：学习路线与原稿校正",
+        "path": "frameworks/langchain/learning.md"
       }
     ]
   },
@@ -178,6 +246,10 @@
       {
         "title": "LangGraph：超步、通道、checkpoint 与恢复",
         "path": "frameworks/langgraph/architecture.md"
+      },
+      {
+        "title": "LangGraph：合并、子图、Overwrite 与恢复边界",
+        "path": "frameworks/langgraph/advanced.md"
       }
     ]
   },
@@ -191,6 +263,14 @@
       {
         "title": "DeepSeek Harness：插件树、会话事件与一次执行",
         "path": "agents/deepseek/architecture.md"
+      },
+      {
+        "title": "DeepSeek Harness：Profile、审批、Sandbox 与子 Agent",
+        "path": "agents/deepseek/capabilities.md"
+      },
+      {
+        "title": "DeepSeek Harness：surface 压缩与持久屏障",
+        "path": "agents/deepseek/context.md"
       }
     ]
   },
@@ -206,11 +286,15 @@
         "path": "history/pi-lane/architecture.md"
       },
       {
+        "title": "Lane 历史：状态分派、进程链与恢复边界",
+        "path": "history/pi-lane/runtime.md"
+      },
+      {
         "title": "Pi 路线演进与“转正”口径",
         "path": "history/pi-lane/evolution.md"
       },
       {
-        "title": "Chord 与 Radius：保留的独有专题",
+        "title": "Chord 与 Radius：组合、复制与远程传输",
         "path": "history/pi-lane/components.md"
       }
     ]
@@ -243,7 +327,7 @@
         "path": "templates/comparison.md"
       },
       {
-        "title": "旧文迁移清单与剩余范围",
+        "title": "旧文迁移完成与证据边界",
         "path": "maintenance/migration.md"
       }
     ]

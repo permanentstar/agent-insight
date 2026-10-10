@@ -14,9 +14,11 @@
         "pi-architecture",
         "pi-loop",
         "pi-context",
-        "pi-extensions"
+        "pi-extensions",
+        "lane-runtime",
+        "pi-platform"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/pi-session.md",
         "state": "retained",
@@ -26,26 +28,37 @@
       "coverage": [
         {
           "target": "pi-index",
-          "scope": "默认/实验/历史边界与当前阅读入口。"
+          "scope": "Pi AgentSession 分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         },
         {
           "target": "pi-architecture",
-          "scope": "组合根、SDK 注入、AgentSession/Agent/SessionManager 所有权。"
+          "scope": "AgentSession：层次、构造与生命周期；默认组合根、SDK 注入与主要对象生命周期已静态核验；未运行 CLI 或模型请求。"
         },
         {
           "target": "pi-loop",
-          "scope": "默认模型与工具循环、控制阶段和执行点。"
+          "scope": "AgentSession：一次输入到实际执行；prompt、loop 的主链路与列出的停止/继续分支静态核验；未运行请求与工具。"
         },
         {
           "target": "pi-context",
-          "scope": "历史树、parent 链和模型上下文投影。"
+          "scope": "AgentSession：历史树与模型上下文；历史路径、压缩投影与 message_end 写入顺序静态核验；未验证崩溃恢复运行。"
         },
         {
           "target": "pi-extensions",
-          "scope": "资源/注册/激活、输入与工具 hook、reload 运行绑定。"
+          "scope": "AgentSession：资源、扩展与运行绑定；已静态核验资源加载、注册/激活、prompt 输入 hook、工具 hook 和 reload 的运行绑定；更多资源冲突、TUI 与 MCP 见平台专题，全部 provider 未运行。"
+        },
+        {
+          "target": "lane-runtime",
+          "scope": "Lane 历史：状态分派、进程链与恢复边界；冻结提交核验 Drive 分派与 Radius 接入口；进程协议/故障矩阵结合原稿整理，未运行历史栈。"
+        },
+        {
+          "target": "pi-platform",
+          "scope": "AgentSession：MCP、codemode、资源冲突与终端宿主；核验资源冲突诊断、MCP 重连与 codemode 嵌套执行；TUI/认证按当前入口整理，未执行终端或登录流程。"
         }
       ],
-      "remaining_scope": "TUI、全量资源冲突、认证、MCP、codemode 与平台机制。"
+      "remaining_scope": "",
+      "known_limits": [
+        "所有外部 MCP/provider/认证和 TUI 交互未运行；逐工具效果按执行契约，不复制同类功能清单。"
+      ]
     },
     {
       "id": "pi-lane",
@@ -54,9 +67,10 @@
       "targets": [
         "lane-index",
         "lane-architecture",
-        "pi-evolution"
+        "pi-evolution",
+        "lane-runtime"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/pi-lane.md",
         "state": "retained",
@@ -66,27 +80,35 @@
       "coverage": [
         {
           "target": "lane-index",
-          "scope": "冻结基线与历史附录入口。"
+          "scope": "Lane Harness 历史附录；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         },
         {
           "target": "lane-architecture",
-          "scope": "Lane/Operation/work 的代表层次和执行链，非全量 RPC。"
+          "scope": "Lane：概念层次与一条工作主线；冻结基线的对象层次、命令提交与 Drive 主线静态核验；非最新实现，未运行恢复测试。"
         },
         {
           "target": "pi-evolution",
-          "scope": "包 API 与官方生产默认的不同口径及 Lane→Pico5 演进。"
+          "scope": "Pi 路线演进与“转正”口径；API 发布、产品入口、删除/迁移时间线已核验；未来生产迁移承诺与全部决策动机未知。"
+        },
+        {
+          "target": "lane-runtime",
+          "scope": "Lane 历史：状态分派、进程链与恢复边界；冻结提交核验 Drive 分派与 Radius 接入口；进程协议/故障矩阵结合原稿整理，未运行历史栈。"
         }
       ],
-      "remaining_scope": "完整 Operation 状态分派、RPC/worker 协议与恢复状态机。"
+      "remaining_scope": "",
+      "known_limits": [
+        "冻结历史栈未运行；默认超时/计时常量保留源码，不提升成跨版本契约。"
+      ]
     },
     {
       "id": "pi-chord",
       "title": "Chord 组件机制：跨进程组合与 Snapshot + Update 状态复制",
       "revision": 31,
       "targets": [
-        "pi-components-migrated"
+        "pi-components-migrated",
+        "lane-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/pi-chord.md",
         "state": "retained",
@@ -96,19 +118,27 @@
       "coverage": [
         {
           "target": "pi-components-migrated",
-          "scope": "Chord 与 Radius 的职责分层；未刷新当前完整实现。"
+          "scope": "Chord 与 Radius：组合、复制与远程传输；旧 Chord 状态序列/Radius 接入及当前 Host/Document 接口核验；外部 Radius Gateway 部署和实现未知。"
+        },
+        {
+          "target": "lane-index",
+          "scope": "Lane Harness 历史附录；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "完整 Host/Facet 依赖解析、远程 Service/复制与当前 Pico5 Document 集成。"
+      "remaining_scope": "",
+      "known_limits": [
+        "旧与当前 Chord 分别固定基线；未运行远端复制或 generation 替换。"
+      ]
     },
     {
       "id": "pi-radius",
       "title": "Radius 机制与源码边界：Pi 远程接入、复用与恢复",
       "revision": 4,
       "targets": [
-        "pi-components-migrated"
+        "pi-components-migrated",
+        "lane-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/pi-radius.md",
         "state": "retained",
@@ -118,10 +148,17 @@
       "coverage": [
         {
           "target": "pi-components-migrated",
-          "scope": "Chord 与 Radius 的职责分层；未刷新当前完整实现。"
+          "scope": "Chord 与 Radius：组合、复制与远程传输；旧 Chord 状态序列/Radius 接入及当前 Host/Document 接口核验；外部 Radius Gateway 部署和实现未知。"
+        },
+        {
+          "target": "lane-index",
+          "scope": "Lane Harness 历史附录；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "所有远程接入/复用/断线路径及外部网关的公开证据。"
+      "remaining_scope": "",
+      "known_limits": [
+        "公开 checkout 中缺外部 Radius 服务实现，认证/HA/服务端存储不作结论；接入与恢复源码已整理。"
+      ]
     },
     {
       "id": "deerflow-middleware",
@@ -129,9 +166,11 @@
       "revision": 8,
       "targets": [
         "deerflow-migrated",
-        "deerflow-middleware"
+        "deerflow-middleware",
+        "deerflow-capabilities",
+        "deerflow-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/deerflow-middleware.md",
         "state": "retained",
@@ -141,23 +180,38 @@
       "coverage": [
         {
           "target": "deerflow-migrated",
-          "scope": "两种入口、run/thread/graph、构造与主链路，以及代表存储/工具边界。"
+          "scope": "DeerFlow：接入、装配、图执行与状态归属；两条入口的图生命周期、装配、worker 执行、prompt 与代表工具门禁已静态核验；完整扩展链和多 worker 故障未运行验证。"
         },
         {
           "target": "deerflow-middleware",
-          "scope": "当前装配分组、prompt 动态消息、system 合并、SkillToolPolicy 效果阻断。"
+          "scope": "DeerFlow：中间件装配、Prompt 与执行门禁；已静态核验装配分组、动态上下文、system 合并和 Skill 工具阻断；补齐当前候选槽位及实际 hook 索引；未运行具体配置或比对应用锁定框架全部语义。"
+        },
+        {
+          "target": "deerflow-capabilities",
+          "scope": "DeerFlow：能力发现、Sandbox 与子 Agent；核验 subagent create_agent/checkpointer=False、task 委派及 sandbox lease/Skill projection 构造；全部外部工具、MCP/ACP 连接与 provider 隔离未实测。"
+        },
+        {
+          "target": "deerflow-index",
+          "scope": "DeerFlow分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "每个中间件的实际 hooks、配置精确顺序及所有扩展贡献。"
+      "remaining_scope": "",
+      "known_limits": [
+        "候选顺序与直接 hooks 全部登记；配置/扩展会改变最终列表，所有组合没有运行验证。"
+      ]
     },
     {
       "id": "deerflow-runtime",
       "title": "DeerFlow Agent 架构与运行机制：源码学习笔记",
       "revision": 6,
       "targets": [
-        "deerflow-migrated"
+        "deerflow-migrated",
+        "deerflow-capabilities",
+        "deerflow-context",
+        "deerflow-index",
+        "deerflow-runtime"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/deerflow-runtime.md",
         "state": "retained",
@@ -167,10 +221,29 @@
       "coverage": [
         {
           "target": "deerflow-migrated",
-          "scope": "两种入口、run/thread/graph、构造与主链路，以及代表存储/工具边界。"
+          "scope": "DeerFlow：接入、装配、图执行与状态归属；两条入口的图生命周期、装配、worker 执行、prompt 与代表工具门禁已静态核验；完整扩展链和多 worker 故障未运行验证。"
+        },
+        {
+          "target": "deerflow-capabilities",
+          "scope": "DeerFlow：能力发现、Sandbox 与子 Agent；核验 subagent create_agent/checkpointer=False、task 委派及 sandbox lease/Skill projection 构造；全部外部工具、MCP/ACP 连接与 provider 隔离未实测。"
+        },
+        {
+          "target": "deerflow-context",
+          "scope": "DeerFlow：Prompt 作用域、持久上下文与压缩；核验 DurableContext 请求渲染与 compact/Overwrite 写入；模板标签按来源与作用域归纳，不声明完整防注入或缓存效果。"
+        },
+        {
+          "target": "deerflow-index",
+          "scope": "DeerFlow分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+        },
+        {
+          "target": "deerflow-runtime",
+          "scope": "DeerFlow：Run 归属、事件读取与独立写入；核验 run 启动/终态资格、独立操作 reservation 与 event store 游标；未实测多 worker、断网或重放交付。"
         }
       ],
-      "remaining_scope": "多 worker 竞争、stream 重放与终态故障验证。"
+      "remaining_scope": "",
+      "known_limits": [
+        "多 worker/重启/lease 故障未运行；事件批次 best effort，不声明完整交付。"
+      ]
     },
     {
       "id": "deerflow-prompt",
@@ -178,9 +251,11 @@
       "revision": 19,
       "targets": [
         "deerflow-migrated",
-        "deerflow-middleware"
+        "deerflow-middleware",
+        "deerflow-context",
+        "deerflow-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/deerflow-prompt.md",
         "state": "retained",
@@ -190,23 +265,38 @@
       "coverage": [
         {
           "target": "deerflow-migrated",
-          "scope": "两种入口、run/thread/graph、构造与主链路，以及代表存储/工具边界。"
+          "scope": "DeerFlow：接入、装配、图执行与状态归属；两条入口的图生命周期、装配、worker 执行、prompt 与代表工具门禁已静态核验；完整扩展链和多 worker 故障未运行验证。"
         },
         {
           "target": "deerflow-middleware",
-          "scope": "当前装配分组、prompt 动态消息、system 合并、SkillToolPolicy 效果阻断。"
+          "scope": "DeerFlow：中间件装配、Prompt 与执行门禁；已静态核验装配分组、动态上下文、system 合并和 Skill 工具阻断；补齐当前候选槽位及实际 hook 索引；未运行具体配置或比对应用锁定框架全部语义。"
+        },
+        {
+          "target": "deerflow-context",
+          "scope": "DeerFlow：Prompt 作用域、持久上下文与压缩；核验 DurableContext 请求渲染与 compact/Overwrite 写入；模板标签按来源与作用域归纳，不声明完整防注入或缓存效果。"
+        },
+        {
+          "target": "deerflow-index",
+          "scope": "DeerFlow分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "所有标签/技能/子 Agent 提示与完整动态场景。"
+      "remaining_scope": "",
+      "known_limits": [
+        "真实 provider 缓存命中与抗注入未测；标签建议作为候选契约。"
+      ]
     },
     {
       "id": "deerflow-harness",
       "title": "Deer Flow Harness 学习路线与源码解析",
       "revision": 23,
       "targets": [
-        "deerflow-migrated"
+        "deerflow-migrated",
+        "deerflow-capabilities",
+        "deerflow-context",
+        "deerflow-index",
+        "deerflow-runtime"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/deerflow-harness.md",
         "state": "retained",
@@ -216,10 +306,29 @@
       "coverage": [
         {
           "target": "deerflow-migrated",
-          "scope": "两种入口、run/thread/graph、构造与主链路，以及代表存储/工具边界。"
+          "scope": "DeerFlow：接入、装配、图执行与状态归属；两条入口的图生命周期、装配、worker 执行、prompt 与代表工具门禁已静态核验；完整扩展链和多 worker 故障未运行验证。"
+        },
+        {
+          "target": "deerflow-capabilities",
+          "scope": "DeerFlow：能力发现、Sandbox 与子 Agent；核验 subagent create_agent/checkpointer=False、task 委派及 sandbox lease/Skill projection 构造；全部外部工具、MCP/ACP 连接与 provider 隔离未实测。"
+        },
+        {
+          "target": "deerflow-context",
+          "scope": "DeerFlow：Prompt 作用域、持久上下文与压缩；核验 DurableContext 请求渲染与 compact/Overwrite 写入；模板标签按来源与作用域归纳，不声明完整防注入或缓存效果。"
+        },
+        {
+          "target": "deerflow-index",
+          "scope": "DeerFlow分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+        },
+        {
+          "target": "deerflow-runtime",
+          "scope": "DeerFlow：Run 归属、事件读取与独立写入；核验 run 启动/终态资格、独立操作 reservation 与 event store 游标；未实测多 worker、断网或重放交付。"
         }
       ],
-      "remaining_scope": "全部工具、上下文压缩、Sandbox 与扩展策略。"
+      "remaining_scope": "",
+      "known_limits": [
+        "同类工具合并按效果边界解释；所有后端与 sandbox 平台未运行。"
+      ]
     },
     {
       "id": "claude-march",
@@ -227,9 +336,11 @@
       "revision": 152,
       "targets": [
         "claude-migrated",
-        "claude-context"
+        "claude-context",
+        "claude-capabilities",
+        "claude-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/claude-march.md",
         "state": "retained",
@@ -239,23 +350,36 @@
       "coverage": [
         {
           "target": "claude-migrated",
-          "scope": "冻结原稿的会话/query/工具层次、权限与多 Agent 工作粒度；保留版本及显式分配未知。"
+          "scope": "Claude Code：冻结材料中的层次与主链路；冻结研究原稿的层次重整；源码 snapshot 的来源和 SHA 未知，原稿描述未独立核验，不代表当前线上实现。"
         },
         {
           "target": "claude-context",
-          "scope": "请求减重、正式压缩、session memory 和长期 memory 的职责；缺失实现保留未知。"
+          "scope": "Claude Code：冻结材料中的压缩与记忆层次；冻结研究原稿的层次重整；源码 snapshot 的来源和 SHA 未知，原稿描述未独立核验，不代表当前线上实现。"
+        },
+        {
+          "target": "claude-capabilities",
+          "scope": "Claude Code：冻结工具、权限、MCP 与 Bridge；逐主题整理冻结原稿与冲突/缺失点；没有可复现源码 snapshot，全部为历史转述，不作当前实现证据。"
+        },
+        {
+          "target": "claude-index",
+          "scope": "Claude Code（冻结）分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "Bridge/MCP 认证、全部 gates/工具、安全边界、缺失实现及原稿自身 TODO；需原 snapshot 补证。"
+      "remaining_scope": "",
+      "known_limits": [
+        "原 snapshot SHA 未知，snip/collapse、部分 gates 和显式 teammate 接单缺原实现，保持冻结未知。"
+      ]
     },
     {
       "id": "claude-official",
       "title": "Claude 官方文档研究：Claude Code 最佳实践与 Agent 架构范式",
       "revision": 33,
       "targets": [
-        "claude-migrated"
+        "claude-migrated",
+        "claude-index",
+        "claude-practices"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/claude-official.md",
         "state": "retained",
@@ -265,19 +389,32 @@
       "coverage": [
         {
           "target": "claude-migrated",
-          "scope": "冻结原稿的会话/query/工具层次、权限与多 Agent 工作粒度；保留版本及显式分配未知。"
+          "scope": "Claude Code：冻结材料中的层次与主链路；冻结研究原稿的层次重整；源码 snapshot 的来源和 SHA 未知，原稿描述未独立核验，不代表当前线上实现。"
+        },
+        {
+          "target": "claude-index",
+          "scope": "Claude Code（冻结）分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+        },
+        {
+          "target": "claude-practices",
+          "scope": "Claude：冻结官方材料的观点与适用边界；官方研究原稿的使用/平台观点已归纳；原页面发布时间与当前产品状态未复查，Managed Agents 不作为 Claude Code 私有实现。"
         }
       ],
-      "remaining_scope": "官方观点的逐项归纳与历史发布时间核对；不用于当前私有实现。"
+      "remaining_scope": "",
+      "known_limits": [
+        "官方实践作为历史转述；Code/API/Managed Agents 分开，不核验当前页面或服务。"
+      ]
     },
     {
       "id": "claude-legacy",
       "title": "Claude Code 泄露源码架构与核心链路分析",
       "revision": 4,
       "targets": [
-        "claude-migrated"
+        "claude-migrated",
+        "claude-capabilities",
+        "claude-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/claude-legacy.md",
         "state": "retained",
@@ -287,19 +424,32 @@
       "coverage": [
         {
           "target": "claude-migrated",
-          "scope": "冻结原稿的会话/query/工具层次、权限与多 Agent 工作粒度；保留版本及显式分配未知。"
+          "scope": "Claude Code：冻结材料中的层次与主链路；冻结研究原稿的层次重整；源码 snapshot 的来源和 SHA 未知，原稿描述未独立核验，不代表当前线上实现。"
+        },
+        {
+          "target": "claude-capabilities",
+          "scope": "Claude Code：冻结工具、权限、MCP 与 Bridge；逐主题整理冻结原稿与冲突/缺失点；没有可复现源码 snapshot，全部为历史转述，不作当前实现证据。"
+        },
+        {
+          "target": "claude-index",
+          "scope": "Claude Code（冻结）分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "旧 QueryEngine/Bridge/命令/状态的逐项核对及版本关系。"
+      "remaining_scope": "",
+      "known_limits": [
+        "旧 QueryEngine/IDE Bridge 与 3 月 snapshot 的版本关系未知，不拼成一种当前实现。"
+      ]
     },
     {
       "id": "codex-official",
       "title": "榨干 Codex 官方文档：开发者最佳实践与 Agent 架构范式",
       "revision": 8,
       "targets": [
-        "codex-official-migrated"
+        "codex-official-migrated",
+        "codex-context",
+        "codex-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/codex-official.md",
         "state": "retained",
@@ -309,19 +459,33 @@
       "coverage": [
         {
           "target": "codex-official-migrated",
-          "scope": "官方实践主题与源码事实的不同证据类型；非最新产品行为核验。"
+          "scope": "Codex：历史实践与源码对应表；历史官方研究原稿全部主题按用途归并，并映射本书源码章节；原产品入口/参数时效未复查，不作为当前配置指南。"
+        },
+        {
+          "target": "codex-context",
+          "scope": "Codex：规则、工具快照、压缩与子线程；核验 project instructions、MCP step 配置、local/remote compaction 与子线程准入；未执行登录、子线程或权限测试。"
+        },
+        {
+          "target": "codex-index",
+          "scope": "Codex分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "全部产品使用观点的历史归纳；与新 Rust core 逐项对应未完成。"
+      "remaining_scope": "",
+      "known_limits": [
+        "历史建议对应当前固定源码执行点；模型价格/参数、30 天安排和模板建议不转成当前 API 契约。"
+      ]
     },
     {
       "id": "hermes",
       "title": "Hermes Agent 社区版源码架构与核心链路学习笔记",
       "revision": 10,
       "targets": [
-        "hermes-migrated"
+        "hermes-migrated",
+        "hermes-capabilities",
+        "hermes-context",
+        "hermes-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/hermes.md",
         "state": "retained",
@@ -331,19 +495,36 @@
       "coverage": [
         {
           "target": "hermes-migrated",
-          "scope": "宿主构造、对话阶段、transport、工具分派与消息批次；不含完整平台/压缩验证。"
+          "scope": "Hermes：宿主生命周期、对话循环与存储边界；CLI/Gateway 构造、原生对话阶段、工具分派与消息事务已静态核验；ACP 与压缩提交在独有专题展开；全部 provider 和恢复故障未运行核验。"
+        },
+        {
+          "target": "hermes-capabilities",
+          "scope": "Hermes：ACP、平台、Skills、委派与定时宿主；核验 ACP 转换与单会话认领、子 Agent 构造与 cron owner fence；工具/平台扩展按契约整理，未运行各平台或调度。"
+        },
+        {
+          "target": "hermes-context",
+          "scope": "Hermes：记忆、压缩与提交许可；核验 memory provider 调用、CompressionCommitFence 与候选提交主线；未验证所有 provider 或崩溃/超时组合。"
+        },
+        {
+          "target": "hermes-index",
+          "scope": "Hermes分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "ACP、全部平台/provider、记忆、压缩提交 fence、cron、skills、多 Agent。"
+      "remaining_scope": "",
+      "known_limits": [
+        "所有平台/provider 与 cron/压缩取消交接未运行；隔离 worker 契约不泛化到所有任务。"
+      ]
     },
     {
       "id": "langchain-overview",
       "title": "LangChain 系统性学习总纲（v1 新范式）",
       "revision": 40,
       "targets": [
-        "langchain-migrated"
+        "langchain-migrated",
+        "langchain-learning",
+        "langchain-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/langchain-overview.md",
         "state": "retained",
@@ -353,19 +534,33 @@
       "coverage": [
         {
           "target": "langchain-migrated",
-          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+          "scope": "LangChain：统一调用协议与 Agent 构图；Runnable 接口、create_agent 图结构与 hook 顺序、模型/工具协议边界已静态核验；教程练习、partner 网络请求和观测后端未执行。"
+        },
+        {
+          "target": "langchain-learning",
+          "scope": "LangChain / LangGraph：学习路线与原稿校正；学习材料按六阶段合并；API 边界与固定源码对照，外部课程质量、历史发布统计和教学练习未实测。"
+        },
+        {
+          "target": "langchain-index",
+          "scope": "LangChain分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "学习路径细节与所有示例对主干的验证。"
+      "remaining_scope": "",
+      "known_limits": [
+        "外部课程、按天安排与无统计比例留归档；学习目标已归并，练习未执行。"
+      ]
     },
     {
       "id": "langchain-stage1",
       "title": "Stage 1 · Runnable 协议与 LCEL",
       "revision": 19,
       "targets": [
-        "langchain-migrated"
+        "langchain-migrated",
+        "langchain-components",
+        "langchain-learning",
+        "langchain-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/langchain-stage1.md",
         "state": "retained",
@@ -375,19 +570,37 @@
       "coverage": [
         {
           "target": "langchain-migrated",
-          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+          "scope": "LangChain：统一调用协议与 Agent 构图；Runnable 接口、create_agent 图结构与 hook 顺序、模型/工具协议边界已静态核验；教程练习、partner 网络请求和观测后端未执行。"
+        },
+        {
+          "target": "langchain-components",
+          "scope": "LangChain：组合、消息、模型与工具契约；核验 Runnable 组合、输入转换、消息文本视图及 BaseTool 异常边界；示例未运行，provider 能力需各自实现。"
+        },
+        {
+          "target": "langchain-learning",
+          "scope": "LangChain / LangGraph：学习路线与原稿校正；学习材料按六阶段合并；API 边界与固定源码对照，外部课程质量、历史发布统计和教学练习未实测。"
+        },
+        {
+          "target": "langchain-index",
+          "scope": "LangChain分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "LCEL 运算组合与 streaming/batch 的完整示例。"
+      "remaining_scope": "",
+      "known_limits": [
+        "例子保留学习目标而非重复大段旧代码；stream/batch 机制已核验，未跑练习。"
+      ]
     },
     {
       "id": "langchain-stage2",
       "title": "Stage 2 · Messages / Model / Tool",
       "revision": 6,
       "targets": [
-        "langchain-migrated"
+        "langchain-migrated",
+        "langchain-components",
+        "langchain-learning",
+        "langchain-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/langchain-stage2.md",
         "state": "retained",
@@ -397,19 +610,37 @@
       "coverage": [
         {
           "target": "langchain-migrated",
-          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+          "scope": "LangChain：统一调用协议与 Agent 构图；Runnable 接口、create_agent 图结构与 hook 顺序、模型/工具协议边界已静态核验；教程练习、partner 网络请求和观测后端未执行。"
+        },
+        {
+          "target": "langchain-components",
+          "scope": "LangChain：组合、消息、模型与工具契约；核验 Runnable 组合、输入转换、消息文本视图及 BaseTool 异常边界；示例未运行，provider 能力需各自实现。"
+        },
+        {
+          "target": "langchain-learning",
+          "scope": "LangChain / LangGraph：学习路线与原稿校正；学习材料按六阶段合并；API 边界与固定源码对照，外部课程质量、历史发布统计和教学练习未实测。"
+        },
+        {
+          "target": "langchain-index",
+          "scope": "LangChain分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "全部消息变形、provider 与 Tool 失败示例。"
+      "remaining_scope": "",
+      "known_limits": [
+        "message/text/tool 旧概括已校正；所有模型集成能力未运行。"
+      ]
     },
     {
       "id": "langchain-stage3",
       "title": "Stage 3 · RAG",
       "revision": 7,
       "targets": [
-        "langchain-migrated"
+        "langchain-migrated",
+        "langchain-retrieval",
+        "langchain-learning",
+        "langchain-index"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/langchain-stage3.md",
         "state": "retained",
@@ -419,19 +650,37 @@
       "coverage": [
         {
           "target": "langchain-migrated",
-          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+          "scope": "LangChain：统一调用协议与 Agent 构图；Runnable 接口、create_agent 图结构与 hook 顺序、模型/工具协议边界已静态核验；教程练习、partner 网络请求和观测后端未执行。"
+        },
+        {
+          "target": "langchain-retrieval",
+          "scope": "LangChain：检索链与 Agentic RAG；核验 Embeddings、VectorStoreRetriever 与检索回调契约；检索质量、外部索引和教学模型请求未实测。"
+        },
+        {
+          "target": "langchain-learning",
+          "scope": "LangChain / LangGraph：学习路线与原稿校正；学习材料按六阶段合并；API 边界与固定源码对照，外部课程质量、历史发布统计和教学练习未实测。"
+        },
+        {
+          "target": "langchain-index",
+          "scope": "LangChain分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
         }
       ],
-      "remaining_scope": "RAG 的检索/切分/索引/召回与示例实现。"
+      "remaining_scope": "",
+      "known_limits": [
+        "检索链与固定/Agentic/混合 RAG 已整理；切分、召回、权限过滤和答案质量无实测。"
+      ]
     },
     {
       "id": "langchain-stage4",
       "title": "Stage 4 · LangGraph 与 Agent 内核",
       "revision": 25,
       "targets": [
-        "langgraph-migrated"
+        "langgraph-migrated",
+        "langgraph-index",
+        "langgraph-advanced",
+        "langchain-learning"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/langchain-stage4.md",
         "state": "retained",
@@ -441,19 +690,37 @@
       "coverage": [
         {
           "target": "langgraph-migrated",
-          "scope": "超步、通道、checkpoint 字段、pending writes 和 interrupt 节点重跑；不含全部示例及稀疏历史算法。"
+          "scope": "LangGraph：超步、通道、checkpoint 与恢复；StateGraph compile、Pregel 超步、pending writes、checkpoint 字段与 interrupt 重跑语义已静态核验；未测崩溃、后端耐久性和 delta-channel 全链路。"
+        },
+        {
+          "target": "langgraph-index",
+          "scope": "LangGraph分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+        },
+        {
+          "target": "langgraph-advanced",
+          "scope": "LangGraph：合并、子图、Overwrite 与恢复边界；核验通道并发规则、Delta 重建与 Command/interrupt 契约；未执行真实 checkpointer 或外部副作用恢复。"
+        },
+        {
+          "target": "langchain-learning",
+          "scope": "LangChain / LangGraph：学习路线与原稿校正；学习材料按六阶段合并；API 边界与固定源码对照，外部课程质量、历史发布统计和教学练习未实测。"
         }
       ],
-      "remaining_scope": "子图、DeltaChannel/Overwrite 与复杂恢复示例。"
+      "remaining_scope": "",
+      "known_limits": [
+        "LastValue/Command/middleware 旧错误已校正，Delta/Overwrite/子图已整理；真实 saver 与恢复练习未运行。"
+      ]
     },
     {
       "id": "langchain-stage5",
       "title": "Stage 5 · LangSmith 与可观测性",
       "revision": 4,
       "targets": [
-        "langchain-migrated"
+        "langchain-migrated",
+        "langchain-learning",
+        "langchain-index",
+        "langchain-observability"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/langchain-stage5.md",
         "state": "retained",
@@ -463,19 +730,37 @@
       "coverage": [
         {
           "target": "langchain-migrated",
-          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+          "scope": "LangChain：统一调用协议与 Agent 构图；Runnable 接口、create_agent 图结构与 hook 顺序、模型/工具协议边界已静态核验；教程练习、partner 网络请求和观测后端未执行。"
+        },
+        {
+          "target": "langchain-learning",
+          "scope": "LangChain / LangGraph：学习路线与原稿校正；学习材料按六阶段合并；API 边界与固定源码对照，外部课程质量、历史发布统计和教学练习未实测。"
+        },
+        {
+          "target": "langchain-index",
+          "scope": "LangChain分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+        },
+        {
+          "target": "langchain-observability",
+          "scope": "LangChain：回调树、Partner 与集成验证；核验 callback/tracer 组树、OpenAI partner 请求分支与 DeerFlow 类解析；未连接 tracing 后端或执行 partner 测试。"
         }
       ],
-      "remaining_scope": "LangSmith/tracer/评估完整链路和实操代码。"
+      "remaining_scope": "",
+      "known_limits": [
+        "tracer/组树与两种 callback 集成路径已整理；外部后端未连接，某应用实证仅留原稿。"
+      ]
     },
     {
       "id": "langchain-stage6",
       "title": "Stage 6 · 源码深读与 Partner 集成",
       "revision": 4,
       "targets": [
-        "langchain-migrated"
+        "langchain-migrated",
+        "langchain-learning",
+        "langchain-index",
+        "langchain-observability"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/langchain-stage6.md",
         "state": "retained",
@@ -485,10 +770,25 @@
       "coverage": [
         {
           "target": "langchain-migrated",
-          "scope": "六阶段学习主题归并；Runnable/model/tool/create_agent 主链路与主干 hook 顺序静态核验，RAG/tracing 教学未全文迁移。"
+          "scope": "LangChain：统一调用协议与 Agent 构图；Runnable 接口、create_agent 图结构与 hook 顺序、模型/工具协议边界已静态核验；教程练习、partner 网络请求和观测后端未执行。"
+        },
+        {
+          "target": "langchain-learning",
+          "scope": "LangChain / LangGraph：学习路线与原稿校正；学习材料按六阶段合并；API 边界与固定源码对照，外部课程质量、历史发布统计和教学练习未实测。"
+        },
+        {
+          "target": "langchain-index",
+          "scope": "LangChain分册；分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+        },
+        {
+          "target": "langchain-observability",
+          "scope": "LangChain：回调树、Partner 与集成验证；核验 callback/tracer 组树、OpenAI partner 请求分支与 DeerFlow 类解析；未连接 tracing 后端或执行 partner 测试。"
         }
       ],
-      "remaining_scope": "所有 Partner 包和完整测试/源码阅读练习。"
+      "remaining_scope": "",
+      "known_limits": [
+        "OpenAI 代表 Partner/standard-tests/DeerFlow 工厂已整理；不逐包重复协议，集成练习未运行。"
+      ]
     },
     {
       "id": "comparison-legacy",
@@ -499,9 +799,11 @@
         "comparison-matrix",
         "comparison-ownership",
         "comparison-state",
-        "comparison-execution"
+        "comparison-execution",
+        "comparison-control",
+        "comparison-observability"
       ],
-      "migration_status": "partial-digestion",
+      "migration_status": "digested",
       "archive": {
         "path": "archive/comparison-legacy.md",
         "state": "retained",
@@ -511,27 +813,39 @@
       "coverage": [
         {
           "target": "comparison-index",
-          "scope": "共同问题与证据层次；旧额外对象/应用候选不进入当前范围。"
+          "scope": "横向比较入口与范围；九对象七个共同维度已整理；源码静态机制、冻结转述与候选设计分开，无运行或性能排名。"
         },
         {
           "target": "comparison-matrix",
-          "scope": "本书九对象的层次与主链路定位。"
+          "scope": "对象矩阵：同一问题与不同阶段；已比较层次、驱动器和代表主链路；全部配置、产品界面和部署可靠性未逐项验证。"
         },
         {
           "target": "comparison-ownership",
-          "scope": "九对象的 owner、构造与实例范围。"
+          "scope": "比较：所有权与生命周期；九对象的代表性构造与状态归属静态比较；Claude 仅历史转述；不证明并发与释放的全部运行性质."
         },
         {
           "target": "comparison-state",
-          "scope": "历史/工作/外部效果三种恢复对象与代表故障。"
+          "scope": "比较：上下文、持久化与恢复；比较历史、工作、效果三个层次及代表提交点；所有对象均未运行崩溃注入或性能测试。"
         },
         {
           "target": "comparison-execution",
-          "scope": "可见性/授权/效果、代表 hook 与观测边界。"
+          "scope": "比较：工具、扩展与执行边界；九对象的代表工具路径、扩展和并发/取消边界静态比较；不是全平台权限审计。"
+        },
+        {
+          "target": "comparison-control",
+          "scope": "比较：理解、规划、委派与控制；九对象固定基线的静态机制比较；Claude 是冻结转述，候选设计明确标注；未做运行或性能测量。"
+        },
+        {
+          "target": "comparison-observability",
+          "scope": "比较：观测、终态与交付确认；九对象固定基线的静态机制比较；Claude 是冻结转述，候选设计明确标注；未做运行或性能测量。"
         }
       ],
-      "remaining_scope": "范围外对象、应用候选设计保留历史；原稿逐段取舍理由尚未全部整理。"
+      "remaining_scope": "",
+      "known_limits": [
+        "范围外对象和某应用章节留归档；Router/Planner/验收/ACK 为候选设计，性能无实测。"
+      ]
     }
   ],
-  "analysis_updated_at": "2026-10-10"
+  "analysis_updated_at": "2026-10-10",
+  "digestion_definition": "重要结论、独有机制、练习目的与未知已归入正文；旧细节按当前/冻结证据校正。不是逐字复制、全部源码审计或目标运行验证。"
 }

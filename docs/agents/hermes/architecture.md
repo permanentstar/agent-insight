@@ -7,7 +7,7 @@ baselines: ["hermes-20261009"]
 sources: ["hermes"]
 depends_on: []
 evidence: ["source", "historical-document"]
-verified_scope: "CLI/Gateway 构造、原生对话阶段、工具分派与消息事务已静态核验；ACP、全部 provider、压缩提交及恢复策略未逐条或运行核验。"
+verified_scope: "CLI/Gateway 构造、原生对话阶段、工具分派与消息事务已静态核验；ACP 与压缩提交在独有专题展开；全部 provider 和恢复故障未运行核验。"
 ---
 
 # Hermes：宿主生命周期、对话循环与存储边界

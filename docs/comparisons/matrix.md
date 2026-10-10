@@ -21,12 +21,12 @@ verified_scope: "已比较层次、驱动器和代表主链路；全部配置、
 | DeerFlow，应用 | Gateway worker 或嵌入 Client | LangChain 构图，LangGraph 执行 | 产品 middleware、thread/run 与平台存储 | Gateway 与 Client 生命周期不同 | [应用分册](../agents/deerflow/index.md) |
 | Claude，冻结历史 | 材料中的 CLI → REPL/SDK | query async generator | deferred tools、权限、分层上下文 | 精确源码快照未知；不推定当前部署 | [冻结分册](../agents/claude/index.md) |
 | Codex，开源 core | 宿主 → ThreadManager/SessionIo | SessionTask → run_turn → sampling/tools | Turn/Step 快照、rollout writer、执行审批 | 开源 core；桌面私有宿主未分析 | [core 分册](../agents/codex/index.md) |
-| Hermes，应用 | CLI/Gateway → AIAgent | conversation_loop 的阶段编排 | transport、工具分段与消息批次 | codex_app_server 可整轮转交；ACP 未完整核验 | [应用分册](../agents/hermes/index.md) |
+| Hermes，应用 | CLI/Gateway → AIAgent | conversation_loop 的阶段编排 | transport、工具分段与消息批次 | codex_app_server 可整轮转交；ACP 另管 turn 排队与反馈 | [应用分册](../agents/hermes/index.md) |
 | LangChain，框架 | create_agent(model/tools/middleware) | 生成 model/tools/hook 节点与路由 | Runnable/Message/Tool 协议，request override | 由应用宿主调用，不是部署服务本身 | [构图分册](../frameworks/langchain/index.md) |
 | LangGraph，框架 | StateGraph.compile / Pregel 调用 | 每次调用的 Loop + runner | channel/reducer、超步、checkpoint、interrupt | 后端和运行配置由应用提供 | [运行分册](../frameworks/langgraph/index.md) |
 | DeepSeek，developer preview | profile patches → Cordis 插件树 | AgentLoop → ReactLoopAgent turn/step | Session 事件/surface、句柄写权与 flush | 后端与插件取决于 profile；跨语言仅文档定位 | [Harness 分册](../agents/deepseek/index.md) |
 
-共同字段仍固定为入口、组合根、状态 owner、loop driver、持久单元、context 投影、授权、扩展、子 Agent、并发、取消、恢复、事件与部署。本版完整主链路静态覆盖不等于各字段已经穷尽：尤其子 Agent 共享规则、全部部署、compaction 算法和每种权限策略没有统一实测。
+共同字段仍固定为入口、组合根、状态 owner、loop driver、持久单元、context 投影、授权、扩展、子 Agent、并发、取消、恢复、事件与部署。本版完整主链路静态覆盖不等于各字段已经穷尽：尤其全部部署、各 provider 的摘要质量与每种平台权限没有统一实测。
 
 同一任务“用户让 Agent 修改文件”可以经过应用再到框架：DeerFlow 的产品 policy 决定允许什么，LangChain 生成控制节点，LangGraph 调度节点，工具 handler 才修改文件。比较时只将各层自己的决定归给它，不能把实际文件权限归给图调度器。
 
