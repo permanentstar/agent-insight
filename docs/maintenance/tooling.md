@@ -12,7 +12,7 @@ verified_scope: "本页维护书籍组织与阅读契约，不声明目标 Agent
 
 # 仓库与 Markdown 书籍选型
 
-采用独立私有仓库和 VitePress 阅读层。研究内容跨多个上游、有独立更新节奏、需要比较与基线治理；放到 MY-NAS assets 会把研究生命周期与 NAS 运维同步混在一起。MY-NAS 如需引用，保留指向本仓库的链接即可。
+采用独立 Git 仓库和 VitePress 阅读层。研究内容跨多个上游、有独立更新节奏、需要比较与基线治理，因此由研究仓库管理；其他项目通过链接引用。
 
 | 方案 | 与本任务的匹配 | 本次决定 |
 |---|---|---|
@@ -25,4 +25,8 @@ verified_scope: "本页维护书籍组织与阅读契约，不声明目标 Agent
 
 依赖核验日期为 2026-10-09，npm audit 的稳定构建链有 3 个报告项（Vite、esbuild、VitePress，含 1 high），当时没有稳定版自动修复。涉及开发服务器；本次只在 loopback 查看构建后的静态产物，不开放服务、不部署站点。保留 stable，不用强制升级绕过兼容检查。正式开放阅读服务前须重新核验依赖与访问控制。[Vite advisory](https://github.com/advisories/GHSA-fx2h-pf6j-xcff)、[esbuild advisory](https://github.com/advisories/GHSA-67mh-4wv8-2f99)。
 
-私有 repo 不等于发布出的静态站点自动私有。CI 只做检查与构建，本次没有 Pages 发布任务。后续若要在线阅读，先选能保留私有访问控制的部署方式。
+仓库按可公开资料维护，历史研究原稿获准以 Markdown 纳入 Git。archive/ 位于 docs/ 之外，不进入站点构建与搜索；正文和元数据只引用本地原稿 ID，不记录私人在线来源链接或资源 token。原稿不代表最新实现；完整归档后仍须逐章源码核验。
+
+GitHub 仓库可见性和静态站点发布分别管理。当前 CI 只做检查与构建，没有 Pages 发布任务；仓库公开与站点上线由 owner 后续设置。删除 archive/ 的当前文件不删除旧提交中的内容。
+
+本地预览使用同一依赖链中的 Vite 5.4.21，通过 scripts/preview.config.mjs 显式绑定 127.0.0.1:4173，只提供已构建的静态文件。VitePress 1.6.4 的 preview 实现调用 listen(port)，没有传入 host，因此不能依靠其 --host 参数限制监听地址。2026-10-10 已改用 Vite preview，并以实际监听地址和浏览器页面核验。前台进程退出后链接不可用；重新启动 npm run preview 即可，后台运行也不会跨电脑重启保留。

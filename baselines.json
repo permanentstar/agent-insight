@@ -100,7 +100,7 @@
       "sha": "6671c604766b3670ed95f405aa7856835d0ca702",
       "commit_time": "2026-09-16T12:11:16+02:00",
       "observed_at": "2026-10-09",
-      "note": "原飞书 Lane/Chord/Radius 共同基线；源码提交日期不是文档分析日期。仅历史研究，不作为当前默认实现。"
+      "note": "Lane/Chord/Radius 历史原稿共同基线；源码提交日期不是文档分析日期。仅历史研究，不作为当前默认实现。"
     },
     "claude-frozen-documents": {
       "repo": null,

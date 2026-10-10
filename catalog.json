@@ -54,6 +54,31 @@
     ]
   },
   {
+    "title": "横向比较",
+    "items": [
+      {
+        "title": "横向比较入口与范围",
+        "path": "comparisons/index.md"
+      },
+      {
+        "title": "对象矩阵：同一问题与不同阶段",
+        "path": "comparisons/matrix.md"
+      },
+      {
+        "title": "比较：所有权与生命周期",
+        "path": "comparisons/ownership.md"
+      },
+      {
+        "title": "比较：上下文、持久化与恢复",
+        "path": "comparisons/state-recovery.md"
+      },
+      {
+        "title": "比较：工具、扩展与执行边界",
+        "path": "comparisons/execution.md"
+      }
+    ]
+  },
+  {
     "title": "各对象分册",
     "items": [
       {
@@ -183,31 +208,6 @@
       {
         "title": "Chord 与 Radius：保留的独有专题",
         "path": "history/pi-lane/components.md"
-      }
-    ]
-  },
-  {
-    "title": "横向比较",
-    "items": [
-      {
-        "title": "横向比较入口与范围",
-        "path": "comparisons/index.md"
-      },
-      {
-        "title": "对象矩阵：同一问题与不同阶段",
-        "path": "comparisons/matrix.md"
-      },
-      {
-        "title": "比较：所有权与生命周期",
-        "path": "comparisons/ownership.md"
-      },
-      {
-        "title": "比较：上下文、持久化与恢复",
-        "path": "comparisons/state-recovery.md"
-      },
-      {
-        "title": "比较：工具、扩展与执行边界",
-        "path": "comparisons/execution.md"
       }
     ]
   }
