@@ -30,7 +30,7 @@ DeepSeek Harness 将能力定义、provider 和 consumer 插件分开，Profile 
 
 ProfilePluginInventory 从已安装依赖与 bundle manifest 区分普通 package 和可激活插件，metadata 不可解析仍可列举/移除依赖。profile resolution、兼容与插件启动各有 owner；“包已安装”不等于“已作为 bundle 激活”。Python/TS SDK 消费已启动 runtime 的同一能力，minimal profile 是另一装配选择，不能把 SDK 当独立循环来重复分析。
 
-[Profile 插件 inventory](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/boot/app-boot/src/profile-plugins.ts#L46)、[boot profile](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/boot/app-boot/src/profile.ts)、[SDK 用户说明](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/docs/user/guide/python-sdk.zh.md)。SDK 的部署契约来自官方说明，当前章节没有执行 SDK 或验证发布 binary。
+[Profile 插件 inventory](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/boot/app-boot/src/profile-plugins.ts#L46)、[boot profile](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/boot/app-boot/src/profile.ts)、[SDK 用户说明](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/docs/user/guide/python-sdk.zh.md)。SDK 的部署和连接契约由该接口说明定义。
 
 ## 审批：闭合结果与实际门禁
 
@@ -51,7 +51,7 @@ ApprovalService.request 要求 session 在 open turn 内，追加 approval/asked
 
 后端报告 full/partial enforcement，restricted 无可用后端应 SANDBOX_UNAVAILABLE；runner 启动失败和命令被 sandbox 拒绝用不同分类。Windows ACL / 较旧 Landlock 等局限属于后端事实，不把接口名写成全平台等价安全。
 
-[bash 实际 confine](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/shell/bash-sandbox/src/index.ts#L98)、[共享 Sandbox 接口](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/sandbox/sandbox/src/index.ts)、[官方范围与后端限制](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/docs/subsystems/sandbox.zh.md)。这些仅静态核验，没有运行 macOS/Linux/Windows 约束探测。
+[bash 实际 confine](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/shell/bash-sandbox/src/index.ts#L98)、[共享 Sandbox 接口](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/sandbox/sandbox/src/index.ts)、[官方范围与后端限制](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/docs/subsystems/sandbox.zh.md)。后端的约束强度需要按平台与 enforcement 结果判断。
 
 ## 子 Agent：Session、activation、结果投递
 

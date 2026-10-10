@@ -51,8 +51,8 @@ SandboxAudit 记录命令与环境行为，ReadBeforeWrite 协调读写约束；
 
 证据：[环境生命周期与 projection](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/sandbox/middleware.py#L54)、[审计效果点](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/sandbox_audit_middleware.py#L511)、[读写门禁](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/read_before_write_middleware.py#L226)。
 
-## 配置与学习原稿归并
+## 配置归属与能力边界
 
-运行参数、agent 配置、AppConfig、模型 profile、能力 storage 与 extensions 是不同输入，读取配置须追到具体工厂；不能把某个默认 YAML 字段当所有宿主的最终行为。旧文的三天/七天阅读路线改为：先 [架构](architecture.md) 定 owner，再 [runtime](runtime.md) 定存储/准入，再 [middleware](middleware.md) 定顺序，最后本页追能力和环境。
+运行参数、agent 配置、AppConfig、模型 profile、能力 storage 与 extensions 是不同输入。配置字段要沿读取者追到工厂和执行点：一个默认 YAML 字段可能影响装配，却未必是所有宿主最终采用的值。先从 [架构](architecture.md)确认所有者，再在 [运行管理](runtime.md)、[中间件](middleware.md)和本章追配置如何生效。
 
-工具实现按动作契约阅读，不为每个同类搜索或文件工具复制相同章节；新增独特效果/权限边界再补专题。本版没有运行 MCP/ACP/搜索后端、sandbox provider 或并发子任务，未验证项不会阻止完成静态材料整理，也不会被写成实测支持。
+工具的名称说明用途，动作契约才说明输入、输出和效果范围。MCP/ACP 目录、Sandbox 环境和子 Agent 执行分别有自己的生命周期；能力被发现后，还需要经过激活、授权和实际调用。

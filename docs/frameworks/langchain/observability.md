@@ -34,7 +34,7 @@ verified_scope: "核验 callback/tracer 组树、OpenAI partner 请求分支与 
 
 ## 模型实际执行点
 
-create_agent 的 model 节点 → BaseChatModel.invoke/ainvoke → prompt/messages 归一与缓存/回调 → partner `_generate/_agenerate` 或流式路径。ChatOpenAI._generate 在当前基线先构造 payload，再按 response_format、Responses API、Chat Completions 分支调用 SDK，并把响应封装为 ChatResult。不能继续照搬旧原稿“总是 chat.completions.create”的单一路径。
+create_agent 的 model 节点 → BaseChatModel.invoke/ainvoke → prompt/messages 归一与缓存/回调 → partner `_generate/_agenerate` 或流式路径。ChatOpenAI._generate 先构造 payload，再按 response_format、Responses API、Chat Completions 分支调用 SDK，并把响应封装为 ChatResult。因此公开 invoke 对应的 SDK 调用，需要按所选请求分支判断。
 
 工具绑定与结构化输出各自有 provider 协议限制；最小继承 `_generate/_llm_type` 足以实现基础调用，但不是能接入全部 Agent 功能的证明。能力 metadata、usage、流式 chunk 合并、工具 schema、错误和异步均需针对集成检查。[OpenAI 实际请求分支](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/partners/openai/langchain_openai/chat_models/base.py#L1927)、[工具绑定](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/partners/openai/langchain_openai/chat_models/base.py#L2494)、[标准测试入口](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/standard-tests/langchain_tests/unit_tests/chat_models.py#L277)。
 
@@ -48,4 +48,4 @@ Tracing handler 应明确放在图调用根或模型层哪一处。DeerFlow 对�
 
 ## 学习练习的落点
 
-旧 Stage 5 的开 trace、看父子树、打标签、跨链继承与 DeerFlow 注入练习，分别对应前两节的调用上下文和第三节的应用装配；旧 Stage 6 的端到端断点、Partner 实现与标准测试，对应模型执行点和能力检查。这里只完成源码整理，不生成 API key、不修改目标配置、不运行真实模型或外部 tracing。
+学习 tracing 时，可以依次观察父子树、标签和跨链回调继承，再追 DeerFlow 如何注入调用上下文。学习 Partner 集成时，从公共 invoke 设置断点，追到 `_generate` 或流式路径，再用能力测试检查工具绑定、结构化输出与错误处理。两组练习分别关注观察关系和真实调用契约。

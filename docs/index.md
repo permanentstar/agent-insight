@@ -12,14 +12,25 @@ verified_scope: "初版九对象分层专题与七个比较维度已完成；21 
 
 # Agent Insight
 
-这套书以可追溯的源码基线解释 Agent 的实现，并把同一问题放到多个对象中比较。Git 中的 Markdown、基线登记和可编辑 SVG 是维护来源，VitePress 提供可搜索阅读界面。
+Agent 的一次回答可能包含多次模型请求、工具调用和状态更新。理解它的实现，需要同时回答三个问题：谁决定继续执行，谁拥有正在变化的状态，发生中断后能恢复到哪里。
 
-**初版整理已完成**：七个源码仓库锁定 2026-10-09 的官方主干观察点，形成八个当前/实验对象及一册 Claude 冻结分析。21 份原稿的重要结论、独有机制、练习目标和未知已提炼，原文继续保留。分析整理日期为 2026-10-10；这是静态研究书，没有运行目标 Agent、模型或故障实验。
+本书从源码出发，研究 Pi、DeerFlow、Claude Code、Codex、Hermes、LangChain、LangGraph 与 DeepSeek Harness 的架构和运行机制。Pi 的 AgentSession 与 Pico5 分开讨论：前者围绕交互会话组织执行，后者把工作进度纳入持久状态。横向章节比较共同问题，各对象分册再展开自己的概念和调用链。
 
-![分册分析层次：基线、对象层次与词典、一次输入执行链、故障边界与比较](assets/book-map.svg)
+![从对象关系、概念词典进入执行链，再分析状态边界与设计取舍](assets/book-map.svg)
 
-先从[横向比较](comparisons/index.md)查看所有权、决策与委派、Prompt/压缩、恢复、执行和观测/交付，再从[对象地图](guide/map.md)进入分册。每册先给图和概念，再解释构造、生命周期、调用链与状态边界；独有机制增加专题，不改变统一问题模板。
+## 从共同问题开始
 
-正文比较 Pi AgentSession（当前官方默认）和 Pico5（实验）；Lane 为冻结历史附录。“转正”仅指官方 Agent 默认在生产使用。Claude 缺失 snapshot SHA 与部分实现、Radius 外部服务和目标运行效果保留明确未知，见[迁移与证据边界](maintenance/migration.md)。
+先读[横向比较](comparisons/index.md)，建立不同实现之间的参照，再从[研究对象地图](guide/map.md)选择分册。版本与研究范围统一见[版本说明](guide/baselines.md)。
 
-引用结论前核对[基线登记](guide/baselines.md)。后续 agent 使用[统一模板](templates/project.md)、[比较模板](templates/comparison.md)和[更新流程](maintenance/update.md)增量维护；换机只改本机 source root，不改正文。
+| 研究问题 | 阅读入口 |
+|---|---|
+| 会话、运行实例和持久记录由谁拥有？ | [所有权与生命周期](comparisons/ownership.md) |
+| 模型理解、计划、工具调用和子 Agent 如何衔接？ | [决策、委派与控制](comparisons/control-delegation.md) |
+| 模型读到哪些资料，压缩摘要何时生效？ | [Prompt、压缩与长期记忆](comparisons/context-compaction.md) |
+| 中断后恢复的是历史、程序进度，还是外部效果？ | [状态、持久化与恢复](comparisons/state-recovery.md) |
+| 工具定义怎样走到实际执行，权限在哪里生效？ | [工具、扩展与执行边界](comparisons/execution.md) |
+| 流事件、持久确认和业务完成分别证明什么？ | [观测、终态与交付确认](comparisons/observability-delivery.md) |
+
+## 沿层次深入源码
+
+每个分册先给对象关系图和概念词典，再追构造、注入、调用与写入。从入口走完一次输入的主链路后，再研究取消、重试、并发和恢复。需要追踪复杂调用时，可按[调用链阅读方法](guide/reading.md)持续标出当前位置、上下层和状态归属。

@@ -46,8 +46,8 @@ Skills 由 SKILL.md 及元数据组成；prompt builder 构建索引，技能工
 
 cron scheduler 构造一次执行的 Agent，使用 fire claim/heartbeat 与 owner 检查控制归属。在交付等副作用边界使用 owner fence；丢失归属后不能继续把旧 worker 结果覆盖为成功。Gateway 退出时，只有拥有独立 scope 的外部 cron worker 才有对应的重启隔离，不能把“子进程”直接等同能跨服务重启存活。
 
-证据：[委派入口与结果契约](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/tools/delegate_tool.py#L337)、[cron 构造](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/cron/scheduler.py#L2465)、[交付 owner fence](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/cron/scheduler.py#L3001)。本书没有创建定时任务或验证各平台消息投递；这些是源码中的宿主机制。
+证据：[委派入口与结果契约](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/tools/delegate_tool.py#L337)、[cron 构造](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/cron/scheduler.py#L2465)、[交付 owner fence](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/cron/scheduler.py#L3001)。cron 的认领、执行和投递有不同控制点，外部平台是否确认收到仍需单独判断。
 
-## 原稿内容的落点
+## 宿主、能力与运行配置
 
-安装脚本/目录索引转为组合根阅读入口，旧版本号不沿用为当前版本。CLI/Gateway 主线见 [架构](architecture.md)，会话/记忆/压缩见 [上下文](context.md)，ACP、工具集、provider、Skills、plugins 与多 Agent 扩展在本页。平台与 provider 名单只作示例，不声称对每个集成都完成兼容实测。
+运行配置先选择宿主，再选择模型协议、工具面与扩展。宿主决定会话身份、队列和审批回传，工具与 provider 配置决定能力是否可见、可用；两者在构造 AIAgent 时汇合。CLI/Gateway 的构造路径见 [架构](architecture.md)，会话与压缩的状态边界见 [上下文](context.md)。

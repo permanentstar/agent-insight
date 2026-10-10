@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="630" viewBox="0 0 1000 630" role="img" aria-labelledby="title desc">
-<title id="title">Claude：请求治理与后台记忆分开</title><desc id="desc">冻结原稿中的 query 先局部结果治理，再请求视图减重，压力仍在时尝试 session memory compact 或完整模型摘要。后台 session extraction 与跨会话 memory 是不同对象。</desc>
+<title id="title">Claude：请求治理与后台记忆分开</title><desc id="desc">query 先局部结果治理，再请求视图减重，压力仍在时尝试 session memory compact 或完整模型摘要。后台 session extraction 与跨会话 memory 是不同对象。</desc>
 <rect width="1000" height="630" fill="#ffffff"/>
 <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
 <g font-family="system-ui,sans-serif" fill="#172554">
@@ -29,5 +29,5 @@
 <path d="M725,153 H655 V410 H623" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="638" y="327" font-size="14">已有摘要</text>
 <text x="28" y="575" font-size="15">本地 messages、请求视图、provider 有效上下文与长期记忆分别判断。</text>
-<text x="28" y="600" font-size="15">历史材料转述；未验证源码 SHA、默认 gates 或性能。</text>
+<text x="28" y="600" font-size="15">后台提取、请求压缩与跨会话记忆有不同生命周期。</text>
 </g></svg>

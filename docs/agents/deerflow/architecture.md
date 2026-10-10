@@ -61,10 +61,8 @@ Tool 是动作，Skill 是任务知识及策略，MCP 是发现和调用外部�
 | 用户取消 / worker 失去所有权 | abort 与 ownership_lost 控制收口 | 不能由停止读 SSE 推定取消成功 |
 | graph state 保存 | checkpointer 与 channel 模式 | 不包含任意外部 shell/API 的事务回滚 |
 | 客户端重连 | 事件流可用于展示 | 显示恢复与执行恢复是不同能力 |
-| 正常结束与取消竞争 | set_status_if_not_cancelled | 完整跨 worker 租约/故障矩阵仍待专章核验 |
+| 正常结束与取消竞争 | set_status_if_not_cancelled | 所有权与终态竞争见 [运行管理](runtime.md) |
 
-本基线 backend/uv.lock 锁定 LangChain 1.3.14、LangGraph 1.2.9、langgraph-checkpoint 4.2.0。两个框架的本书分册分析的是各自独立主干；不能拿它们的最新 hook/DeltaChannel 细节直接充当此应用锁定依赖的执行证明。依据：[依赖锁](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/uv.lock)。
+## 接入方式的设计取舍
 
-## 旧文归并与取舍
-
-四份原稿分别提供运行主线、middleware 顺序、prompt 作用域与 Harness 学习路线。本章把共同架构归一；专题保留有作用域差异的 hook 和 prompt，而原稿的学习日程、示例插件建议仅作为历史材料，不执行其中命令。Gateway 提供执行准入与交付治理，嵌入式 Client 减少 HTTP 层；复用图时，维护者需检查 middleware 成员是否跨调用共享，不以统一工厂掩盖实例范围差异。
+Gateway 提供执行准入、所有权与终态管理，适合通过独立接入层承接请求。嵌入式 Client 减少 HTTP 层，并可复用图实例；代价是调用方需要管理实例与资源生命周期。两者共用产品工厂，但中间件成员是否跨调用共享仍由实例复用范围决定。

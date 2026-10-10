@@ -1,6 +1,6 @@
 ---
 id: "hermes-index"
-title: "Hermes分册"
+title: "Hermes 分册"
 subject: "hermes"
 status: "index"
 baselines: ["hermes-20261009"]
@@ -10,14 +10,14 @@ evidence: []
 verified_scope: "分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
 ---
 
-# Hermes分册
+# Hermes 分册
 
-Hermes 的 AIAgent 是共享编排门面，实例生命周期由 CLI/Gateway/ACP 等宿主决定。正文追到 conversation_loop、tool_executor、压缩提交与平台反馈的边界。
+Hermes 的 AIAgent 是原生运行门面，不同宿主负责会话身份、生命周期和输出。对话阶段、工具调度、记忆与压缩由各自模块执行；先确认宿主，再追门面下的实际调用。
 
-阅读顺序：[宿主、循环与存储](architecture.md) → [记忆、压缩与提交许可](context.md) → [ACP、Skills、委派与 cron](capabilities.md)。
-
-| 本版已解决 | 未解决 / 未验证 |
+| 章节 | 要回答的问题 |
 |---|---|
-| 原生模型工具循环、消息批次、外部记忆 hooks、压缩 fence/in-place/rotate、ACP turn 队列、delegate 与 cron owner。 | 所有平台/provider、锁交接、重启及外部 delivery 未实测；仅明确隔离的外部后台 worker 适用其跨重启契约。 |
+| [宿主与循环](architecture.md) | CLI/Gateway 如何构造 AIAgent，一次 turn 如何推进？ |
+| [记忆与提交许可](context.md) | 摘要候选、fence、会话轮换和数据库提交怎样衔接？ |
+| [平台与委派](capabilities.md) | ACP、工具目录、子 Agent、cron 和交付由谁控制？ |
 
-各章先给图和词典，再进入构造、调用与执行点；沿用[统一模板](../../templates/project.md)。基线以 frontmatter 和[统一清单](../../guide/baselines.md)为准，源码观察日期为 2026-10-09，整理日期为 2026-10-10。静态整理完成不等于目标系统运行验证。
+先走完主链路，再进入状态、能力和故障边界。每次遇到持久记录或临时快照，都重新确认它的所有者和采用时机。

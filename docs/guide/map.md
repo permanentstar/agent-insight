@@ -12,21 +12,23 @@ verified_scope: "本页维护书籍组织与阅读契约，不声明目标 Agent
 
 # 研究对象与阅读地图
 
-每个对象拥有统一的问题集合，但不强行解释成相同实现。框架、应用和历史版本应在比较表中显式区分。
+应用、框架和持久运行内核承担不同职责。先看[横向比较](../comparisons/index.md)，再按感兴趣的问题选择分册；比较时以同一层次的能力为单位。
 
-先看[横向比较](../comparisons/index.md)，再按下表进入各对象分册。只在可比范围内得出取舍：LangGraph 的持久调度不能和一个产品 UI 功能直接排名；旧 Claude 快照也不能证明当前云端行为。
-
-| 对象 | 层次与状态 | 入口 |
+| 对象 | 研究侧重 | 入口 |
 |---|---|---|
-| Pi AgentSession | 官方默认 coding-agent 主链路 | [分册](../agents/pi/index.md) |
-| Pico5 / pi-durable | 同仓库的实验持久架构，独立分析 | [分册](../agents/pi-durable/index.md) |
-| Lane Harness | 已退出最新主干，历史冻结 | [附录](../history/pi-lane/index.md) |
-| DeerFlow | 建立在 LangChain/LangGraph 上的应用与 Harness | [分册](../agents/deerflow/index.md) |
-| Claude Code | 用户指定冻结的历史材料 | [分册](../agents/claude/index.md) |
-| Codex | 重建 Rust core 源码分析，旧官方实践单独保存 | [分册](../agents/codex/index.md) |
-| Hermes | CLI、Gateway、ACP 入口与 Agent 平台 | [分册](../agents/hermes/index.md) |
-| LangChain | agent 构造与 middleware 等框架语义 | [分册](../frameworks/langchain/index.md) |
-| LangGraph | 图状态、调度、checkpoint 与恢复 | [分册](../frameworks/langgraph/index.md) |
-| DeepSeek Harness | 新增源码研究对象 | [分册](../agents/deepseek/index.md) |
+| Pi AgentSession | 交互会话、模型循环、历史树与扩展绑定 | [分册](../agents/pi/index.md) |
+| Pico5 / pi-durable | 持久 Task、事务、Document 与副作用恢复 | [分册](../agents/pi-durable/index.md) |
+| DeerFlow | 产品装配、Gateway/Client、中间件、工具与子 Agent | [分册](../agents/deerflow/index.md) |
+| Claude Code | query 循环、权限、分层压缩、记忆与交互宿主 | [分册](../agents/claude/index.md) |
+| Codex | Rust core 的线程、轮次快照、工具执行与 rollout | [分册](../agents/codex/index.md) |
+| Hermes | CLI/Gateway/ACP 宿主、原生循环、提交控制与平台能力 | [分册](../agents/hermes/index.md) |
+| LangChain | Runnable、消息/模型/工具协议与 Agent 构图 | [分册](../frameworks/langchain/index.md) |
+| LangGraph | 图状态、超步调度、checkpoint 与恢复 | [分册](../frameworks/langgraph/index.md) |
+| DeepSeek Harness | 插件装配、AgentLoop、会话事件与执行屏障 | [分册](../agents/deepseek/index.md) |
+| Lane Harness | 处理道、Operation/Drive 状态机与跨进程协作 | [历史附录](../history/pi-lane/index.md) |
 
-统一阅读顺序是定位与能力边界、层次与词典、构造/注入/生命周期、一次请求、状态与上下文、工具/权限/扩展、并发/故障/恢复、取舍与独有专题。小节深入时给出“当前位置”表，不从函数清单直接跳入底层状态机。
+## 分册的阅读顺序
+
+先理解定位与能力边界，然后认识概念、所有权和生命周期。接着沿一次输入追到模型或工具的执行点，再研究历史与模型视图、权限与扩展，以及并发、中断和恢复。遇到自造术语时回到词典，确认它指的是内存对象、持久记录、一次调用还是一个模型轮次。
+
+LangChain 与 LangGraph 可以连续阅读：前者解释如何构造组件和 Agent，后者解释图如何执行并保存状态。DeerFlow 则提供应用层如何组合这些能力的案例。

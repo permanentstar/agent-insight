@@ -26,7 +26,7 @@ Pi 默认产品仍以 AgentSession 为运行边界；MCP、codemode、资源和�
 
 ## 资源冲突不是统一拒绝
 
-PromptTemplate 和 Theme 按名字保留先出现项并产生 collision diagnostics。扩展 tools/flags 冲突记入 errors，但保留 extensions，最终 precedence 由加载/注册顺序处理。命令、Skill、资源路径和可替换内置扩展有各自规则，因此不能照旧文写成“有重名就整个插件加载失败”。诊断必须让维护者看见来源与采用项。
+PromptTemplate 和 Theme 按名字保留先出现项并产生 collision diagnostics。扩展 tools/flags 冲突记入 errors，但保留 extensions，最终 precedence 由加载/注册顺序处理。命令、Skill、资源路径和可替换内置扩展有各自规则，因此重名的处理需要按资源类型判断，并非整个插件一律加载失败。诊断必须让维护者看见来源与采用项。
 
 `reload` 会重建 runner 与运行绑定，旧引用失效；保存 active tool 名并不让旧插件对象继续拥有 UI/会话。注册、激活、模型可见和执行门禁的区别见 [扩展章](extensions.md)。证据：[扩展冲突诊断](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L795)、[Prompt/Theme 去重](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L1160)。
 
@@ -50,4 +50,4 @@ withClient 对标记 readOnly 的 transient HTTP 错误允许一次重试；tool
 
 TUI 使用 Component/Container、布局、输入与 renderer 分层，main-screen 与 alt-screen 是显示策略；不能据 UI 支持分支/恢复推断两种 screen 有不同 Agent 存储。主屏关注终端滚动历史，备用屏关注受控视口；它们都消费产品事件。[组件与屏幕导出](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/tui/src/index.ts)、[交互渲染宿主](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/modes/interactive/tui-renderer.ts)。
 
-模型 provider 决定 API 请求协议与响应事件，auth 模块决定 API key/OAuth 获取/刷新；ModelRuntime 组合二者。新增 provider 要同时检查发现、凭证、stream、usage、tool result 与错误路径，不能只加模型名称。原稿的逐平台排查/修改清单已归纳为这些边界，不在本研究中执行登录、编译 native terminal 或生产权限操作。
+模型 provider 决定 API 请求协议与响应事件，auth 模块决定 API key/OAuth 获取/刷新；ModelRuntime 组合二者。新增 provider 要同时检查发现、凭证、stream、usage、tool result 与错误路径，不能只加模型名称。模型名称进入目录，只完成发现；请求协议、认证、响应解析和工具结果接回循环后，才形成完整调用链。

@@ -24,6 +24,12 @@ const cases = [
   ['missing dependent conclusion', 'docs/agents/pi/loop.md', text => text.replace('pi-architecture', 'missing-conclusion'), 'dependency_unknown'],
   ['broken chapter link', 'docs/index.md', text => text.replace('guide/map.md', 'guide/missing.md'), 'link_missing'],
   ['machine path', 'docs/index.md', text => text + '\n本机路径 /Users/example/source\n', 'nonportable_or_forbidden_diagram'],
+  ['process report in a reader chapter', 'docs/index.md', text => text + '\n## 旧文归并与取舍\n\n资料整理说明。\n', 'process_report_in_book'],
+  ['maintainer content in book navigation', 'catalog.json', text => {
+    const catalog = JSON.parse(text);
+    catalog[0].items.push({ title: '维护记录', path: '../README.md' });
+    return JSON.stringify(catalog);
+  }, 'catalog_nonreader_path'],
   ['changed historical original', 'archive/pi-session.md', text => text + '\nChanged original\n', 'archive_hash_mismatch'],
   ['archive path outside archive', 'migration.json', text => {
     const registry = JSON.parse(text);

@@ -37,7 +37,7 @@ DurableContext before/after_model 捕捉 delegation 与已读 Skill 信息进入
 
 自动 Summarization 在 before_model 判断，使用独立摘要模型与内部 prompt，保留需要的尾部/消息配对，并维护 summary_text；Memory 在自己的生命周期处理长期资料，不是同一个缓存。摘要调用可以不对 UI stream，空/失败结果与无需压缩分别处理。
 
-手工 compact 从 checkpoint accessor 读 materialized state，构造压缩 middleware，`acompact_state(...raise_on_failure=True)` 后以 Overwrite(preserved_messages) 写 messages，并更新 summary_text/task_history。当前原稿中“RemoveMessage 即全部压缩”的单一描述不够；独立修改借 mutation accessor，不需要重新构建完整 lead 图。
+手工 compact 从 checkpoint accessor 读 materialized state，构造压缩 middleware，`acompact_state(...raise_on_failure=True)` 后以 Overwrite(preserved_messages) 写 messages，并更新 summary_text/task_history。这里的压缩既涉及消息覆盖，也更新摘要与任务历史。独立修改通过 mutation accessor 完成，不需要重新构建完整 lead 图。
 
 | 情形 | 返回或持久结果 | 边界 |
 |---|---|---|
@@ -60,8 +60,8 @@ DurableContext before/after_model 捕捉 delegation 与已读 Skill 信息进入
 | 副作用审批/拒绝 | wrap_tool_call 或实际 handler 前门禁 | blocked 路径不能继续 handler |
 | 内部摘要/路由模型 | 独立调用 | 不继承错误角色、主 Agent tools 或 UI stream |
 
-不可信内容做转义/标签中和，来源由服务器 additional_kwargs 标记；不能仅扫描内容里某个 tag 来判可信。标签名如 role、skill_index、subagent_system、current_date、durable_context_data 与 system-reminder 表达不同层次；同义不同拼写要同时检查净化规则。原稿推荐“标签注册表”“单次插件模板”已转为上述评审契约，是可采用设计，不写成已实现全局注册表。
+不可信内容做转义/标签中和，来源由服务器 additional_kwargs 标记；不能仅扫描内容里某个 tag 来判可信。标签名如 role、skill_index、subagent_system、current_date、durable_context_data 与 system-reminder 表达不同层次；同义不同拼写要同时检查净化规则。可以用统一的标签定义和插件模板减少重复约定，但这是设计选择；实际行为仍取决于捕捉、净化、投影和效果点控制。
 
 ## 取舍与验证口径
 
-稳定前缀有利于复用，但没有测量就不报告 prefix cache 命中收益；工具 description 引导模型决策，也不保证它遵循 policy。新增 prompt 插件应分别验证真实最终请求、state/checkpoint、UI 是否隐藏、工具阻断是否到效果点。旧文测试清单按这四类合并，未在本书执行目标系统测试。
+稳定前缀有利于复用，但没有测量就不报告 prefix cache 命中收益；工具 description 引导模型决策，也不保证它遵循 policy。新增 prompt 插件应分别验证真实最终请求、state/checkpoint、UI 是否隐藏、工具阻断是否到效果点。这四种观察分别回答请求内容、持久状态、用户视图与执行控制的问题。

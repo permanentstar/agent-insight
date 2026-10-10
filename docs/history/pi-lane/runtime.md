@@ -71,4 +71,4 @@ Client-runtime 先解析 routes：显式 connect 单 route；自动发现只找�
 
 ServerLifetime 与 WorkerLifecycle 综合连接/活动工作/临时 hold；不是无前台就立刻退出。插件按 session/tui 分别构建与加载 bundle，各 Host 有独立实例；manifest/hash 校验不等于插件代码 sandbox。旧版本的计时默认值留在固定源码，不提升成跨版本契约。
 
-本页仅冻结历史机制；Lane 没成为默认生产入口，正文不把 API 导出、实验 server 运行与产品转正混称。[路线演进](evolution.md) 保留其退出与 Pico5 替换的证据。
+Lane 的持久 Operation 与内存 Drive 分工，为恢复提供了明确的状态边界。它与后续持久路线的关系见 [架构路线](evolution.md)。

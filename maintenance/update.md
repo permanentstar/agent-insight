@@ -14,7 +14,7 @@ verified_scope: "本页维护书籍组织与阅读契约，不声明目标 Agent
 
 更新以“哪些结论受到变化影响”为单位，不能只把日期和 SHA 改成今天。后续 agent 接到本页即可开始，历史原稿从仓库 archive/ 读取。
 
-![维护者先锁定基线与范围，再追对象层次及执行链，最后更新依赖比较页](../assets/book-map.svg)
+![源码研究依次区分对象职责、概念层次、一次输入的执行链和机制边界](../docs/assets/book-map.svg)
 
 1. 阅读 README、AGENTS、contracts、对象分册与依赖比较页；判断目标是跟踪主干、冻结材料补证还是新对象分析。
 2. 通过 AGENT_SOURCE_ROOT 或本机 .source-map.json 找源码。先记录 branch、HEAD、remote、staged/unstaged/untracked；更新必须已有授权，只使用 fetch 与可安全 fast-forward，不清理用户改动。

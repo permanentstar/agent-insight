@@ -57,7 +57,7 @@ LangGraph 负责把图定义变成可执行的状态计算。StateGraph 是构�
 | pending_writes | 某 checkpoint 下已产生的任务输出 | 整个超步尚未全部成功时保留进度 |
 | checkpoint_ns / id | 子图命名空间及具体恢复点 | 多层图与历史寻址 |
 
-messages 若使用 add_messages reducer，会有 ID 替换/删除等语义；不能将所有 channel 都看作 append-only list。Overwrite、DeltaChannel 等又有额外替换和稀疏历史规则，本章先定位，[进阶章](advanced.md)再解释合并与恢复边界；各 saver 未运行。依据：[checkpoint 类型](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/checkpoint/langgraph/checkpoint/base/__init__.py)、[消息 reducer](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/graph/message.py)。
+messages 若使用 add_messages reducer，会有 ID 替换/删除等语义；不能将所有 channel 都看作 append-only list。Overwrite、DeltaChannel 等又有额外替换和稀疏历史规则，本章先定位，[进阶章](advanced.md)再解释合并与恢复边界。依据：[checkpoint 类型](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/checkpoint/langgraph/checkpoint/base/__init__.py)、[消息 reducer](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/graph/message.py)。
 
 ## 同一个故障案例：节点发请求后暂停或崩溃
 
@@ -70,7 +70,7 @@ messages 若使用 add_messages reducer，会有 ID 替换/删除等语义；不
 | durability 为 async/exit | 写入等待时机与 sync 不同 | 不用“启用 checkpoint”推定每个步骤同步耐久 |
 | 没配置合适后端 | 图可运行；恢复保证受限 | 明确 checkpointer 是否存在以及其存储契约 |
 
-依据：[interrupt 实现与契约](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/types.py#L903)、[pending writes 与提交排序](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/_loop.py#L203)。取消与异常也会进入运行收口，但没有运行故障注入，不能声称实测了所有后端。
+依据：[interrupt 实现与契约](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/types.py#L903)、[pending writes 与提交排序](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/_loop.py#L203)。取消与异常也会进入运行收口，具体耐久边界由 saver 和持久模式决定。
 
 ## 取舍与独有内容
 

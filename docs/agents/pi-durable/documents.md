@@ -45,4 +45,4 @@ CompactionTask 状态先 select，再把摘要请求与边界存进 summarize ch
 
 旧 Lane 用专用 Operation 状态表达执行与结构操作；Pico5 用通用 Task + typed Doc/Entry。Chord 仍承担 Service 与复制，当前 DocumentState 已直接对接其观察接口；旧“把 Harness event 手工拼 transcript 再 publish”的分析不能原样迁入这里。
 
-实验服务的产品接口缺口仍按 [架构章](architecture.md) 的迁移说明保留，尤其旧 navigation/nextRun/resume 与 paging。底层有 Document/fork 能力不能证明产品命令已完成连接，更不能证明它已成为默认生产路线。
+Document/fork 是底层能力，产品命令还需接通服务接口。navigation、nextRun、resume、子会话服务和 transcript paging 的缺口见 [架构章](architecture.md)。理解数据模型与产品入口的分层，才能判断某项能力是否能从当前接口使用。

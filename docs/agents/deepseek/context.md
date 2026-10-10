@@ -43,4 +43,4 @@ region 检查没有未关闭压缩及自动/手工 turn owner，追加 start；p
 
 运行前 checkpoint/flush policy 在模型与顶层工具边界建立屏障（须实际装载对应插件），防持久失败后继续效果。恢复修复未闭合 step/tool/turn，生成 TOOL_NOT_STARTED / TOOL_OUTCOME_UNKNOWN 等结果；不是继续原程序栈或无条件重放工具。
 
-本页覆盖压缩 provider 的代表提交主线，完整存储与 repair 见 [架构章](architecture.md)。模型摘要已经生成但 flush 失败仍是持久失败；最终文字、UI 可见与磁盘确认不能相互替代。无真实重启或 fsync 测量。
+压缩 provider 决定上下文如何投影，存储后端决定记录何时耐久，repair 决定如何继续未闭合的执行；后两层见 [架构章](architecture.md)。模型摘要已经生成但 flush 失败仍是持久失败；最终文字、UI 可见与磁盘确认不能相互替代。

@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
 <title id="title">Chord 与 Radius：组合、复制和传输</title>
 <desc id="desc">Chord 不等于网络、认证或存储；Radius 模型网关与 Session relay 是不同用途。
-旧 Lane 接入口有冻结证据；当前 Document bridge 已核验，外部 Radius 服务实现未知。</desc>
+Lane 接入口与 Document bridge 在不同层连接；外部 Radius 服务实现未知。</desc>
 <defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#334155"/></marker></defs>
 <rect width="1000" height="660" fill="#ffffff"/>
 <text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">Chord 与 Radius：组合、复制和传输</text>
@@ -38,5 +38,5 @@
 <text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">Server.accept → attachment 路由</text>
 <text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">当前 Pico5 Doc 对接 Chord 观察</text>
 <text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">Chord 不等于网络、认证或存储；Radius 模型网关与 Session relay 是不同用途。</text>
-<text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">旧 Lane 接入口有冻结证据；当前 Document bridge 已核验，外部 Radius 服务实现未知。</text>
+<text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">Lane 接入口与 Document bridge 在不同层连接；外部 Radius 服务实现未知。</text>
 </svg>

@@ -66,15 +66,15 @@ create_agent 收集工具、middleware 的额外工具与 schema，形成 ToolNo
 
 LCEL 适合明确的输入输出组合；create_agent 适合模型动态决定工具及继续次数；自定义 StateGraph 适合显式业务状态和分支。选择依据是控制流需求，未做性能排名。
 
-## 六阶段原稿的归并
+## 组件之间怎样衔接
 
-| 原稿内容 | 在本书的归属与保留价值 | 核验边界 |
+| 组件层次 | 连接关系 | 机制边界 |
 |---|---|---|
 | Stage 1 Runnable/LCEL | 本章通用协议；链式与并行组合 | 不把全部 Runnable 的 stream 都看作真正增量生成 |
 | Stage 2 Messages/Model/Tool | 本章协议与执行边界 | 内容块、参数校验、injected 参数须读对应类型 |
 | Stage 3 RAG | 独有应用模式：先检索再生成，或把检索做成模型工具 | retriever/vectorstore 是检索组件，不自动成为 agent loop |
 | Stage 4 Graph/Agent | 独立 LangGraph 分册及本章 factory | 图节点不是必然一个 Agent |
-| Stage 5 tracing | RunnableConfig callbacks 形成父子观测链 | trace span 成功不等于外部业务效果成功；未运行 LangSmith |
+| Stage 5 tracing | RunnableConfig callbacks 形成父子观测链 | trace span 成功不等于外部业务效果成功 |
 | Stage 6 partner/包边界 | core 定义协议，langchain 组装，partner 接 provider | 具体 provider 的 SDK/HTTP 路径需单独核验 |
 
-教程练习和自检题留在 archive；本章提炼可维护的机制，不机械复制旧学习日程。Python 主干是本分册范围，不能推广成 TypeScript SDK 的实现。DeerFlow 锁定依赖与本基线分别登记，不能混为同一运行组合。
+Runnable 提供统一调用接口，create_agent 生成控制图，LangGraph 推进节点；消息、工具和 provider 的契约则约束每个节点如何处理数据。按这条链理解组件，比按包名判断能力更准确。[学习路线](learning.md)给出逐层练习与自检问题。

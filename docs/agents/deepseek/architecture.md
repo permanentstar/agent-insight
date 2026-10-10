@@ -64,8 +64,8 @@ Session.append 接纳事件与投影；persistence 的 append 承诺有序可见
 | cancel | AbortController 与 inbox 控制 | keepInbox 与默认清空不同；不能撤销已发生效果 |
 | 插件卸载 / 后端重装载 | teardown、句柄失效与错误收口 | 原后端签发的句柄不会被新实例无声接管 |
 
-依据：[checkpoint-policy](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/session/session-checkpoint-policy/src/index.ts#L53)、[中断修复](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/session/src/repair.ts#L19)、[存储契约](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/session/session-persistence/src/handle.ts)。压缩插件与 Session 的 surface 操作协作；完整 compaction 算法、原生 subprocess sandbox 与审批策略尚需独立深入，不由以上 flush 结论替代。
+依据：[checkpoint-policy](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/session/session-checkpoint-policy/src/index.ts#L53)、[中断修复](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/session/src/repair.ts#L19)、[存储契约](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/session/session-persistence/src/handle.ts)。压缩插件与 Session 的 surface 操作协作；压缩的 surface 提交见 [上下文章](context.md)，subprocess sandbox 与审批见 [能力章](capabilities.md)。flush 提供持久屏障，不代替这些独立的控制规则。
 
 ## 取舍与独有内容
 
-插件树让模型协议、工具、会话、压缩、权限策略可按组合替换，代价是运行行为取决于实际 profile 与 patch。每次比较都应说明启用了哪套后端和 checkpoint policy。Python SDK 通过同版本 dsh SDK profile 接入，不能把 Python 包目录误读成另一套 loop。profile 组合来自[上游架构说明](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/docs/architecture.md)，本章对 SDK 跨语言全链路仅引用该说明，未做进程实测。
+插件树让模型协议、工具、会话、压缩、权限策略可按组合替换，代价是运行行为取决于实际 profile 与 patch。每次比较都应说明启用了哪套后端和 checkpoint policy。Python SDK 通过同版本 dsh SDK profile 接入，不能把 Python 包目录误读成另一套 loop。profile 组合来自[上游架构说明](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/docs/architecture.md)；SDK 接入 runtime，不因此成为另一套循环。

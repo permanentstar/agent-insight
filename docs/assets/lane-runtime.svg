@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
-<title id="title">Lane 冻结历史：进程层与工作层</title>
-<desc id="desc">仅为冻结历史，不是当前默认生产入口；Operation 与 Drive 不能当同一生命周期。
+<title id="title">Lane：进程层与工作层</title>
+<desc id="desc">持久 Operation 记录工作，内存 Drive 推进执行；两者不能当同一生命周期。
 Client 断连可重建 attachment/复制视图，不表示自动重发命令或回滚外部效果。</desc>
 <defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#334155"/></marker></defs>
 <rect width="1000" height="660" fill="#ffffff"/>
-<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">Lane 冻结历史：进程层与工作层</text>
+<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">Lane：进程层与工作层</text>
 <polyline points="460,135 540,135" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
 <text x="500.0" y="122" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">连接</text>
 <polyline points="750,190 750,220.0 250,220.0 250,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
@@ -39,6 +39,6 @@ Client 断连可重建 attachment/复制视图，不表示自动重发命令或�
 <text x="558" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">Drive 状态分派</text>
 <text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">generation / tools / summary</text>
 <text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">恢复未知效果、结构提交与终态</text>
-<text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">仅为冻结历史，不是当前默认生产入口；Operation 与 Drive 不能当同一生命周期。</text>
+<text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">持久 Operation 记录工作，内存 Drive 推进执行；两者不能当同一生命周期。</text>
 <text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">Client 断连可重建 attachment/复制视图，不表示自动重发命令或回滚外部效果。</text>
 </svg>

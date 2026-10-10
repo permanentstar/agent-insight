@@ -12,12 +12,12 @@ verified_scope: "分册入口和已完成的初版专题对应；静态/冻结�
 
 # Pico5 / pi-durable 分册
 
-Pico5 是新持久运行架构，对外包名 pi-durable。旧 Lane 删除后，实验 TUI 与 Session Worker 已迁移到它；官方默认 coding-agent 仍是 AgentSession。
+Pico5 把执行进度纳入持久 Task，并通过事务、Document 和调度器组织运行。研究重点是工作记录、当前代码和外部副作用之间的边界，以及中断后的继续条件。
 
-阅读顺序：[概念词典](glossary.md) → [事务、Task 与副作用恢复](architecture.md) → [Document、投影与异步摘要](documents.md)。Chord 与当前 Document 的关系见[独有专题](../../history/pi-lane/components.md)。
-
-| 本版已解决 | 未解决 / 未验证 |
+| 章节 | 要回答的问题 |
 |---|---|
-| 持久工作与数据分层、提交/发布顺序、工具 replay 条件和两类摘要放置边界。 | 所有 storage 后端、复杂交错没有运行验证；旧 navigation/nextRun/resume、子会话服务及 paging 的产品接口缺口保留，不声明会默认上线。 |
+| [概念词典](glossary.md) | Entry、Task、Document 与运行句柄怎样区分？ |
+| [事务与恢复](architecture.md) | checkpoint、工具 intent/outcome 和 replay 怎样协作？ |
+| [Document 与上下文](documents.md) | 已提交状态怎样变成视图，异步摘要在哪里采用？ |
 
-各章先给图和词典，再进入构造、调用与执行点；沿用[统一模板](../../templates/project.md)。基线以 frontmatter 和[统一清单](../../guide/baselines.md)为准，源码观察日期为 2026-10-09，整理日期为 2026-10-10。静态整理完成不等于目标系统运行验证。
+先走完主链路，再进入状态、能力和故障边界。每次遇到持久记录或临时快照，都重新确认它的所有者和采用时机。

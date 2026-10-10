@@ -46,4 +46,4 @@ provider 生命周期包括会话切换、回合同步、记忆工具桥接及 p
 
 压缩锁、turn lease、attempt generation、commit fence 分别控制持久竞争、当前宿主、旧 worker 和迟到提交，不能用一个“加锁”概念替代。holder-qualified 释放防止旧 worker 删除新锁；内存 append 的 persisted markers 只在数据库成功后采用。[fence](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_compression.py#L451)、[实际提交许可与采用](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_compression.py#L4200)、[数据库边界](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_compression.py#L3688)、[Codex 路由](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_compression.py#L4314)、[会话批量写入](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/session_persistence.py#L290)。
 
-原稿只讲“压缩中段保留两头”，本版补出提交控制与 owner 分支。这里没有实测超时、锁交接或任意外部记忆插件的事务保证；不把源码注释中某次修复记录当作运行证据。
+压缩中段与保留两端只说明摘要算法。完整的压缩契约还包括候选覆盖范围、提交资格、数据库更新和宿主采用：fence 防止迟到工作取得新的提交许可，持久事务与外部记忆 provider 的保证仍需分别判断。

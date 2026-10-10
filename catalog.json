@@ -1,21 +1,21 @@
 [
   {
-    "title": "阅读与基线",
+    "title": "导读",
     "items": [
       {
         "title": "Agent Insight",
         "path": "index.md"
       },
       {
+        "title": "版本说明",
+        "path": "guide/baselines.md"
+      },
+      {
         "title": "研究对象与阅读地图",
         "path": "guide/map.md"
       },
       {
-        "title": "源码基线与核验范围",
-        "path": "guide/baselines.md"
-      },
-      {
-        "title": "证据等级与层次阅读",
+        "title": "如何阅读 Agent 调用链",
         "path": "guide/reading.md"
       }
     ]
@@ -115,7 +115,7 @@
     "title": "DeerFlow",
     "items": [
       {
-        "title": "DeerFlow分册",
+        "title": "DeerFlow 分册",
         "path": "agents/deerflow/index.md"
       },
       {
@@ -141,26 +141,26 @@
     ]
   },
   {
-    "title": "Claude Code（冻结）",
+    "title": "Claude Code",
     "items": [
       {
-        "title": "Claude Code（冻结）分册",
+        "title": "Claude Code 分册",
         "path": "agents/claude/index.md"
       },
       {
-        "title": "Claude Code：冻结材料中的层次与主链路",
+        "title": "Claude Code：层次与主链路",
         "path": "agents/claude/architecture.md"
       },
       {
-        "title": "Claude Code：冻结材料中的压缩与记忆层次",
+        "title": "Claude Code：压缩与记忆层次",
         "path": "agents/claude/context.md"
       },
       {
-        "title": "Claude Code：冻结工具、权限、MCP 与 Bridge",
+        "title": "Claude Code：工具、权限、MCP 与 Bridge",
         "path": "agents/claude/capabilities.md"
       },
       {
-        "title": "Claude：冻结官方材料的观点与适用边界",
+        "title": "Claude：任务、上下文与托管边界",
         "path": "agents/claude/practices.md"
       }
     ]
@@ -169,7 +169,7 @@
     "title": "Codex",
     "items": [
       {
-        "title": "Codex分册",
+        "title": "Codex 分册",
         "path": "agents/codex/index.md"
       },
       {
@@ -181,7 +181,7 @@
         "path": "agents/codex/context-capabilities.md"
       },
       {
-        "title": "Codex：历史实践与源码对应表",
+        "title": "Codex：任务组织与运行配置",
         "path": "agents/codex/official-practices.md"
       }
     ]
@@ -190,7 +190,7 @@
     "title": "Hermes",
     "items": [
       {
-        "title": "Hermes分册",
+        "title": "Hermes 分册",
         "path": "agents/hermes/index.md"
       },
       {
@@ -211,7 +211,7 @@
     "title": "LangChain",
     "items": [
       {
-        "title": "LangChain分册",
+        "title": "LangChain 分册",
         "path": "frameworks/langchain/index.md"
       },
       {
@@ -231,7 +231,7 @@
         "path": "frameworks/langchain/observability.md"
       },
       {
-        "title": "LangChain / LangGraph：学习路线与原稿校正",
+        "title": "LangChain / LangGraph：学习路线与常见误区",
         "path": "frameworks/langchain/learning.md"
       }
     ]
@@ -240,7 +240,7 @@
     "title": "LangGraph",
     "items": [
       {
-        "title": "LangGraph分册",
+        "title": "LangGraph 分册",
         "path": "frameworks/langgraph/index.md"
       },
       {
@@ -257,7 +257,7 @@
     "title": "DeepSeek Harness",
     "items": [
       {
-        "title": "DeepSeek Harness分册",
+        "title": "DeepSeek Harness 分册",
         "path": "agents/deepseek/index.md"
       },
       {
@@ -290,45 +290,12 @@
         "path": "history/pi-lane/runtime.md"
       },
       {
-        "title": "Pi 路线演进与“转正”口径",
+        "title": "Pi：持久架构路线与产品入口",
         "path": "history/pi-lane/evolution.md"
       },
       {
         "title": "Chord 与 Radius：组合、复制与远程传输",
         "path": "history/pi-lane/components.md"
-      }
-    ]
-  },
-  {
-    "title": "维护与模板",
-    "items": [
-      {
-        "title": "文档与元数据契约",
-        "path": "maintenance/contracts.md"
-      },
-      {
-        "title": "增量更新与换机流程",
-        "path": "maintenance/update.md"
-      },
-      {
-        "title": "仓库与 Markdown 书籍选型",
-        "path": "maintenance/tooling.md"
-      },
-      {
-        "title": "每个对象的固定模板",
-        "path": "templates/project.md"
-      },
-      {
-        "title": "深入机制的固定模板",
-        "path": "templates/mechanism.md"
-      },
-      {
-        "title": "横向比较的固定模板",
-        "path": "templates/comparison.md"
-      },
-      {
-        "title": "旧文迁移完成与证据边界",
-        "path": "maintenance/migration.md"
       }
     ]
   }

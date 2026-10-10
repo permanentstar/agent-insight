@@ -48,4 +48,4 @@ BinaryOperatorAggregate 的一个 Overwrite 会替换本步累积值，并按当
 
 interrupt 保存等待外部 resume 的位置。恢复会从节点开头重新执行，返回值按该任务的 interrupt 调用次序匹配；interrupt 前的副作用可能重做，应放入具有明确重试/幂等契约的任务。节点恢复、任务缓存、外部事务是三个层次，不能用“checkpoint 已保存”跳过后两者。
 
-证据：[Command 与 interrupt](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/types.py#L833)、[编译与控制分支](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/graph/state.py#L1749)。本页静态核验这些分支，没有执行重启或重复副作用实验。
+证据：[Command 与 interrupt](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/types.py#L833)、[编译与控制分支](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/graph/state.py#L1749)。

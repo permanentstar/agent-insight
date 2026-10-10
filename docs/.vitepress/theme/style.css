@@ -1,5 +1,1 @@
-.baseline-banner { border: 1px solid var(--vp-c-divider); border-left: 4px solid var(--vp-c-brand-1); border-radius: 8px; padding: 14px 18px; margin: 20px 0; font-size: 14px; }
-.baseline-banner p { margin: 6px 0; }
-.baseline-banner ul { margin: 8px 0 0; padding-left: 20px; }
-.baseline-banner a { color: var(--vp-c-brand-1); text-decoration: underline; }
 .vp-doc img[src$=".svg"] { background: #fff; border: 1px solid #64748b; border-radius: 8px; width: 100%; }

@@ -50,7 +50,7 @@ ProviderTransport 的契约把消息、工具、kwargs 和 NormalizedResponse �
 
 工具执行有两层：agent/tool_executor 处理一轮调用的分段、并发、interrupt 和结果顺序；model_tools.handle_function_call / _execute_tool 再经执行 middleware 到 registry.dispatch 或 connector dispatch。并行 executor 的结果按原调用次序回填；并发安全的判定是具体策略，不能只凭“读工具”名字推断。依据：[分段门面](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/run_agent.py#L1294)、[并行执行](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/tool_executor.py#L1563)、[handler 分派](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/model_tools.py#L822)、[transport 契约](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/transports/base.py#L12)。
 
-有些 hook 是可替换结果的观察点，并不是安全门禁。`transform_tool_result` 失败按源码处理为保留原结果；不能将所有插件错误都称作 fail-closed。审批、guardrail 和 shell sandbox 尚需逐工具核验，不把工具可用性检查推广成执行授权。
+有些 hook 是可替换结果的观察点，并不是安全门禁。`transform_tool_result` 失败按源码处理为保留原结果；不能将所有插件错误都称作 fail-closed。审批、guardrail 和 shell sandbox 需要由具体工具消费；工具可用性检查不代替执行授权。
 
 ## 持久化、压缩与故障
 
@@ -67,6 +67,6 @@ ProviderTransport 的契约把消息、工具、kwargs 和 NormalizedResponse �
 
 依据：[消息批次](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/session_persistence.py#L290)、[失败收口](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1813)、[压缩约束说明](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_compression.py#L1)。压缩的提交 fence、coverage watermark 和 DB lineage 是需要单独深入的独有机制；当前只定位其契约，未以注释替代完整实现证明。
 
-## 旧文归并与取舍
+## 门面与执行模块的分工
 
-原稿的三个入口、transport/toolset、记忆与压缩保留在上述共同章节；安装脚本与旧 0.13.0 目录介绍按历史材料理解。当前源码已经大量拆分：AIAgent 是门面，conversation_loop 是阶段编排，tool_executor 是调用调度。维护者应从门面追到这些实际函数，不能只读 run_agent.py 就认定读完了实现。ACP 全链路、平台投递可靠性、skills、cron 与多 Agent 的具体共享规则仍需专章核验。
+AIAgent 将宿主需要的操作集中为门面，conversation_loop 负责阶段编排，tool_executor 负责调用调度。这种分工保留统一入口，同时让循环、工具与持久化拥有清晰边界。追踪一次输入时，需要从门面进入实际阶段函数；[ACP、平台与委派](capabilities.md)进一步解释不同宿主如何绑定执行身份与输出。

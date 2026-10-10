@@ -14,7 +14,7 @@ verified_scope: "冻结基线的对象层次、命令提交与 Drive 主线静�
 
 Lane 模型把持久工作的身份与进程内推进分开：Operation 保存“什么工作、执行到哪”，Drive 决定这次进程怎样继续。读流程前先区分这两者。
 
-![冻结 Lane 的五层：产品 Worker、Harness/Lane、持久 Operation、内存 Drive、Session/Storage](../../assets/lane.svg)
+![Lane 的五层：产品 Worker、Harness/Lane、持久 Operation、内存 Drive、Session/Storage](../../assets/lane.svg)
 
 | 术语 | 层次 / owner | 生命周期与关系 |
 |---|---|---|
@@ -35,4 +35,4 @@ createAgentHarness 恢复 Session 并返回 open operations，本身不启动模
 
 Drive 根据当前状态选择 startRun、checkpoint、generation、tool batch、deferred polling、summary 或 navigation 的过程。过程先准备输入、提交 intent，再做 effect 和提交 outcome。恢复重新走持久状态指定的路径，不靠之前 JavaScript Promise 的完成值。
 
-证据：[Harness 构造](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/agent/src/harness/runtime/harness.ts)、[Lane 命令提交](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/agent/src/harness/runtime/lane.ts#L328)、[Drive 分派](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/agent/src/harness/runtime/drive.ts#L33)。当前实现中这些文件已删除，必须使用固定旧 SHA 阅读。本章只覆盖这条代表主线；旧全套 RPC、状态叶与存储迁移未逐项转写。
+证据：[Harness 构造](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/agent/src/harness/runtime/harness.ts)、[Lane 命令提交](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/agent/src/harness/runtime/lane.ts#L328)、[Drive 分派](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/agent/src/harness/runtime/drive.ts#L33)。[运行专题](runtime.md)进一步解释 Drive 状态分派与跨进程交接。

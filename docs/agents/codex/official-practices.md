@@ -1,6 +1,6 @@
 ---
 id: "codex-official-migrated"
-title: "Codex：历史实践与源码对应表"
+title: "Codex：任务组织与运行配置"
 subject: "codex"
 status: "frozen-document"
 baselines: []
@@ -10,11 +10,11 @@ evidence: ["historical-document"]
 verified_scope: "历史官方研究原稿全部主题按用途归并，并映射本书源码章节；原产品入口/参数时效未复查，不作为当前配置指南。"
 ---
 
-# Codex：历史实践与源码对应表
+# Codex：任务组织与运行配置
 
-原稿讲的是使用方式与平台启发；本书重新用 Rust core 分析执行机制。下表保留有用的实践问题，明确哪些已经对应源码，哪些只作为历史设计建议。
+任务组织与运行机制相互影响：输入约束决定请求准备，工作区和权限约束决定动作范围，验收决定如何判断完成。下表把使用问题与 Rust core 的执行边界对应起来。
 
-| 原稿主题 | 保留观点与条件 | 当前源码/正文落点 |
+| 任务问题 | 使用方式与条件 | 实现关系 |
 |---|---|---|
 | Goal / Context / Constraints / Done | 给任务输入与验收，错误报告给复现 | 使用实践，不等同固定内部 Planner |
 | Plan first | 方案未定或风险跨模块先规划 | 没有“所有复杂任务必须调用某工具”的通用约束 |
@@ -24,14 +24,14 @@ verified_scope: "历史官方研究原稿全部主题按用途归并，并映射
 | 验证闭环 | 以目标行为与证据判断完成 | 工具结果、业务验收、交付确认分别报告 |
 | 运行面 | CLI/desktop/cloud/exec 面向不同宿主 | 本书 Rust core 不推定桌面私有服务或 cloud 环境全部实现 |
 | 主 Agent / 子 Agent | 调查上下文隔离、父汇总结果，权限按任务限界 | [AgentControl 准入与驻留](context-capabilities.md)；不是固定 PM/Explorer/Test 角色路由 |
-| Auto-review / reviewer | 可作为动作审批的产品策略 | 模型判断仍有不确定性；不把旧材料用法当各工具默认政策 |
+| Auto-review / reviewer | 可作为动作审批的产品策略 | 模型判断仍有不确定性；审批策略由具体工具和宿主采用 |
 | Skills / MCP / Plugins | 知识、连接、分发/组合分别管理 | [能力快照](context-capabilities.md)，可见不等于获准执行 |
-| MCP server 运行 Codex | 外部平台可宿主 Codex 会话 | 外部协议是接入面，不是替代 SessionTask；旧命令参数须按版本核验 |
+| MCP server 运行 Codex | 外部平台可宿主 Codex 会话 | 外部协议是接入面，不是替代 SessionTask |
 | traces / OTel / JSONL / schema output | 观察与机器可读接口有助于集成 | rollout 存储与工具效果不同；schema 不证明任务正确 |
 | Memories | 检索加速，强制规则仍版本化 | 实践建议；不反推所有记忆数据写入/召回实现 |
-| 模型/effort 和角色模板 | 按任务与证据成本选择 | 旧型号与价格/参数不沿用，不承诺 mini 对所有调查足够 |
-| skill / exec / CI 模板与 30 天计划 | 稳定流程再脚本化，按实际痛点拆阶段 | 使用建议归纳，原示例保留 archive；不执行任何自动化 |
+| 模型/effort 和角色模板 | 按任务与证据成本选择 | 模型能力与成本需要按任务和验收要求选择 |
+| skill / exec / CI 流程 | 稳定流程再脚本化，按实际痛点拆阶段 | 使用实践；脚本化不改变底层执行与权限契约 |
 
-这些主题已消化为“配置与 owner → 真实执行 → 结果证据”的阅读路径。原稿“必须 plan”“默认 worktree”“把所有 traces 视为默认件”等强表述改为适用条件，避免把推荐变成事实。原始示例可用于历史对照，复制命令前必须核验当前官方版本；本页没有更新参数指南或创建 skill/定时任务。
+规划适合方案未定、跨模块或验证成本较高的任务；工作区隔离适合存在文件并发的场景。两者都需要按问题选择，不能由任务名称推定必须创建某种内部对象。trace、rollout 和结构化输出提供不同证据，最终仍要检查目标行为。
 
-Codex 的初版从官方材料重构为 [主链路](architecture.md) 与 [上下文/能力](context-capabilities.md) 两章源码分析，历史实践本页与它们分别标注证据等级。记录的源码观察点是基线清单的 commit，而非旧网页整理日期。
+沿 [线程与执行](architecture.md)理解输入如何运行，再沿 [规则、快照与压缩](context-capabilities.md)理解运行配置如何生效。使用层的计划、角色模板和规则文件，与内核中的 SessionTask、StepContext 和 ToolRouter 有联系，但不是同一组对象。

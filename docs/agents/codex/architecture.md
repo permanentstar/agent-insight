@@ -50,7 +50,7 @@ ThreadManager 的 spawn_thread 调 Session::spawn，注入配置、认证、模�
 
 ## 历史、压缩与持久确认
 
-`record_prepared_conversation_items` 先给历史项补元数据，更新内存 history，再转为 RolloutItem 交持久路径。RolloutRecorder.record_canonical_items 返回表示 AddItems 已进入后台队列；persist/flush 通过 oneshot ack 等待 writer 确认。不能把这两类 await 说成相同的落盘保证，本章也没有实测断电耐久性。
+`record_prepared_conversation_items` 先给历史项补元数据，更新内存 history，再转为 RolloutItem 交持久路径。RolloutRecorder.record_canonical_items 返回表示 AddItems 已进入后台队列；persist/flush 通过 oneshot ack 等待 writer 确认。这两类 await 对应不同的持久边界；断电耐久性还取决于 writer 与存储后端。
 
 压缩通过活动历史替换及持久 compaction 资料影响后续请求；上下文指令、用户消息和工具输出不会按所有 JSONL 行直接拼接。原始日志顺序也不能单独证明逻辑覆盖范围或 conversation branch。依据：[历史写入](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/mod.rs#L3596)、[历史替换](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/mod.rs#L4116)、[writer 接口](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/rollout/src/recorder.rs#L1048)。
 
@@ -66,10 +66,10 @@ ToolRouter 区分 model-visible specs、code mode 的嵌套工具身份和 regis
 | 写入排队后进程崩溃 | AddItems 与确认分开 | 每个 UI 事件都已持久 |
 | 重启恢复历史 | InitialHistory / rollout 等资料用于重建 | 任意进程内 SessionTask 都能续跑或工具恰好一次 |
 
-依据：[工具路由](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/router.rs#L85)、[效果编排](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/orchestrator.rs#L127)。本章是执行路径定位，不是全平台安全审计。
+依据：[工具路由](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/router.rs#L85)、[效果编排](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/orchestrator.rs#L127)。
 
-## 取舍、独有内容与覆盖限制
+## 快照与执行边界的设计取舍
 
-TurnContext/StepContext 让长活线程与动态模型/工具配置能够共存，代价是读源码时不能把这些 context 都当成同一对象。code mode、插件、MCP、子 Agent 和远端 environment 各有组合入口，应沿 router/handler 继续下钻。完整 compaction 覆盖规则、现代 agent runtime 的持久工作机制、全部 shell runtime 与线程 lineage 留待专章，不据本章有限的 SessionTask 观察断言整个 Codex 没有持久工作能力。
+TurnContext/StepContext 让长活线程与动态模型/工具配置能够共存，代价是读源码时不能把这些 context 都当成同一对象。code mode、插件、MCP、子 Agent 和远端 environment 各有组合入口，应沿 router/handler 继续下钻。会话历史恢复与工作续跑也是不同问题：前者依赖历史重建，后者需要对应任务类型的持久记录和执行器。
 
-[旧官方实践](official-practices.md) 保留为历史文档观点；开源 core、app-server 和桌面宿主分别解释，本文不把桌面 App 私有实现写成开源事实。
+[任务组织与运行配置](official-practices.md)把使用问题与执行机制对应起来。开源 core、app-server 和桌面宿主承担不同职责，core 的实现不能直接代替宿主契约。

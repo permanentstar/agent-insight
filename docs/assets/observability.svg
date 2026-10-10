@@ -17,5 +17,5 @@
 <text x="54" y="358" font-family="sans-serif" font-size="21" font-weight="700" fill="#172554">模型执行</text>
 <text x="54" y="388" font-family="sans-serif" font-size="19" fill="#172554">BaseChatModel → Partner → SDK → ChatResult / Chunk</text>
 <text x="54" y="418" font-family="sans-serif" font-size="17" fill="#334155">trace 是观察数据；checkpoint 和业务 effect 另有 owner</text>
-<text x="32" y="478" font-family="sans-serif" font-size="16" fill="#334155">固定源码基线的静态分析；没有运行模型、索引服务或 tracing 后端。</text>
+<text x="32" y="478" font-family="sans-serif" font-size="16" fill="#334155">回调传递父子关系，Partner 落实调用；trace 不代替业务效果确认。</text>
 </svg>

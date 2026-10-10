@@ -1,6 +1,6 @@
 ---
 id: "baselines"
-title: "源码基线与核验范围"
+title: "版本说明"
 subject: "book"
 status: "index"
 baselines: []
@@ -10,28 +10,34 @@ evidence: []
 verified_scope: "本页维护书籍组织与阅读契约，不声明目标 Agent 运行验证。"
 ---
 
-# 源码基线与核验范围
+# 版本说明
 
-基线记录的是一次官方主干观察点；页面状态记录正文核验程度。更新源码不等于更新研究，二者必须分开。
+本书研究的是明确版本中的架构和执行机制。七个源码仓库的主干观察日期为 **2026-10-09**；引用使用固定 commit 链接，读者可以据此复现文件和调用位置。
 
-基线事实源为根目录 [baselines.json](https://github.com/permanentstar/agent-insight/blob/main/baselines.json)，完整 SHA 对应可复现的源文件版本。此表是初版阅读摘要；新增基线后同时更新摘要，不替代 JSON。
+| 研究对象 | 分支 | 固定提交 | 研究范围 |
+|---|---|---|---|
+| Pi AgentSession / Pico5 | main | [f1b2e77f5b13b2a199b1052cb79c235451afe7d7](https://github.com/earendil-works/pi/commit/f1b2e77f5b13b2a199b1052cb79c235451afe7d7) | 主干研究 |
+| DeerFlow | main | [b842e06be19f04280a9e5e12f90da04d0c6f09a5](https://github.com/bytedance/deer-flow/commit/b842e06be19f04280a9e5e12f90da04d0c6f09a5) | 主干研究 |
+| Codex | main | [2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4](https://github.com/openai/codex/commit/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4) | 主干研究 |
+| Hermes | main | [8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f](https://github.com/NousResearch/hermes-agent/commit/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f) | 主干研究 |
+| LangChain | master | [34489d61433cbf5044a630de2e7797e361672900](https://github.com/langchain-ai/langchain/commit/34489d61433cbf5044a630de2e7797e361672900) | 主干研究 |
+| LangGraph | main | [bfcfea554ed5c7f7be562cebf8825e911b493ab1](https://github.com/langchain-ai/langgraph/commit/bfcfea554ed5c7f7be562cebf8825e911b493ab1) | 主干研究 |
+| DeepSeek Harness | master | [d743267388641bc76f17c45ce8b4c231aed1d32c](https://github.com/deepseek-ai/deepseek-harness/commit/d743267388641bc76f17c45ce8b4c231aed1d32c) | 主干研究 |
+| Lane Harness | main | [6671c604766b3670ed95f405aa7856835d0ca702](https://github.com/earendil-works/pi/commit/6671c604766b3670ed95f405aa7856835d0ca702) | 历史方案 |
+| Claude Code | 未确定 | 原始源码 SHA 未确定 | 历史架构研究 |
 
-| 基线 ID | 分支 | SHA | 提交时间（原时区） | 角色 |
-|---|---|---|---|---|
-| `pi-20261009` | main | `f1b2e77f5b13b2a199b1052cb79c235451afe7d7` | 2026-10-09T09:40:08+02:00 | current |
-| `deerflow-20261009` | main | `b842e06be19f04280a9e5e12f90da04d0c6f09a5` | 2026-10-09T17:58:09+08:00 | current |
-| `codex-20261009` | main | `2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4` | 2026-10-09T05:12:54Z | current |
-| `hermes-20261009` | main | `8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f` | 2026-10-09T02:59:16-07:00 | current |
-| `langchain-20261009` | master | `34489d61433cbf5044a630de2e7797e361672900` | 2026-10-08T18:11:07-04:00 | current |
-| `langgraph-20261009` | main | `bfcfea554ed5c7f7be562cebf8825e911b493ab1` | 2026-10-08T16:10:55-07:00 | current |
-| `deepseek-20261009` | master | `d743267388641bc76f17c45ce8b4c231aed1d32c` | 2026-10-09T17:31:32+08:00 | current |
-| `pi-lane-20260916` | main | `6671c604766b3670ed95f405aa7856835d0ca702` | 2026-09-16T12:11:16+02:00 | historical |
-| `claude-frozen-documents` | 未知 | `未确定` | 未知 | historical |
+## 实现阶段与依赖组合
 
-所有 current 基线的观察日期为 2026-10-09。Local HEAD 和 fetch 后的 origin 对应相同提交；DeerFlow、Hermes 和 LangChain 的既有 WIP 保留。本书的已核验源码结论引用 Git 固定版本，不将 WIP 当作上游实现。
+Pi 的官方 coding-agent 默认入口使用 AgentSession。Pico5 / pi-durable 是实验持久架构，实验前端与 Session Worker 使用这条执行路线。Lane Harness 是历史方案，没有成为官方 coding-agent 的默认生产入口；它的 API 发布与包导出不能代替这一判断。
 
-没有 SHA 的 Claude 资料仅冻结到文档 revision，不伪造源码基线。DeerFlow 此基线的 backend/uv.lock 锁定 LangChain 1.3.14、LangGraph 1.2.9、langgraph-checkpoint 4.2.0，已登记在该基线 dependency_lock。只核验锁文件，没有将这组包逐项映射到框架源码 SHA；框架各自主干不自动等于应用运行组合。
+DeerFlow 的应用依赖锁定 LangChain **1.3.14**、LangGraph **1.2.9** 和 langgraph-checkpoint **4.2.0**。LangChain、LangGraph 分册研究各自独立主干，二者与 DeerFlow 的锁定包不是同一个运行组合。框架章节解释其自身语义；判断应用行为时，以应用的实际调用和依赖组合为准。[DeerFlow 依赖锁](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/uv.lock)。
 
-每次更新新增带日期或 SHA 的基线 ID，保留仍被历史章节引用的旧基线。逐页核验后迁移页面引用；未检查的页面保留旧 ID，不通过改一个全局 SHA 把整本书“刷新”。
+Claude Code 分册依据已有的历史架构研究。原始源码 SHA 和两组研究材料的准确版本关系无法确定，因此其中的机制解释不用于判断当前线上产品。Claude Code、模型 API 和 Managed Agents 也分别讨论，不将托管平台契约视为客户端内部实现。
 
-本轮分析整理日期为 2026-10-10；没有重新 fetch 或改变上述观察点。七个源码仓库的代表主链路已形成静态章节，核验限制以逐页 verified_scope 为准。Claude 保持冻结原稿，Lane 保持历史基线；全部对象都没有运行模型、工具或崩溃测试。
+## 研究方法与适用范围
+
+主体分析通过源码中的构造、调用、字段和写入顺序解释行为，未运行目标 Agent、真实模型请求或故障注入，也没有性能、摘要质量或恢复成功率的测量。源码事实、静态推导与设计建议分别表达；某项实现证据缺失时，保留为未知，不据此判断它没有能力。
+
+Claude 的 snip/contextCollapse 算法、部分 feature gates 和显式队友接单链，以及 Radius 外部网关的恢复实现，缺少足够的执行证据。正文会在相关机制处说明这些具体边界。
+
+完整版本登记保存在 [baselines.json](https://github.com/permanentstar/agent-insight/blob/main/baselines.json)。后续研究仍通过固定提交引用定位实现，版本说明集中在本页。

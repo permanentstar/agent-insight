@@ -41,7 +41,7 @@ Runnable 统一的是调用协议，不保证任意两个组件在数据类型�
 
 `BaseChatModel._convert_input` 接受 PromptValue、字符串、消息序列；字符串先变 StringPromptValue，序列经 convert_to_messages。无效类型直接抛 ValueError。角色属于协议字段，不由 XML 标签或文本顺序替代。
 
-| 数据 | 读法 | 原稿需要修正的边界 |
+| 数据 | 读法 | 使用边界 |
 |---|---|---|
 | content | 原始字符串或内容块 | 不同 provider 不保证形状相同 |
 | content_blocks | 经过 translator 的标准块视图 | reasoning 与 text 仍是不同块；标准化不是把所有信息拼成答案 |
@@ -49,7 +49,7 @@ Runnable 统一的是调用协议，不保证任意两个组件在数据类型�
 | AIMessage.tool_calls | 已规范化的调用列表 | 还有无效调用与流式片段，不能把局部参数当完整调用 |
 | ToolMessage | 工具结果，关联 tool_call_id | call/result 配对是上层会话契约，工具描述不能替代它 |
 
-[输入归一](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/language_models/chat_models.py#L461)、[文本提取](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/messages/base.py#L263)、[AIMessage](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/messages/ai.py) 是三种不同边界。旧文把“.text 优先读”写成 reasoning 空结果的通用修复，本书不保留这项保证。
+[输入归一](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/language_models/chat_models.py#L461)、[文本提取](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/messages/base.py#L263)、[AIMessage](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/messages/ai.py) 是三种不同边界。`.text` 只提取文本块，不能作为 reasoning 或工具结果为空时的通用修复。
 
 ## 工具 schema 与失败
 
@@ -66,6 +66,6 @@ Runnable 统一的是调用协议，不保证任意两个组件在数据类型�
 
 ## 集成能力与取舍
 
-BaseChatModel.bind_tools 的基类实现是 NotImplementedError；with_structured_output 也依赖具体绑定支持。旧文“任意模型都能挂工具”的表述不成立。结构化输出适合 schema 明确的结果；文本 parser 仍适合文本处理，不能因 v1 Agent API 更薄就说 parser 被废弃。
+BaseChatModel.bind_tools 的基类实现是 NotImplementedError；with_structured_output 也依赖具体绑定支持。因此工具绑定能力取决于具体模型适配器。结构化输出适合 schema 明确的结果；文本 parser 仍适合文本处理，不能因 v1 Agent API 更薄就说 parser 被废弃。
 
 DeerFlow 使用自己的模型工厂与 Runnable 协议装图，主流程没有因不写 `|` 而脱离 LangChain。一个图节点内部仍可使用 LCEL；三种路线——固定链、create_agent、显式 StateGraph——按控制权需求组合，不能按新旧排成淘汰关系。

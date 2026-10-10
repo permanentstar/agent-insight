@@ -17,6 +17,7 @@ export function checkBook(root) {
   const ids = new Map();
   const paths = catalog.flatMap(group => group.items.map(item => item.path));
   if (new Set(paths).size !== paths.length) report(root, 'catalog_duplicate');
+  for (const path of paths) if (/^(?:archive|maintenance|templates)\/|(?:^|\/)\.\.(?:\/|$)|^\//.test(path)) report(root, `catalog_nonreader_path: ${path}`);
   for (const path of paths) if (!existsSync(resolve(root, 'docs', path))) report(root, `catalog_missing: ${path}`);
   for (const path of files) {
     let page;
@@ -44,6 +45,7 @@ export function checkBook(root) {
       }
     }
     const withoutCode = body.replace(/```[\s\S]*?```/g, '');
+    if (/^#{1,6} .*?(?:旧文归并|原稿归并|资料迁移|迁移报告)|本版已解决|初版整理.*?完成/m.test(withoutCode)) report(path, 'process_report_in_book');
     for (const match of withoutCode.matchAll(/!?\[[^\]]*\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g)) {
       const href = match[1];
       if (/^(https?:|mailto:|#)/.test(href)) continue;

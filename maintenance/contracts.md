@@ -27,7 +27,7 @@ verified_scope: "本页维护书籍组织与阅读契约，不声明目标 Agent
 
 status 不是单一质量分数。frozen-source 可以准确，但不代表当前；index 表示入口完成，不表示正文分析完成。书面引用固定 commit；Git 文档更新时间不等于核验日期。
 
-目录单一来源为 catalog.json，构建配置自动使用它。页面 Markdown 必须有 frontmatter 和中文正文；SVG 放 docs/assets，自带不透明画布与显式颜色。模板允许没有实际内容的“待核验”，正文不为形式补空章。
+书籍目录单一来源为 catalog.json，构建配置自动使用它。docs/ 只放读者章节；maintenance/、templates/ 和 archive/ 不参与阅读构建与搜索。版本与全书研究范围集中在 docs/guide/baselines.md；页面元数据保留追溯用途，不逐页渲染状态和版本列表。正文直接讲研究结论，不写资料整理过程。页面 Markdown 必须有 frontmatter 和中文正文；SVG 放 docs/assets，自带不透明画布与显式颜色。模板允许没有实际内容的“待核验”，正文不为形式补空章。
 
 门禁检查元数据、未知基线、来源、依赖、目录遗漏、迁移去向、相对链接和源码页面的固定链接。门禁不能判断注释与实现是否冲突、链接行号是否准确、图示是否表达错误；更新者仍需逐条核验。
 

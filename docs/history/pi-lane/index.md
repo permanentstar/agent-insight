@@ -12,12 +12,13 @@ verified_scope: "分册入口和已完成的初版专题对应；静态/冻结�
 
 # Lane Harness 历史附录
 
-Lane 按用户定义没有转正：未成为官方 Agent 默认生产入口。库默认导出不改变这个结论；最新主干已经删除旧实现。
+Lane 围绕处理道与持久 Operation 编排输入，内存 Drive 负责推进，产品 Worker 连接模型、工具和远端接入。它提供一个研究“持久工作记录与进程内驱动如何分开”的案例。
 
-阅读顺序：[概念层次](architecture.md) → [状态分派、进程链与恢复](runtime.md) → [路线演进](evolution.md) → [Chord 与 Radius 专题](components.md)。
-
-| 本版已解决 | 未解决 / 未验证 |
+| 章节 | 要回答的问题 |
 |---|---|
-| 完整 Drive 分派面、Client/Server/Worker/协议层次及故障语义已按冻结源码整理。 | 没有运行历史栈；外部 Radius 网关实现不在可读源码范围。Chord 与当前 Pico5 的连接单独标明当前基线。 |
+| [层次与主线](architecture.md) | Worker、Harness、Lane、Operation、Drive 怎样关联？ |
+| [状态与进程链](runtime.md) | Drive 如何分派，Client/Server/Worker 在哪里交接？ |
+| [架构路线](evolution.md) | 公开 API 与产品默认入口怎样区分，持久路线如何改变？ |
+| [Chord 与 Radius](components.md) | 组件组合、状态复制与远端传输怎样连接运行层？ |
 
-各章先给图和词典，再进入构造、调用与执行点；沿用[统一模板](../../templates/project.md)。基线以 frontmatter 和[统一清单](../../guide/baselines.md)为准，源码观察日期为 2026-10-09，整理日期为 2026-10-10。静态整理完成不等于目标系统运行验证。
+先走完主链路，再进入状态、能力和故障边界。每次遇到持久记录或临时快照，都重新确认它的所有者和采用时机。
