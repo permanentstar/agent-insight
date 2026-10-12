@@ -107,8 +107,8 @@ this._refreshToolRegistry({
 ```ts
 runner.bindCore({
   sendMessage: (message, options) => {
-    // 扩展发消息，实际接回当前 AgentSession 的 custom
-    // 消息入口。
+    // 扩展发消息时，调用当前 AgentSession 的消息入口；
+    // sendCustomMessage 负责接纳 custom 消息。
     this.sendCustomMessage(message, options).catch((err) => {
       // 省略：runner.emitError 记录 send_message 失败，不把
       // Promise 丢掉。

@@ -88,8 +88,8 @@ async execute(_toolCallId, params, signal, onUpdate) {
   const client = await options.getClient();
   const result = await client.callTool(tool.name, (params ?? {}) as Record<string, unknown>, {
     signal, timeoutMs: options.timeoutMs,
-    // 省略：onProgress 把 MCP 进度转换为产品工具的 onUpdate
-    // 消息。
+    // 省略：onProgress 接到 MCP 进度通知，
+    // 并通过 onUpdate 发布产品工具的进度消息。
   });
   return convertMcpResult(server, tool.name, result, {
     readableResources: options.readableResources?.(),

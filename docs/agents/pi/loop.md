@@ -77,8 +77,8 @@ if (lastAssistant) await this._checkCompaction(lastAssistant, false);
 const result = await this._extensionRunner.emitBeforeAgentStart(
   expandedText, currentImages, this._baseSystemPromptOptions,
 );
-// 省略：协调 hook 的工具选择，规范化图片，再构造 user/custom
-// 消息。
+// 省略：协调 hook 的工具选择并规范化图片，
+// 然后构造 user/custom 消息。
 // 消息创建在 hook 之后，保证本次模型选择与图片处理、
 // 工具声明一致。
 const updateMessage = this._preparePromptAndToolLoadout(result.systemPromptOptions);
@@ -135,8 +135,8 @@ if (lastCompletedTurn) {
     config = {
       ...config,
       model: nextTurnSnapshot.model ?? config.model,
-      // 省略：采用返回的 thinkingLevel，并转换成内核 reasoning
-      // 配置。
+      // 省略：采用返回的 thinkingLevel，
+      // 并转换成内核的 reasoning 配置。
     };
   }
 }

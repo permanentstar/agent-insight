@@ -104,8 +104,8 @@ return createAgentSession({
   settingsManager: options.services.settingsManager,
   resourceLoader: options.services.resourceLoader,
   sessionManager: options.sessionManager,
-  // 省略：解析后的模型、thinking、工具选项与 session_start
-  // 事件。
+  // 省略：解析后的模型、thinking 与工具选项，
+  // 以及用于生命周期通知的 session_start 事件。
 });
 ```
 
@@ -144,8 +144,8 @@ const runtime = await createAgentSessionRuntime(createRuntime, {
 进入 `AgentSession` 构造函数后，还要把产品行为接到内核边界。下面节选构造函数的绑定段；省略隐藏声明等专门投影 hook：
 
 ```ts
-// 执行事件接回产品处理器；消息结束后由产品负责历史追加与扩展通
-// 知。
+// 执行事件接回产品处理器；
+// 消息结束后由产品负责历史追加与扩展通知。
 this._unsubscribeAgent = this.agent.subscribe(this._handleAgentEvent);
 // 在真实工具调用前后接入扩展，构造时只安装函数，不执行工具。
 this._installAgentToolHooks();
