@@ -7,6 +7,9 @@
     "dev": "vitepress dev docs --host 127.0.0.1",
     "build": "npm run check && vitepress build docs",
     "preview": "vite preview --config scripts/preview.config.mjs",
+    "review": "node scripts/review.mjs",
+    "build:review": "node scripts/review.mjs --build-only",
+    "test:review": "node --test scripts/review.test.mjs",
     "check": "node scripts/check-book.mjs",
     "sources": "node scripts/source-status.mjs",
     "test:contracts": "node --test scripts/check-book.test.mjs"

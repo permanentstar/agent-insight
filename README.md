@@ -24,6 +24,8 @@ npm run preview
 
 打开 http://127.0.0.1:4173/。`npm run preview` 在前台运行，保持终端开启；按 Ctrl+C 停止。已经构建时只需运行 preview；电脑重启后重新启动即可。修改文档后重新 build，再重启 preview。服务只绑定 127.0.0.1，端口被占用时直接报错。CI 负责检查和构建。
 
+本地审稿使用 `npm run review`，它先检查并构建带审稿界面的本地版本，再在同一地址启动。若 preview 正在运行，先按 Ctrl+C 停止，二者不同时占用 4173。选中正文点击“添加批注”，或通过右下角“批注”添加整章意见、查看全书意见。批注保存到 gitignored 的 `.review/annotations.json`，刷新与重启服务后保留；普通 `npm run build` 不包含审稿界面。存储与换机边界见[本地审稿资料](maintenance/tooling.md#本地审稿资料)。
+
 ## 仓库维护
 
 书籍内容位于 docs/，目录由 catalog.json 管理。版本登记保存在 baselines.json，页面元数据保存引用、结论依赖和核验范围，不逐页显示版本条。

@@ -38,12 +38,12 @@
 <text x="706" y="706" font-size="18" fill="#172554" font-weight="700">自然结束后</text>
 <text x="706" y="733" font-size="16" fill="#172554">有 followUp 则外层续跑</text>
 <path d="M620,744 H686" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M810,678 V114 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="699" y="166" font-size="15" fill="#172554">followUp 回到内层</text>
+<path d="M930,722 H945 V192 H650 V262 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="660" y="184" font-size="15" fill="#172554">followUp 回到请求准备</text>
 <rect x="30" y="813" width="590" height="72" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
 <text x="46" y="841" font-size="18" fill="#172554" font-weight="700">agent_end</text>
-<text x="46" y="868" font-size="16" fill="#172554">无后续输入，或明确停止</text>
+<text x="46" y="868" font-size="16" fill="#172554">内核停止；等待监听者后释放 activeRun</text>
 <path d="M325,766 V809" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="355" y="797" font-size="15" fill="#172554">结束</text>
-<text x="30" y="903" font-size="15" fill="#172554">这是实际控制流的阶段图，不是源码声明的统一状态枚举。</text>
+<text x="30" y="903" font-size="15" fill="#172554">这是内核阶段图；产品层还需检查后处理与 agent_settled 收口，见下图。</text>
 </g></svg>

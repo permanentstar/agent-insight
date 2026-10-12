@@ -52,15 +52,39 @@ Pi 的上下文设计解决一个经常同时出现的需求：**保存探索过
 
 图与上表使用同一组 ID，r1/e1 的工具调用与结果分别成对。程序先沿 parentId 选择路径，再按消息类型解释条目。文件写入顺序只说明追加顺序，不能代替祖先关系。例如 D 比 E 先写入，不意味着 E 必须把 D 交给模型。[路径与上下文 Entry 选择](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L476)。
 
+这一步对应 `buildSessionPath` 的回溯段。下面是源码节选，前面的 leaf 查找与默认选择省略；`index` 是 Entry ID 到记录的索引：
+
+```ts
+const path: SessionEntry[] = [];
+let current: SessionEntry | undefined = leaf;
+while (current) {
+  path.push(current);
+  current = current.parentId ? index.get(current.parentId) : undefined;
+}
+path.reverse();
+return path;
+```
+
+以 G 为 leaf，回溯先得到 G/F/E/C/B/A，reverse 后才是正文使用的 A/B/C/E/F/G。D 从未经过这个 parent 链，所以无需再靠“较新或较旧”的规则排除它。[回溯执行点](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L408)。
+
 ### 当前路径如何变成消息
 
 message 条目通常贡献一条消息；custom_message 可以贡献扩展消息；模型选择、thinking、普通 custom 状态等条目不必贡献自然语言正文。branch_summary 和 compaction 有自己的转换。所以“沿路径拿到条目”以后，还要做一次**条目到消息贡献**的解释。
 
+`sessionEntryToContextMessages` 是这一步的实际转换函数。下面保留正常 message 和摘要路径，省略旧文件空内容兼容、custom_message 与 branch_summary 的展开：
+
 ```ts
-// Teaching skeleton: the real projection also applies edits and configuration.
-path = walkParents(currentLeaf)
-contextEntries = selectCompactionAndRetainedRange(path)
-messages = contextEntries.flatMap(entryToModelContributions)
+if (entry.type === "message") {
+  const message = entry.message;
+  // ... normalize null/missing content in older files
+  return [message];
+}
+// ... custom_message and branch_summary produce their respective message types
+if (entry.type === "compaction") {
+  const summary = createCompactionSummaryMessage(entry.summary, entry.tokensBefore, entry.timestamp);
+  return entry.systemMessage ? [entry.systemMessage, summary] : [summary];
+}
+return []; // Configuration and structural entries need not contribute prose.
 ```
 
 这解释了为什么记录数量不等于模型消息数量：一个结构条目可能没有贡献，也可能在需要时贡献摘要及 system 资料。[条目转换](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L439)。
@@ -93,6 +117,32 @@ S, F, G, H, I, J
 
 图和表使用同一组 Entry；上方是历史路径，下方是这次上下文 Entry 顺序。摘要文字解释已经获得的语义，firstKeptEntryId 解释详细资料的边界。两者必须配合；一段总结写得再好，也不能告诉程序应该保留哪次调用及其反馈。[保留区间算法](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L499)。
 
+将演算对照 `buildContextEntries` 的节选，最重要的是扫描范围始终为 `path`。这里省略了 compaction 索引不存在时的防御性返回，保留区间的判断则完整保留：
+
+```ts
+const path = buildSessionPath(entries, leafId, byId);
+let compaction: CompactionEntry | null = null;
+for (const entry of path) {
+  if (entry.type === "compaction") compaction = entry;
+}
+if (!compaction) return path;
+const compactionIdx = path.findIndex((entry) => entry.id === compaction.id);
+// ... return path if compactionIdx is not found
+const contextEntries: SessionEntry[] = [compaction];
+let foundFirstKept = false;
+for (let i = 0; i < compactionIdx; i++) {
+  const entry = path[i];
+  if (entry.id === compaction.firstKeptEntryId) foundFirstKept = true;
+  if (foundFirstKept && !(entry.type === "message" && entry.message.role === "system")) {
+    contextEntries.push(entry);
+  }
+}
+contextEntries.push(...path.slice(compactionIdx + 1));
+return contextEntries;
+```
+
+在 F 那一次迭代就把 `foundFirstKept` 设为 true，所以 F 包含在结果中。保留段的旧 system 消息另被过滤；最新 compaction 可携带它自己的 systemMessage，因此不会简单重复旧请求的 system 声明。[摘要选择与保留段](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L481)。
+
 ### 工具调用与结果为什么不能随便切开
 
 F 是 edit 调用 e1，G 是 e1 的结果。默认压缩准备选择合适的消息切点，不直接把普通 toolResult 当作切点。若只保留 G，模型得到一个没有对应动作请求的结果，语义与 provider 配对都可能不完整；从 F 保留则同时留下动作和观察。
@@ -112,7 +162,7 @@ F 位于 E 启动的用户工作中间。为了让保留段仍能理解原目标
   "id": "K", "parentId": "J", "type": "context_edit",
   "targetId": "G",
   "replacement": {
-    "content": "已修改 src/export.ts 的字段转义；逗号、引号与换行分别处理。"
+    "content": [{ "type": "text", "text": "已修改 src/export.ts 的字段转义；逗号、引号与换行分别处理。" }]
   }
 }
 ```
@@ -131,19 +181,74 @@ F 位于 E 启动的用户工作中间。为了让保留段仍能理解原目标
 
 buildSessionProjection 保留 sourceEntry 与 messages 的对应，因此可以同时回答“模型看见什么”和“它来自哪个历史记录”。`replacement=null` 则让目标不再贡献消息；它不是删除磁盘上的原始行。[编辑投影](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L519)、[编辑接纳](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L1360)。
 
+下面节选 `buildSessionProjection` 的编辑收集与输出段，省略 model/thinking 的恢复。注意：按 ContextEntry 顺序写入 Map，同一目标后出现的编辑会覆盖前一份；输出的 `sourceEntry` 仍是被投影的原条目：
+
+```ts
+const contextEntries = buildContextEntries(entries, leafId, byId);
+const edits = new Map<string, ContextEditEntry>();
+for (const entry of contextEntries) {
+  if (entry.type === "context_edit") edits.set(entry.targetId, entry);
+}
+const projectedEntries = contextEntries.map((sourceEntry, index) => ({
+  sourceEntry,
+  messages: sourceEntry.type === "compaction" && index > 0
+    ? []
+    : projectContextEntry(sourceEntry, edits.get(sourceEntry.id)),
+}));
+return {
+  entries: projectedEntries,
+  messages: projectedEntries.flatMap((entry) => entry.messages),
+  // ... thinkingLevel and model
+};
+```
+
+`projectContextEntry` 内部先调用刚才的条目转换：没有 edit 原样返回，`replacement === null` 返回 `[]`，可编辑消息则保留其他字段、替换 content。对 assistant/toolResult，字符串 replacement 会规范化为 text block 数组；上面的 G 样例已采用这个数组形态。压缩覆盖与内容编辑在两次不同转换里发生。[投影输出](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L548)、[replacement 规范化](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L1381)。
+
 这种编辑是路径内的可见贡献变化，和“重新总结全部历史”不同。已经被最新摘要取代、没有详细保留的旧条目，不会因为后来编辑了原条目就自动改写摘要文字。要理解它的效果，应先确定当前上下文 Entry 范围，再判断目标是否还有贡献。
 
 ## 5. 投影怎样真正影响下次请求
 
 SessionManager 产生 projection 还不是请求已经发出。AgentSession 的 `_refreshFinalizedContext` 从 SessionManager 读取投影，为消息保存来源对应，再把 projection.messages 赋给 Agent.state.messages。手工及自动压缩在追加 CompactionEntry 后都进入这条刷新路径。
 
+这个方法本身很短，可以直接看源码。除了采用消息，它也登记消息对象到来源 Entry 的对应：
+
 ```ts
-// Source skeleton, unrelated mapping details omitted.
-projection = sessionManager.buildSessionProjection()
-agent.state.messages = projection.messages
+private _refreshFinalizedContext(): void {
+  const projection = this.sessionManager.buildSessionProjection();
+  for (const entry of projection.entries) {
+    for (const message of entry.messages) this._entryIdsByMessage.set(message, entry.sourceEntry.id);
+  }
+  this.agent.state.messages = projection.messages;
+}
 ```
 
 因此，链路已经闭合：**追加历史结构 → 生成新投影 → 采用为 Agent 活动消息 → 下一请求读取**。这一步让持久历史和进程内循环使用一致的选中语义，而不是等到重启才让摘要生效。[投影采用](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L938)、[手工压缩后的刷新](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L2847)。
+
+当前请求也有自己的准备入口。构造时 `_installAgentRequestProjection` 接到 `Agent.prepareRequest`；每次模型请求前，它再次从历史产生 canonicalContext。下面按源码整理具体模型的普通路径，省略失败响应记录和 virtual model 路由：
+
+```ts
+const previousPrepareRequest = this.agent.prepareRequest;
+this.agent.prepareRequest = async (request, signal) => {
+  // ... clear the previous failed response
+  const projection = this.sessionManager.buildSessionProjection();
+  const canonicalContext = {
+    ...request.context,
+    messages: projection.messages,
+    tools: this.agent.state.tools.slice(),
+  };
+  const previous = await previousPrepareRequest?.({
+    ...request, context: canonicalContext,
+    model: this.agent.state.model, thinkingLevel: this.agent.state.thinkingLevel,
+  }, signal);
+  const context = previous?.context ?? canonicalContext;
+  const model = previous?.model ?? this.agent.state.model;
+  const thinkingLevel = previous?.thinkingLevel ?? this.agent.state.thinkingLevel;
+  if (!isVirtualModel(model)) return { ...previous, context, model, thinkingLevel };
+  // ... resolve a virtual model and recheck its request context
+};
+```
+
+这是“活动状态”和“当次请求”的第二次交接：messages 来自当前历史投影，tools 是可执行实现集合，已有 prepareRequest 可以进一步调整本次请求。随后内核才做下文的消息转换。不能把循环启动时复制过的 messages 数组理解成整个任务期间不再变化的最终请求。[每次请求的投影入口](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L787)。
 
 ### 活动消息与 provider 请求仍有一层距离
 

@@ -18,4 +18,5 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run test:contracts
+      - run: npm run test:review
       - run: npm run build

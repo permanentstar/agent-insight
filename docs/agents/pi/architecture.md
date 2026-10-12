@@ -43,15 +43,57 @@ SDK 的 `createAgentSession` 首先确定 cwd：显式参数优先，其次采�
 
 最后，SDK 创建 Agent，将执行所需的 model、转换函数、streamFunction 等能力接进去，再把 Agent 和各服务注入 AgentSession。CLI 的 services 路径同样承担组合职责。**组合根的作用是决定对象如何协作，构造时还没有开始模型任务。** [历史读取与配置恢复](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/sdk.ts#L209)、[services 组合](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session-services.ts#L135)、[CLI 入口](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/main.ts#L751)。
 
-可以用下面的概念性伪代码记住顺序。它省略认证、模型回退和资源诊断，不能直接作为 SDK 示例运行：
+下面是 `sdk.ts` 中 `createAgentSession` 的流程骨架，保留真实对象和调用顺序；省略模型选择细节、请求缓存和可选配置，不能独立运行。先看历史消息怎样交给 Agent，再看服务怎样交给 AgentSession：
 
 ```ts
-services = useProvidedOrCreate(cwd)
-context = services.sessionManager.buildSessionContext()
-selection = chooseModelAndThinking(explicitOptions, context, settings)
-agent = createAgent(context, selection, modelStream, messageConversion)
-session = createAgentSession(agent, services)
+const cwd = resolvePath(options.cwd ?? options.sessionManager?.getCwd() ?? process.cwd());
+// ... resolve agentDir and credential paths
+const modelRuntime = options.modelRuntime ?? (await ModelRuntime.create({ authPath, modelsPath }));
+const settingsManager = options.settingsManager ?? SettingsManager.create(cwd, agentDir);
+const sessionManager = options.sessionManager ?? SessionManager.create(cwd, getDefaultSessionDir(cwd, agentDir));
+let resourceLoader = options.resourceLoader;
+if (!resourceLoader) {
+  resourceLoader = new DefaultResourceLoader({ cwd, agentDir, settingsManager });
+  await resourceLoader.reload();
+}
+const existingSession = sessionManager.buildSessionContext();
+// ... select model and thinkingLevel using options, history and settings
+const agent = new Agent({
+  initialState: { systemPrompt: "", model, thinkingLevel, tools: [], messages: existingSession.messages },
+  convertToLlm: convertToLlmWithBlockImages,
+  streamFn: async (model, context, options) => {
+    const requestOptions = buildRequestOptions(model, options);
+    // ... cache warming
+    return modelRuntime.streamSimple(model, context, requestOptions);
+  },
+  // ... callbacks and queue settings
+});
+// ... record initial selection metadata
+const session = new AgentSession({
+  agent, sessionManager, settingsManager, cwd, resourceLoader, modelRuntime,
+  // ... tool selections, cache and extension references
+});
 ```
+
+这里创建的是能力连接：`existingSession.messages` 给出执行起点，`streamFn` 指向真正的模型请求服务。只有之后调用 prompt，这些连接才被使用。[SDK 的 Agent 构造](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/sdk.ts#L411)、[AgentSession 注入](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/sdk.ts#L461)。
+
+进入 `AgentSession` 构造函数后，还要把产品行为接到内核边界。下面节选构造函数的绑定段；省略隐藏声明等专门投影 hook：
+
+```ts
+this._unsubscribeAgent = this.agent.subscribe(this._handleAgentEvent);
+this._installAgentToolHooks();
+this._installAgentNextTurnRefresh();
+this._installAgentRequestProjection();
+this._installAgentBoundaryHooks();
+// ... additional projections
+this._buildRuntime({
+  activeToolNames: this._initialActiveToolNames,
+  includeAllExtensionTools: true,
+});
+if (this._initialActiveToolNames === undefined) this._restoreToolsFromTranscript();
+```
+
+订阅负责把执行事件交给产品和历史；tool hooks 负责工具前后处理；request projection 负责请求视图；runtime 负责扩展定义与当前绑定。它们不是四份执行循环，而是同一循环在不同边界调用的产品能力。[构造时的绑定](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L511)。
 
 如果程序重启，恢复的是历史和配置，再创建一个新的执行对象；如果用户开始新会话，产品 runtime 可以更换活动 AgentSession。两种动作都不同于在原工具函数的暂停位置继续执行。
 
@@ -60,6 +102,26 @@ session = createAgentSession(agent, services)
 以修改导出逻辑为例，第一份输入经过 AgentSession 的产品处理后进入 Agent。Agent 为这次运行创建 activeRun 和 AbortController；循环结束时释放运行状态。随后用户再提交“给这项修改补一段说明”，可以在同一个 AgentSession 和同一条历史上启动新的 activeRun。
 
 如果第二份输入在第一份尚未结束时到达，产品需要选择 steer 或 followUp。它们进入队列，由循环在相应边界消费，不能再启动一份并行 `Agent.prompt`。Agent 的 `isStreaming` 表示整个活跃运行，其间也可能正在执行工具；不能把名字理解为“此刻一定正在接收模型 token”。[运行生命周期与 activeRun](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/agent/src/agent.ts#L507)。
+
+在执行层，`runWithLifecycle` 为一次内核运行认领 `activeRun`，并在最后调用 `finishRun`。下面的节选保留认领与释放位置，省略初始显示状态和异常消息的构造：
+
+```ts
+if (this.activeRun) throw new Error("Agent is already processing.");
+const abortController = new AbortController();
+// ... create promise and resolvePromise
+this.activeRun = { promise, resolve: resolvePromise, abortController };
+this._state.isStreaming = true;
+try {
+  await executor(abortController.signal);
+} catch (error) {
+  await this.handleRunFailure(error, abortController.signal.aborted);
+} finally {
+  this.finishRun();
+}
+// finishRun(): clear streaming state, resolve activeRun.promise, clear activeRun
+```
+
+因此 activeRun 的终点是内核和 awaited 事件监听者均完成之后。产品层在一次内核运行结束后还可能继续调用 `Agent.continue()`，最终用 `agent_settled` 表达产品收口；完整代码在[循环章](loop.md)展开。不要用一个 `agent_end` 同时代表内核事件终点和整个产品 prompt 已完成。[状态释放](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/agent/src/agent.ts#L550)。
 
 ## 哪些状态交给哪一层
 

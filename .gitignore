@@ -1,7 +1,9 @@
 node_modules/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+docs/.vitepress/review-dist/
 .source-map.json
+/.review/
 .env
 .env.*
 !.env.example

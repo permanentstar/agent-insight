@@ -45,9 +45,85 @@ AgentSession 中的资源层提供定义，ExtensionRunner 提供事件处理，
 
 证据：[注册](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/loader.ts#L289)、[激活](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1518)、[prompt 顺序](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1968)、[工具 hook 安装](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L649)。注册、激活、模型选择和真实 execute 是连续的不同边界；具体 prepare/execute/finalize 见[循环章](loop.md)。
 
+### 定义怎样成为当前运行绑定
+
+先看注册层。下面节选 loader 提供给扩展的 `registerTool` 方法，省略 schema 无效时的错误文案；保存的是定义与来源，还没有执行工具：
+
+```ts
+registerTool(tool: ToolDefinition): void {
+  assertActive();
+  // ... require an object parameter schema
+  extension.tools.set(tool.name, {
+    definition: tool,
+    sourceInfo: extension.sourceInfo,
+  });
+  runtime.refreshTools();
+}
+```
+
+再进入产品层。`AgentSession._buildRuntime` 采用 ResourceLoader 的加载结果，创建 runner 并连接当前会话。下面节选它的装配段，省略默认工具名选择：
+
+```ts
+this._extensionRunner = new ExtensionRunner(
+  extensionsResult.extensions,
+  extensionsResult.runtime,
+  this._cwd,
+  this.sessionManager,
+  new ModelRegistry(this._modelRuntime),
+);
+if (this._extensionRunnerRef) this._extensionRunnerRef.current = this._extensionRunner;
+this._bindExtensionCore(this._extensionRunner);
+this._applyExtensionBindings(this._extensionRunner);
+// ... derive baseActiveToolNames from options or defaults
+this._refreshToolRegistry({
+  activeToolNames: baseActiveToolNames,
+  includeAllExtensionTools: options.includeAllExtensionTools,
+});
+```
+
+这里的 current 引用和 core/UI 绑定让定义能操作当前产品会话。激活又是另一段：`_setActiveTools` 调用 `_applyToolLoadout`，清除对应 pending 名称，再按实际工具名 `_rebuildSystemPrompt`。因此注册改变可用定义，激活改变当前选择及声明；两者都没有触发 execute。[注册执行点](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/loader.ts#L289)、[运行装配](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3637)、[激活实现](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1527)。
+
 ## Hook 分发与失败
 
 `emitToolCall` 按处理器快照逐个 await，遇到 block 直接返回；处理器异常会向调用边界传播。`emitToolResult` 把每次修改累计到 currentEvent，某个 handler 报错时记录 extension error 并继续处理其余结果 hook。两种错误策略不同，不能把“hook 失败”统一写成忽略或中止。
+
+产品安装的 hook 不捕获某一个旧 runner。下面按源码整理绑定与调用段，省略 parentToolCallId 展开和异常文案：
+
+```ts
+// _installAgentToolHooks()
+this.agent.beforeToolCall = (context) => this._beforeToolCall(context);
+this.agent.afterToolCall = (context) => this._afterToolCall(context);
+
+// _beforeToolCall({ toolCall, args }, parentToolCallId?)
+const runner = this._extensionRunner;
+if (!runner.hasHandlers("tool_call")) return undefined;
+return await runner.emitToolCall({
+  type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id,
+  // ... optional parentToolCallId
+  input: args as Record<string, unknown>,
+});
+```
+
+`this._extensionRunner` 在调用时读取，这就是 reload 更换 runner 后仍沿同一 Agent hook 生效的原因。[动态读取当前 runner](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L652)。
+
+再下到 runner 的事件分发层，`emitToolCall` 的普通处理循环很短，可以直接节选。它依次 await，block 是明确的提前返回：
+
+```ts
+const ctx = this.createContext();
+let result: ToolCallEventResult | undefined;
+for (const { handlers } of snapshotEventHandlers(this.extensions, "tool_call")) {
+  for (const handler of handlers) {
+    const handlerResult = await handler(event, ctx);
+    if (handlerResult) {
+      result = handlerResult as ToolCallEventResult;
+      if (result.block) return result;
+    }
+  }
+}
+return result;
+```
+
+结果 hook 的控制不同：`currentEvent` 接收每个 handler 返回的修改，后一个 handler 读到前一个处理后的结果；每次 handler 调用包在 try/catch 中，catch 调 `emitError` 记录错误后继续后续 handler。这个累计对象才决定最后返回哪些结果字段。[前置事件分发](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1242)、[结果事件分发](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1183)。
 
 修改结果 content 而没有同步提供 structuredContent 时，runner 删除原 structuredContent，避免文本与结构内容互相矛盾。依据：[调用 hook](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1242)、[结果 hook](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1183)。这些都发生在进程内，未由此获得 Pico5 的 intent/replay 语义。
 
@@ -62,6 +138,30 @@ AgentSession 中的资源层提供定义，ExtensionRunner 提供事件处理，
 | session_start(reason=reload) | 有绑定时发新生命周期事件 | 后续扩展资源在新绑定中加载 |
 
 证据：[reload](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3660)。当前源码保留 active tool 名称并处理尚未注册的 pending 名称，还允许新加入默认配置的工具进入集合；不把 reload 描述成“全部状态清空重启”。
+
+将表中的动作对照 reload 的源码节选。省略 defaultTools 差异计算及末尾 session_start 事件；保留旧句柄失效、资源重载和新 runner 装配顺序：
+
+```ts
+const oldRunner = this._extensionRunner;
+const previousFlagValues = oldRunner.getFlagValues();
+await emitSessionShutdownEvent(oldRunner, { type: "session_shutdown", reason: "reload" });
+oldRunner.invalidate();
+// ... remember the previous default tool selection
+await this.settingsManager.reload();
+this.syncQueueModesFromSettings();
+resetApiProviders();
+await this._resourceLoader.reload();
+// ... compute addedDefaultTools
+for (const name of this.getActiveToolNames()) this._pendingToolNames.add(name);
+this._buildRuntime({
+  activeToolNames: [...this.getActiveToolNames(), ...addedDefaultTools],
+  flagValues: previousFlagValues,
+  includeAllExtensionTools: true,
+});
+// ... rebind the new runner and emit session_start(reason: "reload")
+```
+
+持久历史的 SessionManager 没有在这里被替换。替换的是资源定义及扩展运行绑定；旧 ctx 失效、新工具逐步注册和原历史继续保留可以同时成立。[重载顺序](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3661)。
 
 ## 独有内容与边界
 

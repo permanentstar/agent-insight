@@ -26,3 +26,23 @@ verified_scope: "词典中的层次、构造与对象关系已静态核验；未
 | steering / follow-up | 输入调度 | 流中插入输入 / 自然结束后续跑输入 | 由 Agent 队列消费；不是历史分支 |
 
 构造证据见 [SDK](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/sdk.ts#L191)，词典与 [主链路](loop.md) 联读。
+
+## 从注入关系区分相似名字
+
+`AgentSessionConfig` 是创建产品会话时传入的依赖契约。下面节选其主线字段，省略可选工具、缓存与 UI 配置；这些字段保留源码名称：
+
+```ts
+export interface AgentSessionConfig {
+  agent: Agent;
+  sessionManager: SessionManager;
+  settingsManager: SettingsManager;
+  cwd: string;
+  // ... optional configuration
+  resourceLoader: ResourceLoader;
+  // ... custom tools
+  modelRuntime: ModelRuntime;
+  // ...
+}
+```
+
+这里不是把同一种“session”换几个名字：`agent` 接受运行请求，`sessionManager` 提供历史，`resourceLoader` 提供资源，`modelRuntime` 提供模型服务。它们作为不同对象进入同一个产品编排者。下一章展开这些对象怎样构造，以及何时开始执行。[依赖契约](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L252)。

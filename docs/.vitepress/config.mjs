@@ -4,6 +4,7 @@ const catalog = JSON.parse(readFileSync(new URL('../../catalog.json', import.met
 export default defineConfig({
   lang: 'zh-CN', title: 'Agent Insight', description: 'Agent 架构、执行机制与设计取舍的源码研究',
   lastUpdated: false, cleanUrls: true,
+  vite: { define: { __LOCAL_REVIEW__: JSON.stringify(process.env.AGENT_INSIGHT_REVIEW === '1') } },
   themeConfig: {
     nav: [{ text: '版本说明', link: '/guide/baselines' }, { text: '比较', link: '/comparisons/' }, { text: '分册', link: '/guide/map' }],
     sidebar: catalog.map(group => ({ text: group.title, collapsed: false, items: group.items.map(item => ({ text: item.title, link: item.path === 'index.md' ? '/' : '/' + item.path.replace(/\/index\.md$/, '/').replace(/\.md$/, '') })) })),
