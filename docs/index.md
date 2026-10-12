@@ -20,7 +20,7 @@ Agent 的一次回答可能包含多次模型请求、工具调用和状态更�
 
 ## 从共同问题开始
 
-先读[横向比较](comparisons/index.md)，建立不同实现之间的参照，再从[研究对象地图](guide/map.md)选择分册。版本与研究范围统一见[版本说明](guide/baselines.md)。
+建议按[学习路径](guide/learning.md)阅读。先读[共同架构](comparisons/common-model.md)，从一次模型调用建立完整工作闭环的认知，再进入[横向比较](comparisons/index.md)，再从[研究对象地图](guide/map.md)选择分册。版本与研究范围统一见[版本说明](guide/baselines.md)。
 
 | 研究问题 | 阅读入口 |
 |---|---|

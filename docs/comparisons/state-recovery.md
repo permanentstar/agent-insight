@@ -39,6 +39,44 @@ Pico5 将 Task checkpoint 交给当前代码继续调度，LangGraph 将图状�
 外部效果还有自己的事实：即使任务状态没保存，文件也可能已经被修改。因而恢复设计需要区分“下一步可定位”与“这个动作是否已经发生”；相同消息可以重新读取，不代表相同写入可以无条件重做。下面的表按三层资料比较实现，再用一个必要的中断案例解释差异。
 
 
+## 用一份等待记录推导下一步
+
+Pico5 可以直接用持久任务资料解释“工具结果回来以后谁继续”。以下是字段节选，ID 是教学命名：
+
+```json
+{
+  "generation": {
+    "id": "G1",
+    "state": {"status": "waiting",
+      "checkpoint": {"phase": "tools", "assistant": "E2",
+                     "tools": ["T1"], "pending": []},
+      "on": ["T1"], "policy": "allSettled"}
+  },
+  "tool": {
+    "id": "T1", "owner": "G1",
+    "state": {"status": "terminal",
+      "outcome": {"status": "completed", "result": {"entryId": "R1"}}}
+  }
+}
+```
+
+这里 T1 已有终态，G1 的等待条件可以满足。调度器重新认领 G1，按 checkpoint.phase=tools 进入处理代码；结果再参与边界判断。正常续跑可以创建下一 generation G2，G1 自己终止，pi.live.run 的归属移到 G2，用户输入仍等待最终收口。
+
+这份记录同时回答了三个问题：等待谁、恢复进入哪段代码、观察结果在哪里。不能只看 G1 的 status 或只保存一个“工具完成”字符串。[Pico5 的任务与移交](../agents/pi-durable/loop.md)。
+
+如果改用图表示，相应问题由节点、channels、版本、pending writes 与 checkpoint 共同回答；如果使用进程内循环，下一次调用位置最初由函数控制流维持。三者的语义可以对照，保存的具体资料不能互相替换。
+
+## 状态为何不应全写成自然语言
+
+模型可以解释“工具完成后继续验证”，但程序在中断后不能只从任意文本里猜哪个具体工具是否已有结果、哪个任务可以被认领。工作身份、结果关联、状态和控制位置需要明确的程序资料。
+
+这并不要求把目标正文也改成固定分类。目标、代码和观察保持开放语义，控制字段让程序可解释地推进。将所有语义提前压成一个 intent 标签，会损失任务变化；将全部控制都留给自由文本，又难以说明实际执行关系。
+
+**演算。** T1 已 terminal/completed，是否意味着用户工作 done？
+
+参考解答：不是。这里只说明一项工具 Task 收口。G1 还要消费结果、决定后续 generation 或结束；Submission 和 run 有自己的结果边界。
+
+
 | 对象 | 权威状态与所有者 | 构造与生命周期 | 实际机制与执行点 | 提供的能力 | 机制边界 | 深入阅读 |
 |---|---|---|---|---|---|---|
 | AgentSession | SessionManager 历史树 / Agent 消息 | 重建分支 parent 链及模型投影；活动执行在内存 | compaction/context edit 后构造输入；事件与 append 先后分开 | 分支历史与请求上下文关系可追 | 未证明任意活工具跨崩溃续跑或 fsync | [Pi](../agents/pi/architecture.md) |

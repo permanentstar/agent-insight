@@ -11,6 +11,10 @@
         "path": "guide/baselines.md"
       },
       {
+        "title": "学习路径：建立统一认知，再阅读真实实现",
+        "path": "guide/learning.md"
+      },
+      {
         "title": "研究对象与阅读地图",
         "path": "guide/map.md"
       },
@@ -26,6 +30,10 @@
       {
         "title": "横向比较入口与范围",
         "path": "comparisons/index.md"
+      },
+      {
+        "title": "共同架构：从模型调用到完整工作闭环",
+        "path": "comparisons/common-model.md"
       },
       {
         "title": "对象矩阵：同一问题与不同阶段",

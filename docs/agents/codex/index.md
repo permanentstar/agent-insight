@@ -7,12 +7,26 @@ baselines: ["codex-20261009"]
 sources: ["codex-official"]
 depends_on: ["codex-plan", "codex-context", "codex-official-migrated"]
 evidence: []
-verified_scope: "分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+verified_scope: "入口按共同职责定位并连接实现专题；正文的静态证据、历史范围与教学核验各自说明。"
 ---
 
 # Codex 分册
 
 Codex 的 Rust core 用长活 Session/Thread 承接提交，以 turn 和 step 的快照组织请求和执行。上下文、工具路由、审批环境与 rollout 记录各有 owner，不能把一个线程读成单个模型调用。
+
+## 在共同架构中定位
+
+先把本实现放到[共同职责地图](../../comparisons/common-model.md)，再沿下面的章节追到实际对象。这里对齐的是问题，具体类型和作用域仍按本分册解释。
+
+| 共同职责 | 本实现中的定位 |
+|---|---|
+| 产品宿主 | 宿主通过 ThreadManager 和 SessionIo 接纳操作。 |
+| 工作推进 | SessionTask 驱动用户 Turn，StepContext 固定一次采样视图。 |
+| 模型与动作 | ModelClientSession 组织请求；ToolRouter/handler/runtime 落实调用。 |
+| 历史与请求 | ContextManager 投影活跃历史；RolloutRecorder 另管理写入及确认。 |
+| 扩展与控制 | skills/plugins、MCP、协作模式与工具执行政策作用在各自边界。 |
+
+## 分册阅读
 
 | 章节 | 要回答的问题 |
 |---|---|

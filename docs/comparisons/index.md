@@ -5,7 +5,7 @@ subject: "comparison"
 status: "index"
 baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-frozen-documents"]
 sources: ["comparison-legacy"]
-depends_on: ["comparison-matrix", "comparison-modes", "comparison-ownership", "comparison-control", "comparison-context", "comparison-state", "comparison-execution", "comparison-observability"]
+depends_on: ["comparison-reference", "comparison-matrix", "comparison-modes", "comparison-ownership", "comparison-control", "comparison-context", "comparison-state", "comparison-execution", "comparison-observability"]
 evidence: ["source", "historical-document", "static-inference"]
 verified_scope: "九对象的定位与七个机制专题；源码静态机制、历史转述与候选设计分开，无运行或性能排名。"
 ---
@@ -16,6 +16,7 @@ verified_scope: "九对象的定位与七个机制专题；源码静态机制、
 
 | 共同问题 | 页面 | 覆盖 |
 |---|---|---|
+| 一项工作怎样成为模型、动作和反馈的闭环 | [共同架构](common-model.md) | 从最小循环到职责分层、控制表示与组合取舍 |
 | 应用、框架、实验分别处于哪层 | [对象矩阵](matrix.md) | 定位、入口、驱动器与基线 |
 | ReAct、规划执行和固定编排如何区分 | [执行模式](execution-modes.md) | 同一任务、模式层次、实际入口与支持程度 |
 | 谁构造谁、谁持有活动工作 | [所有权](ownership.md) | owner、复用、长期身份与运行实例 |

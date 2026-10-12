@@ -82,6 +82,53 @@ ToolMessage(content="exportCsv 直接拼接字段，已有验证覆盖普通字�
 
 这也是自然语言组织方式：框架不把所有正文变成一个固定 intent_class，而用消息角色、内容块和调用关联约束材料的解释。结构化输出又是另一种返回契约；它可以影响工厂结束条件，不能和“工具调用结果”混称。
 
+## 从工具契约到一次完整图调用
+
+将任务交给 create_agent，应用仍要提供实际能力；工厂不会凭“修复 CSV”这几个字自动生成读文件和验证代码。为手工演算，定义以下三个应用工具，名字与输出为教学约定：
+
+| 工具 | 输入 | 正常返回的资料 | 实际效果归谁 |
+|---|---|---|---|
+| read_source | path: str | 指定源码文本及位置 | 应用读取 handler |
+| replace_source | path: str、replacement: str | 受影响路径与替换结果 | 应用写入 handler |
+| check_source | path: str | 逗号、引号、换行样例的检查结果 | 应用验证 handler |
+
+这些函数可以用 @tool 或 BaseTool 提供 schema、名字和说明。模型由调用者预先构造；工作区、执行政策和验证实现也由应用准备。下面只展示工厂与调用的连接，省略 handler 和模型配置，未执行真实请求：
+
+```python
+agent = create_agent(
+    model=prepared_chat_model,
+    tools=[read_source, replace_source, check_source],
+)
+result = agent.invoke({
+    "messages": [HumanMessage(content="读取导出实现，修复 CSV 转义并验证。")],
+})
+```
+
+这段调用没有另写主 while 循环。create_agent 已将 model、tools、hooks 和路由组合为 compiled graph；LangGraph 根据输入、节点返回和边推进。普通代码也能实现反馈循环，采用图是工厂的组合选择，不是“工具达到某个数量就必须升级”的规则。[工厂与 compile](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L892)。
+
+### 把完整消息增长列出来
+
+假设本次模型选择如下轨迹。每一行的 AI/Tool 消息都追加到相应 state，call ID 保持关联；实际任务不固定轮数。
+
+| 模型请求前 | 此次响应／工具 | 随后进入 state 的资料 |
+|---|---|---|
+| U：用户目标 | AI A1 请求 read_source，id=r1 | A1 的 tool_calls |
+| U、A1 | 工具读取返回 R1 | ToolMessage(tool_call_id=r1)，含当前实现 |
+| U、A1、R1 | AI A2 请求 replace_source，id=w1 | A2 的路径与具体 replacement |
+| 再加 A2 | 写入返回 R2 | ToolMessage(tool_call_id=w1)，含修改结果 |
+| 再加 R2 | AI A3 请求 check_source，id=v1 | A3 的验证调用 |
+| 再加 A3 | 验证返回 R3 | ToolMessage(tool_call_id=v1)，含三类检查事实 |
+| U、A1、R1、A2、R2、A3、R3 | AI A4 说明结果，无待执行调用 | 正常回答，按有效路由与 hooks 收口 |
+
+R1 让模型知道实际代码，R2 让它知道动作结果，R3 让它知道验证事实。工厂路由消费 tool_calls、结果关联和有效状态；它不从 A4 的“我已经完成”直接证明测试覆盖或文件效果。
+
+由此可见框架接管了哪些工作：协议对象、工具节点、middleware 组合和图路由。应用仍负责哪些工具有效、handler 做什么、模型与环境怎样准备、目标怎样验收。两层分工明确，才知道自己组装的是 Agent 工作闭环，还是只得到了一份生成建议。
+
+**演算。** 若模型先要求 check_source，再发现需要修改，是否违反工厂流程？
+
+参考解答：不违反。model/tools 的协作骨架保持相同，具体工具与轮数由当次决定和程序控制共同形成。该轨迹可能多出观察和请求，不能从本表的教学顺序推定工厂强制读→改→测。
+
+
 ## middleware 怎样改变同一条主线
 
 before_model/after_model 作为图中的节点，可返回状态更新或允许的跳转；wrap_model_call 是模型调用的包裹，可以改当次请求或结果。比如只想为这次请求附上时间信息，可以 override request，而不必把时间永久追加为用户消息。
@@ -97,6 +144,38 @@ TodoListMiddleware 添加 write_todos 和 todos 状态，工具以 Command 更�
 在本案例中，外层计划可以保存“实现转义”这一项，而 Executor 内部独立读取、修改、测试多次。外层计划项与内层 tool call 是不同粒度。只有将输入输出契约和状态位置写清楚，组合后才不会出现两层都以为对方负责推进的情况。
 
 学习自检：AIMessage.content、tool_calls 与 ToolMessage 各承担什么？如果同一图开始新请求，哪些对象复用、哪些 request 新建？为什么 Runnable 的统一调用接口不等于业务状态机？
+
+## 一次 middleware 调用的完整资料时间轴
+
+![初始 State 经 before_model 更新进入模型节点，wrap_model_call 只为当次请求加入临时资料，模型返回消息后形成 State 更新，after_model 再提交自己的更新；配置的 checkpointer保存相应图状态](../../assets/middleware-request-state.svg)
+
+前文区分了 hook 与 wrapper，但要预测下一轮输入，还需要把它们放在同一次调用中。假设应用 schema 添加 model_calls 和 review 字段，初始 State 是：
+
+```python
+state_0 = {"messages": [U], "model_calls": 0, "review": None}
+```
+
+U 是用户目标。本例 middleware 的三项职责都由应用定义，不是 AgentState 默认就有这些字段：before_model 计数；wrap_model_call 临时附加资料 T；after_model 写入本例的观察标记。T 可以是某次请求才需要的环境说明。
+
+| 时间 | 实际动作 | 下一消费者看见什么 |
+|---|---|---|
+| before_model 节点 | 返回 update：model_calls=1 | 图合并后，模型节点读取更新后的 State |
+| 模型节点构造 ModelRequest | messages 来自 State；另绑定模型、工具、system 与 runtime | wrapper 得到当次 request |
+| wrap_model_call | 以 request.override(messages=[U,T]) 调 handler | 模型这次读 U 与 T；State 尚未追加 T |
+| 模型返回 A | model response 形成 messages 等 State 更新 | 后续图节点读取 U、A 与其他有效状态 |
+| after_model 节点 | 返回 update：review="checked" | 后续状态包含该字段，路由按允许控制决定走向 |
+| 有效持久配置的保存边界 | checkpointer 接收相应图状态／写入资料 | 后续恢复依据保存资料；不是保存原 wrapper 局部变量 |
+
+在本例的正常路径下，后续 State 主要是 messages=[U,A]、model_calls=1、review="checked"。临时 T 没有仅因为 override 就独立成为持久消息；如果模型在 A 中引用了 T 的内容，这些文字仍可以随 A 保存。判断要精确到**是哪条消息、由哪个 update 进入了 State**，不能笼统说“临时信息绝对不会出现在历史”。
+
+节点返回 update，也不等于它直接修改了所有节点正在读取的同一个对象。LangGraph 按节点与超步边界应用写入；持久保存还取决于 checkpointer、thread 配置与 durability。图状态、模型请求、provider 连接和后端提交是不同对象。[模型节点与请求](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1579)、[图编排与 hook 边](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1715)、[LangGraph 提交主线](../langgraph/architecture.md)。
+
+这种对照可直接用来理解 DeerFlow middleware：一段内容是在改变持久任务资料、生成当次 Prompt，还是包装工具效果，必须按实际职责定位。不要因为都有 middleware 后缀就给它们相同生命周期。
+
+**演算。** 如果只保留 wrapper 的 T，删除 before_model 的计数 update，下一状态的 model_calls 应是多少？
+
+参考解答：仍是 0。请求增加 T 没有自动改变 State 的 model_calls。模型是否在回答中提到 T，是另一项消息内容问题，不会替程序更新这个字段。
+
 
 ## Hook 顺序与状态更新
 

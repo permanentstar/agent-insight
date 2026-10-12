@@ -1,37 +1,69 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" role="img" aria-labelledby="title desc">
-<title id="title">Pi 压缩投影：摘要、保留段与新增内容</title><desc id="desc">原始路径 A、B、C、D 后追加 compaction S，再追加 E；S 指定 firstKept=C，模型投影为摘要加 C、D、E，原始记录仍保留。</desc>
-<rect width="960" height="470" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" role="img" aria-labelledby="title desc">
+<title id="title">Pi 压缩投影：同一案例的摘要、保留和新增</title><desc id="desc">当前路径A B C E F G S H I J；S.firstKept=F，F/G为修改调用及结果，H/I为新验证调用及结果；上下文Entry为S F G H I J，D不在当前路径。</desc>
+<rect width="960" height="520" fill="#ffffff"/>
 <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
 <g font-family="system-ui, sans-serif" fill="#172554">
-<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pi 压缩投影：摘要、保留段与新增内容</text>
-<rect x="30" y="86" width="130" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="114" font-size="18" fill="#172554" font-weight="700">A</text>
-<text x="46" y="141" font-size="16" fill="#172554">历史条目</text>
-<path d="M160,128 H180" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="184" y="86" width="130" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="200" y="114" font-size="18" fill="#172554" font-weight="700">B</text>
-<text x="200" y="141" font-size="16" fill="#172554">历史条目</text>
-<path d="M314,128 H334" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="338" y="86" width="130" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="354" y="114" font-size="18" fill="#172554" font-weight="700">C</text>
-<text x="354" y="141" font-size="16" fill="#172554">历史条目</text>
-<path d="M468,128 H488" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="492" y="86" width="130" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="508" y="114" font-size="18" fill="#172554" font-weight="700">D</text>
-<text x="508" y="141" font-size="16" fill="#172554">历史条目</text>
-<path d="M622,128 H642" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="646" y="86" width="130" height="85" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
-<text x="662" y="114" font-size="18" fill="#172554" font-weight="700">S</text>
-<text x="662" y="141" font-size="16" fill="#172554">摘要</text>
-<path d="M776,128 H796" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="800" y="86" width="130" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="816" y="114" font-size="18" fill="#172554" font-weight="700">E</text>
-<text x="816" y="141" font-size="16" fill="#172554">新增</text>
-<text x="30" y="211" font-size="17" fill="#172554">S.summary 概括较老语义；S.firstKeptEntryId=C 指定详细保留区间。</text>
-<path d="M711,171 V247 H185 V276" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="30" y="280" width="900" height="110" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
-<text x="46" y="308" font-size="18" fill="#172554" font-weight="700">模型可见投影</text>
-<text x="46" y="335" font-size="16" fill="#172554">S 的摘要 + C、D 的详细贡献 + S 后新增的 E</text>
-<text x="46" y="359" font-size="16" fill="#172554">A、B 仍在历史文件；模型请求无需再次读取其全部细节</text>
-<text x="30" y="437" font-size="16" fill="#172554">先选 parent 路径，再解释覆盖边界；不能按文件行号或时间戳拼接。</text>
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pi 压缩投影：同一案例的摘要、保留和新增</text>
+<rect x="30" y="85" width="78" height="76" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="40" y="112" font-size="18" fill="#172554" font-weight="700">A</text>
+<text x="38" y="141" font-size="14" fill="#172554">目标</text>
+<path d="M108,121 H116" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="120" y="85" width="78" height="76" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="130" y="112" font-size="18" fill="#172554" font-weight="700">B</text>
+<text x="128" y="141" font-size="14" fill="#172554">r1请求</text>
+<path d="M198,121 H206" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="210" y="85" width="78" height="76" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="220" y="112" font-size="18" fill="#172554" font-weight="700">C</text>
+<text x="218" y="141" font-size="14" fill="#172554">r1结果</text>
+<path d="M288,121 H296" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="300" y="85" width="78" height="76" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="310" y="112" font-size="18" fill="#172554" font-weight="700">E</text>
+<text x="308" y="141" font-size="14" fill="#172554">新方向</text>
+<path d="M378,121 H386" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="390" y="85" width="78" height="76" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="400" y="112" font-size="18" fill="#172554" font-weight="700">F</text>
+<text x="398" y="141" font-size="14" fill="#172554">e1请求</text>
+<path d="M468,121 H476" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="480" y="85" width="78" height="76" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="490" y="112" font-size="18" fill="#172554" font-weight="700">G</text>
+<text x="488" y="141" font-size="14" fill="#172554">e1结果</text>
+<path d="M558,121 H566" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="570" y="85" width="78" height="76" rx="8" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="580" y="112" font-size="18" fill="#172554" font-weight="700">S</text>
+<text x="578" y="141" font-size="14" fill="#172554">摘要</text>
+<path d="M648,121 H656" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="660" y="85" width="78" height="76" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="670" y="112" font-size="18" fill="#172554" font-weight="700">H</text>
+<text x="668" y="141" font-size="14" fill="#172554">v1请求</text>
+<path d="M738,121 H746" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="750" y="85" width="78" height="76" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="760" y="112" font-size="18" fill="#172554" font-weight="700">I</text>
+<text x="758" y="141" font-size="14" fill="#172554">v1结果</text>
+<path d="M828,121 H836" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="840" y="85" width="78" height="76" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="850" y="112" font-size="18" fill="#172554" font-weight="700">J</text>
+<text x="848" y="141" font-size="14" fill="#172554">回答</text>
+<text x="30" y="205" font-size="16" fill="#172554">S.parentId=G；firstKeptEntryId=F，包含 F 本身；较早语义由 S 承接。</text>
+<text x="30" y="244" font-size="16" fill="#172554">选择的是 J 的祖先路径；旧方向 D 不会因为还在文件里就进入这次请求。</text>
+<path d="M606,161 V278 H480 V307" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="311" width="130" height="91" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="46" y="339" font-size="18" fill="#172554" font-weight="700">S</text>
+<text x="46" y="366" font-size="16" fill="#172554">摘要贡献</text>
+<rect x="184" y="311" width="130" height="91" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="200" y="339" font-size="18" fill="#172554" font-weight="700">F</text>
+<text x="200" y="366" font-size="16" fill="#172554">e1 请求</text>
+<rect x="338" y="311" width="130" height="91" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="354" y="339" font-size="18" fill="#172554" font-weight="700">G</text>
+<text x="354" y="366" font-size="16" fill="#172554">e1 结果</text>
+<rect x="492" y="311" width="130" height="91" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="508" y="339" font-size="18" fill="#172554" font-weight="700">H</text>
+<text x="508" y="366" font-size="16" fill="#172554">v1 请求</text>
+<rect x="646" y="311" width="130" height="91" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="662" y="339" font-size="18" fill="#172554" font-weight="700">I</text>
+<text x="662" y="366" font-size="16" fill="#172554">v1 结果</text>
+<rect x="800" y="311" width="130" height="91" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="816" y="339" font-size="18" fill="#172554" font-weight="700">J</text>
+<text x="816" y="366" font-size="16" fill="#172554">回答</text>
+<text x="30" y="450" font-size="17" fill="#172554">下方是模型上下文的 Entry 顺序，原始历史及 parent 关系不被改写。</text>
+<text x="30" y="492" font-size="16" fill="#172554">摘要承担旧语义；详细保留段与新增内容继续维持调用／结果配对。</text>
 </g></svg>

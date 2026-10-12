@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="785" viewBox="0 0 960 785" role="img" aria-labelledby="title desc">
+<title id="title">计划消费：目标、执行结果与重规划</title><desc id="desc">Planner生成步骤与完成条件，外层选择具体步骤并交接观察，Executor内部可运行工具循环，结果回到外层决定继续、修订或结束；字段由教学应用定义。</desc>
+<rect width="960" height="785" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">计划消费：目标、执行结果与重规划</text>
+<rect x="30" y="75" width="900" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="103" font-size="18" fill="#172554" font-weight="700">Planner：目标 → plan.steps</text>
+<text x="46" y="130" font-size="16" fill="#172554">每项有 ID、语义目标、完成条件和进度；计划必须有程序消费者</text>
+<rect x="30" y="233" width="590" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="261" font-size="18" fill="#172554" font-weight="700">选择一项 → Executor 输入</text>
+<text x="46" y="288" font-size="16" fill="#172554">用户目标 + 当前步骤 + 已知事实 + 可用能力</text>
+<rect x="30" y="389" width="590" height="106" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="417" font-size="18" fill="#172554" font-weight="700">Executor → 结果</text>
+<text x="46" y="444" font-size="16" fill="#172554">内部可多轮模型与工具反馈</text>
+<text x="46" y="468" font-size="16" fill="#172554">返回 step_id、outcome、facts、evidence</text>
+<rect x="30" y="555" width="590" height="105" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="583" font-size="18" fill="#172554" font-weight="700">外层保存并判断</text>
+<text x="46" y="610" font-size="16" fill="#172554">符合条件：下一项；新事实：修订剩余计划</text>
+<text x="46" y="634" font-size="16" fill="#172554">目标已有结果：综合说明并收口</text>
+<rect x="705" y="233" width="225" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="721" y="261" font-size="18" fill="#172554" font-weight="700">Replanner</text>
+<text x="721" y="288" font-size="16" fill="#172554">读取计划与结果</text>
+<text x="721" y="312" font-size="16" fill="#172554">只修订剩余工作</text>
+<rect x="705" y="555" width="225" height="105" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="721" y="583" font-size="18" fill="#172554" font-weight="700">结束</text>
+<text x="721" y="610" font-size="16" fill="#172554">步骤结果不能代替</text>
+<text x="721" y="634" font-size="16" fill="#172554">整个用户目标</text>
+<path d="M480,175 V207 H325 V229" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M325,333 V385" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M325,495 V551" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M30,607 H13 V283 H26" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M620,584 H666 V283 H701" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M705,319 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M620,635 H701" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="30" y="728" font-size="16" fill="#172554">这是应用组装的教学设计，不能从框架名称或 Todo 清单推定已有该流程。</text>
+</g></svg>

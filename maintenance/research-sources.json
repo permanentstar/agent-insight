@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "repo": "anthropics/claude-quickstarts",
+      "sha": "9ec32b91df50b0d4906cae64b13c6298055ff40d",
+      "observed_at": "2026-10-12",
+      "representative_path": "agents/agent.py",
+      "role": "官方最小参考实现",
+      "adopt": "模型请求、结构化调用、handler、结果和下一次请求的闭环",
+      "boundary": "示例特意简化生产能力；不把 MCP 接入或 while 循环解释成完整恢复系统"
+    },
+    {
+      "repo": "anthropics/claude-cookbooks",
+      "sha": "9c1e493ddd2b82df399d2a61b9c806c539e18be6",
+      "observed_at": "2026-10-12",
+      "representative_path": "patterns/agents/orchestrator_workers.ipynb",
+      "role": "官方模式示例",
+      "adopt": "先拆分目标，再把明确子任务与上下文交给 worker；模式由数据交接解释",
+      "boundary": "process 采用 for 循环逐项调用 worker；class 文案提到 parallel，不能据此推定代码实际并发；不等同 Claude Code 内部实现"
+    },
+    {
+      "repo": "huggingface/agents-course",
+      "sha": "3c469e773ec04e5f338b727ff20e3a6ea823ff81",
+      "observed_at": "2026-10-12",
+      "representative_path": "units/en/unit1/agent-steps-and-structure.mdx",
+      "role": "官方课程",
+      "adopt": "从消息、动作和观察建立学习前提，正常任务逐步演算",
+      "boundary": "不把可见 Thought 当成所有模型的必要协议，不把 Prompt 规则视为执行保证；provider 可有不同上下文和会话契约"
+    },
+    {
+      "repo": "langchain-ai/langchain-academy",
+      "sha": "fa15bec4a51c541c40c261586b037c9d134977b1",
+      "observed_at": "2026-10-12",
+      "representative_path": "module-2/state-reducers.ipynb",
+      "role": "框架作者课程",
+      "adopt": "先给确定状态，再展示节点 update 与 reducer 如何产生下一状态",
+      "boundary": "教程依赖和 API 不是本书当前框架基线；实际实现回到目标源码核验"
+    },
+    {
+      "repo": "microsoft/ai-agents-for-beginners",
+      "sha": "4c9a2759522679611635efbddcde3f8dfc3e40ee",
+      "observed_at": "2026-10-12",
+      "representative_path": "07-planning-design/README.md",
+      "role": "官方课程",
+      "adopt": "学习目标、计划 schema、职责与结果交接、学习问题",
+      "boundary": "固定片段中构造 provider 而调用 client，不能直接当作可运行代码；不采用云账号配置与未验证的供应商能力描述"
+    },
+    {
+      "repo": "shareAI-lab/learn-claude-code",
+      "sha": "ce8f9f186058939da54c9d6fead78dfb5d0fd6c3",
+      "observed_at": "2026-10-12",
+      "representative_path": "s01_agent_loop/README.zh.md",
+      "role": "社区教学代码",
+      "adopt": "问题推动机制逐步增长；tool-use→Todo→子执行→上下文的前后依赖",
+      "boundary": "它是独立教学实现，不能当 Claude Code 原源码；Todo 标签不自动说明独立 Planner/Executor"
+    },
+    {
+      "repo": "datawhalechina/hello-agents",
+      "sha": "623d8148f83d53365e39c21cb592b62b0f8e7b1b",
+      "observed_at": "2026-10-12",
+      "representative_path": "docs/chapter7/第七章 构建你的Agent框架.md",
+      "role": "社区教材",
+      "adopt": "原理、实现、应用分层；一段教学内容应有完整推导和案例",
+      "boundary": "Everything is a Tool 是这个教学框架的接口选择；不强制把记忆采用、调度与后台治理都放进模型可调用工具"
+    },
+    {
+      "repo": "li2092/harness-study",
+      "sha": "8890ca1153dca5486106ef37693103599e10f021",
+      "observed_at": "2026-10-12",
+      "representative_path": "introduction/05-00-mechanisms-overview.md",
+      "role": "社区机制论述",
+      "adopt": "区别运行机制与横切策略；结合单项工作串联机制",
+      "boundary": "8+1 是作者切分方式，不作行业标准；固定安全层数、turn 含义、模型升级规则与默认预算不套用所有目标"
+    },
+    {
+      "repo": "jiminelee/agent-harness-course",
+      "sha": "77999df43008f33749dcf241ef38ceed90feb46b",
+      "observed_at": "2026-10-12",
+      "representative_path": "module06/module06_planning.py",
+      "role": "社区递进练习",
+      "adopt": "显式计划被代码消费，每项再运行工具反馈循环，最终综合",
+      "boundary": "示例 search_web 是 stub，不能证明检索；隔离子步骤还须显式传递先前事实，不照搬 eval 或静默降级"
+    },
+    {
+      "repo": "sanjaynandanj/harness-engineering-from-scratch",
+      "sha": "59d7343482249144b2cf505c0ad5978523d60382",
+      "observed_at": "2026-10-12",
+      "representative_path": "phases/01-core-loop/01-minimal-loop/code/python/lesson.py",
+      "role": "社区教学练习",
+      "adopt": "使用脚本响应记录每次输入，让学习者验证消息和控制关系",
+      "boundary": "MockLLM 只检查已指定轨迹，不验证模型决策质量；这份最小例子未执行工具，不能将其测试数当 Agent 性能"
+    }
+  ]
+}

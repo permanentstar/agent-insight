@@ -84,6 +84,29 @@ running 内的 turn/step 才表达任务推进。turn 首次 preStep 面向 next
 
 学习自检：为什么 phase=running 与存在一个未闭合 turn 是两种状态？assistant-stream 与 assistant/message 的职责有什么不同？事件仍在日志里，却不进入当前 surface，模型是否一定能看见它？
 
+## 用一次 step 追踪事件与模型视图
+
+当前驱动器已经处于 running，一项 CSV 修复的 turn 正在推进。下面是正常轨迹的字段与事件节选解释，不是假定所有日志行都进入模型：
+
+| 时点 | Session 记录／观察 | 后续作用 |
+|---|---|---|
+| 进入 step | step/start 与已接纳输入 | 标出工作边界，准备请求 |
+| 请求形成 | 有效 system/context、工具定义及消息快照 | 冻结本次调用的输入 |
+| 模型生成 | 临时 assistant-stream 帧 | 用于观察流式进度 |
+| 最终模型结果 | assistant/message，包含可能的 tool-call | 保存可解释的模型结果及动作请求 |
+| 工具调用和返回 | tool/call、tool/result | 保存动作边界与反馈；有效贡献进入 surface |
+| step 收口 | step/end | 当前步骤边界关闭；可能进入下一 step |
+| 工作收口 | turn/end 与 reason | 当前用户工作有终点；driver 可继续或回 idle |
+
+下一请求不是把上表所有记录转成聊天正文。Session 的 surface 指定可见贡献，deriveMessages 构造模型输入；边界、请求元数据与流式帧有各自用途。若审计日志保留某次事件，而 surface 已改变它的可见贡献，模型也不因此必然看见原事件全文。
+
+一条 tool/result 为模型提供观察，但不直接改变自然语言任务的唯一正确下一步。驱动器按有效控制条件进入后续 step，模型再结合资料选择动作。这说明事件结构让过程可解释，语义资料让决策保持开放；二者共同参与同一个工作闭环。[step 与请求](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/agent.ts#L400)。
+
+**演算。** UI 已看到 assistant-stream，Session 尚未出现最终 assistant/message，这能否作为最终回答已经保存的证明？
+
+参考解答：不能。它是临时流观察；最终消息、surface 贡献及后端确认仍有独立边界。这是正常生成过程中的层次区别，不需要先假定发生崩溃。
+
+
 ## 存储、压缩与故障边界
 
 Session.append 接纳事件与投影；persistence 的 append 承诺有序可见，flush 才是跨崩溃存活的统一契约。启用 checkpoint-policy 时，它在模型 stream、顶层 tools/execute 和下一 pre-step 发起 session flush；失败则不进入相应下游效果。嵌套工具复用外层调用的持久边界，不能声称每个嵌套动作都有独立 durable intent。

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="795" viewBox="0 0 960 795" role="img" aria-labelledby="title desc">
+<title id="title">RAG：资料表示相同，检索控制权不同</title><desc id="desc">同一Retriever返回含source和section的Document；格式化成带来源资料；固定链先检索再生成，Agentic由模型发调用、结果回填再决策，两者都需要答案对应资料事实。</desc>
+<rect width="960" height="795" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">RAG：资料表示相同，检索控制权不同</text>
+<rect x="30" y="70" width="900" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="98" font-size="18" fill="#172554" font-weight="700">资料面：Document → Retriever → 带来源的片段</text>
+<text x="46" y="125" font-size="16" fill="#172554">知识准备：加载 / 分块 / 索引；查询：选出相关 Document</text>
+<text x="46" y="149" font-size="16" fill="#172554">片段正文 + source / section / ID → 明确格式化为请求资料</text>
+<path d="M480,170 V211 H250 V246" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M480,211 H710 V246" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="250" width="430" height="116" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="278" font-size="18" fill="#172554" font-weight="700">固定两阶段</text>
+<text x="46" y="305" font-size="16" fill="#172554">程序先调用 Retriever</text>
+<text x="46" y="329" font-size="16" fill="#172554">问题 + 资料 → 模型请求</text>
+<text x="46" y="353" font-size="16" fill="#172554">通常一次生成</text>
+<rect x="500" y="250" width="430" height="116" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="516" y="278" font-size="18" fill="#172554" font-weight="700">Agentic 检索</text>
+<text x="516" y="305" font-size="16" fill="#172554">模型请求 search_rules</text>
+<text x="516" y="329" font-size="16" fill="#172554">程序执行检索，ToolMessage 回填</text>
+<text x="516" y="353" font-size="16" fill="#172554">后续模型可继续检索或回答</text>
+<rect x="30" y="445" width="430" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="473" font-size="18" fill="#172554" font-weight="700">固定控制</text>
+<text x="46" y="500" font-size="16" fill="#172554">检索在应用 / 节点中受控</text>
+<text x="46" y="524" font-size="16" fill="#172554">运行步骤由程序组织</text>
+<rect x="500" y="445" width="430" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="516" y="473" font-size="18" fill="#172554" font-weight="700">动态控制</text>
+<text x="516" y="500" font-size="16" fill="#172554">检索能力被包装为 Tool</text>
+<text x="516" y="524" font-size="16" fill="#172554">动作选择由模型 / 外层策略组织</text>
+<path d="M250,366 V441" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M710,366 V441" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M930,300 H947 V225 H931" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="631" width="900" height="103" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="46" y="659" font-size="18" fill="#172554" font-weight="700">答案与证据</text>
+<text x="46" y="686" font-size="16" fill="#172554">答案采用哪些片段事实？引用能否定位原资料？</text>
+<text x="46" y="710" font-size="16" fill="#172554">查到 Document、调用完成、模型回答和正确使用事实分别判断</text>
+<path d="M250,549 V596 H480 V627" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M710,549 V596 H480" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+</g></svg>

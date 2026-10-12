@@ -82,6 +82,27 @@ Gateway worker 取得执行所有权后，组合 RunContext 与 Runtime，调用
 
 学习自检：一个 run 内为什么可以有多个模型调用？TodoMiddleware 怎样让模型继续，却没有直接替模型选择下一工具？如果 SSE 读连接断开，哪个执行对象仍可能继续运行？
 
+## 三种“状态更新”在正常任务里怎样配合
+
+以 Gateway 接入的 CSV 修复为例，产品 worker 开始运行后，Lead 图可以有多次模型和工具节点。修复过程中的三个状态面相互联系，但面对不同问题：
+
+| 状态面 | 任务中的变化 | 消费者 |
+|---|---|---|
+| 图 state | messages 增加调用及结果；启用时 todos 改变 | 模型节点、middleware、图路由及 checkpointer |
+| 产品 run | pending → running，再按有效执行和收尾结果收口 | RunManager、worker 与平台运行接口 |
+| 产品事件 | 从图流和执行过程形成可读取资料 | SSE、事件存储与界面 |
+
+读取代码完成时，图得到新观察，但 run 通常仍在 running；修改结果回来时，模型可以继续验证；图结束后，worker 还要完成相应平台收尾。一个 tool result、一个 graph end 和一个 run success，因此对应不同边界。
+
+Todo 的结构化状态同样要放在图内理解。pending/in_progress/completed 描述清单进度，清单项正文描述语义目标；middleware 可以在未完成时提醒同一主循环，却不会因清单包含“运行验证”就直接替模型产生固定调用。模型选择与图／产品控制分工清楚，才能解释实际模式。
+
+应用和框架也因此互补：DeerFlow 给任务提供产品语义与运行控制，create_agent 装配标准反馈图，LangGraph 推进状态。这里的框架行为须对应应用实际组合，不能用两框架独立研究主干的新增细节代替应用依赖证据。[产品工厂](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/agent.py#L1391)、[运行与收尾](runtime.md)。
+
+**演算。** 一个验证 ToolMessage 已进入图状态，但 run 尚在 running，这是否矛盾？
+
+参考解答：不矛盾。它表明图已有一次观察，后面还可以有模型判断或其他图工作，平台还需要收口。只有明确各状态的 owner 和消费者，才能解释这种正常中间状态。
+
+
 ## Prompt、工具与扩展的层次
 
 产品 `apply_prompt_template` 负责 system prompt 的基底，包含角色、SOUL、skills、子 Agent 等按配置组合的内容。DynamicContext 等 middleware 再按生命周期加入记忆、时间或请求事实；DurableContext 用可恢复业务状态生成当次请求内容。因此“某段文本由 middleware 注入”不等于“该 middleware 拥有整个 system prompt”。

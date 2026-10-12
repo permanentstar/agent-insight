@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="850" viewBox="0 0 960 850" role="img" aria-labelledby="title desc">
+<title id="title">Middleware：State、请求副本与保存边界</title><desc id="desc">before_model返回状态更新，模型节点构造request，wrapper临时加入T供当次模型读取；模型返回A并形成状态更新，after_model再更新字段，有配置的checkpointer保存相应图资料；T不因override自动成为独立持久消息。</desc>
+<rect width="960" height="850" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Middleware：State、请求副本与保存边界</text>
+<rect x="30" y="75" width="900" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="103" font-size="18" fill="#172554" font-weight="700">初始 State</text>
+<text x="46" y="130" font-size="16" fill="#172554">messages=[U]；model_calls=0；review=None</text>
+<rect x="30" y="216" width="570" height="98" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="244" font-size="18" fill="#172554" font-weight="700">before_model → State update</text>
+<text x="46" y="271" font-size="16" fill="#172554">model_calls=1；合并后供模型节点读取</text>
+<rect x="30" y="372" width="570" height="118" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="400" font-size="18" fill="#172554" font-weight="700">ModelRequest → wrap_model_call</text>
+<text x="46" y="427" font-size="16" fill="#172554">request.override(messages=[U,T])</text>
+<text x="46" y="451" font-size="16" fill="#172554">模型当次读 U、T；T 未因此成为 state 消息</text>
+<rect x="30" y="546" width="570" height="112" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="574" font-size="18" fill="#172554" font-weight="700">模型 A → after_model → State</text>
+<text x="46" y="601" font-size="16" fill="#172554">正常消息更新：messages=[U,A]</text>
+<text x="46" y="625" font-size="16" fill="#172554">示例 review=&quot;checked&quot;；T 的局部请求被释放</text>
+<rect x="690" y="546" width="240" height="112" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="706" y="574" font-size="18" fill="#172554" font-weight="700">有持久配置时</text>
+<text x="706" y="601" font-size="16" fill="#172554">图状态 / writes</text>
+<text x="706" y="625" font-size="16" fill="#172554">交 checkpointer 保存</text>
+<path d="M480,165 V189 H315 V212" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M315,314 V368" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M315,490 V542" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M600,602 H686" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="716" width="900" height="96" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="46" y="744" font-size="18" fill="#172554" font-weight="700">判断必须精确到资料与写入者</text>
+<text x="46" y="771" font-size="16" fill="#172554">T 不自动作为消息保存；模型若在 A 中引用 T，其文字仍可能随 A 保存</text>
+<text x="46" y="795" font-size="16" fill="#172554">request.override、State update 与数据库提交不是同一动作</text>
+</g></svg>

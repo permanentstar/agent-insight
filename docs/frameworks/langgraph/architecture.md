@@ -83,6 +83,48 @@ StateGraph 注册节点与边；compile 后运行才开始计算。节点可以�
 
 在 LangChain create_agent 的模型／工具图中，条件路由主要处理 tool_calls 与返回结果。学习两套代码时，先把 LangChain 视为图的生产者，再把 LangGraph 视为状态推进者，避免将它们理解为两套串联的 Agent loop。
 
+## 把超步结果交给一条可预测的路由
+
+前面的并行读取例子说明了状态合并，现在把合并结果接到实际走向。本例所有字段与节点均为教学应用定义；模型节点的返回先按应用契约转换成有限的控制字段，图并不直接从任意自然语言句子猜路由。
+
+```python
+S_N = {"request": "修复 CSV 转义", "observations": [], "decision": ""}
+A = {"observations": ["项目要求特殊字段加引号"]}
+B = {"observations": ["当前代码直接拼接字段"]}
+# After merging the two writes, show A/B in this teaching order:
+S_next = {
+    "request": "修复 CSV 转义",
+    "observations": A["observations"] + B["observations"],
+    "decision": "",
+}
+```
+
+这里展示的列表次序用于演算，不从网络完成先后推定一般合并次序。共同事实是两份观察都进入下一超步。随后 decision 节点读取 S_next，调用模型或确定程序，再输出本例定义的 decision="modify" 或 "done"。
+
+应用给出明确映射：
+
+```python
+def route_decision(state):
+    return state["decision"]
+
+builder.add_edge(["read_rules", "read_code"], "decide")
+builder.add_conditional_edges(
+    "decide", route_decision,
+    {"modify": "edit", "done": END},
+)
+```
+
+列表形式的边用于本例的汇合：两个读取节点完成后再进入 decide；条件映射说明 decide 的返回怎样决定 edit 或 END。节点函数、模型输出解析和工具效果未在这段构图节选里实现，不能把它当作完整可运行程序。[StateGraph 的边与构图](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/graph/state.py)。
+
+正常任务有两种可解释的走向。若观察表明当前实现需要修改，decision=modify 选择 edit；若该任务已经有满足目标的结果，decision=done 选择 END。程序提前规定了可到达节点，具体决定由应用的 decision 实现根据当前事实作出。**图的固定结构不等于任务必须按一条固定路线执行。**
+
+LangChain 的 create_agent 为标准工具循环生成另一份具体路由：它主要检查 AIMessage 的待处理工具调用与结构化结果。两者同样使用图执行机制，决策字段与消费者却不同。学完通用状态和路由，再分别读工厂源码，才不会把框架运行能力和特定 Agent 策略混在一起。
+
+**演算。** 两个读取节点都已完成，observations 不为空，是否能直接知道下一步会修改？
+
+参考解答：不能。还要知道 decision 节点怎样使用观察、产生什么字段，以及条件边怎样映射。合并结果提供决定的输入，不会仅因为“数据已经非空”就自动选择一个业务动作。
+
+
 ## checkpoint 为什么需要值与版本
 
 checkpoint 不只是保存一个 messages 数组。channel_values 让运行重建数据，channel_versions 与 versions_seen 帮助判断哪些节点已经消费哪些更新，pending writes 保存已经产生的节点输出。图对象保存定义，checkpoint 保存恢复资料，PregelLoop 在一次调用中将二者结合。

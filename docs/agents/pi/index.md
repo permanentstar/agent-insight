@@ -7,12 +7,26 @@ baselines: ["pi-20261009"]
 sources: ["pi-session"]
 depends_on: ["pi-architecture", "pi-loop", "pi-context", "pi-extensions", "pi-platform"]
 evidence: []
-verified_scope: "分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+verified_scope: "入口按共同职责定位并连接实现专题；正文的静态证据、历史范围与教学核验各自说明。"
 ---
 
 # Pi AgentSession 分册
 
 AgentSession 围绕交互会话编排模型和工具；Agent 执行循环，SessionManager 保存历史树，资源与扩展在会话边界绑定。读这一册时，先分清编排对象、活动执行和持久历史。
+
+## 在共同架构中定位
+
+先把本实现放到[共同职责地图](../../comparisons/common-model.md)，再沿下面的章节追到实际对象。这里对齐的是问题，具体类型和作用域仍按本分册解释。
+
+| 共同职责 | 本实现中的定位 |
+|---|---|
+| 产品宿主 | CLI/SDK 的 createAgentSession 装配产品会话。 |
+| 工作推进 | AgentSession 准备输入；Agent/agent-loop 执行模型与工具反馈。 |
+| 模型与动作 | pi-ai 组织模型协议；当前工具 loadout 接到实际执行对象。 |
+| 历史与请求 | SessionManager 历史树经压缩/编辑投影，AgentSession 采用为活动消息。 |
+| 扩展与控制 | 扩展 hook、输入队列与 finishTurn 在相应边界影响行为。 |
+
+## 分册阅读
 
 | 章节 | 要回答的问题 |
 |---|---|

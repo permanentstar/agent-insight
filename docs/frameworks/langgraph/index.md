@@ -7,12 +7,26 @@ baselines: ["langgraph-20261009"]
 sources: ["langchain-stage4"]
 depends_on: ["langgraph-migrated", "langgraph-advanced"]
 evidence: []
-verified_scope: "分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+verified_scope: "入口按共同职责定位并连接实现专题；正文的静态证据、历史范围与教学核验各自说明。"
 ---
 
 # LangGraph 分册
 
 LangGraph 将图定义编译为可执行计算，以超步调度任务、合并 channel 写入并保存 checkpoint。图定义、活动 Loop 和持久 thread 身份各有生命周期。
+
+## 在共同架构中定位
+
+[共同职责地图](../../comparisons/common-model.md)先说明每项工作需要谁承担职责。本框架提供其中的组合与执行能力，应用层再补自己的语义和生命周期。
+
+| 共同职责 | 框架中的定位 |
+|---|---|
+| 图定义 | StateGraph 注册 schema、节点、边和 reducer。 |
+| 工作推进 | 每次调用创建 Loop，以超步选择任务、执行和合并写入。 |
+| 模型与动作 | 节点可以运行模型、工具或程序；框架不规定语义决策策略。 |
+| 状态与恢复 | channels、checkpoint、pending writes 和 thread 寻址共同提供资料。 |
+| 产品责任 | Prompt、具体能力、执行授权与业务完成条件由应用定义。 |
+
+## 分册阅读
 
 | 章节 | 要回答的问题 |
 |---|---|

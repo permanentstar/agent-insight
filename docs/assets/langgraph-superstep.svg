@@ -6,7 +6,7 @@
 <text x="30" y="37" font-size="22" fill="#172554" font-weight="700">LangGraph：并行超步与状态可见性</text>
 <rect x="30" y="75" width="900" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
 <text x="46" y="103" font-size="18" fill="#172554" font-weight="700">超步 N 的同一状态快照</text>
-<text x="46" y="130" font-size="16" fill="#172554">goal 已保存；observations 尚无本次读取结果</text>
+<text x="46" y="130" font-size="16" fill="#172554">request 已保存；observations 尚无本次读取结果</text>
 <path d="M480,169 V207 H240 V244" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <path d="M480,207 H730 V244" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <rect x="30" y="248" width="430" height="116" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>

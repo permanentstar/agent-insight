@@ -7,12 +7,26 @@ baselines: ["pi-20261009"]
 sources: []
 depends_on: ["durable-glossary", "durable-architecture", "durable-loop", "durable-documents"]
 evidence: []
-verified_scope: "分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+verified_scope: "入口按共同职责定位并连接实现专题；正文的静态证据、历史范围与教学核验各自说明。"
 ---
 
 # Pico5 / pi-durable 分册
 
 Pico5 把进行中的模型与工具工作表示为持久 Task，用事务对齐历史、任务状态和可观察资料。本分册先建立对象层次，再沿同一项“读、改、验证、回答”任务学习接纳、调度、模型决策和上下文组织。
+
+## 在共同架构中定位
+
+先把本实现放到[共同职责地图](../../comparisons/common-model.md)，再沿下面的章节追到实际对象。这里对齐的是问题，具体类型和作用域仍按本分册解释。
+
+| 共同职责 | 本实现中的定位 |
+|---|---|
+| 产品宿主 | 应用打开 Harness，Conversation 接纳 Submission。 |
+| 工作推进 | GenerationTask/ToolTask 保存阶段，TaskScheduler 按 Registry 推进。 |
+| 模型与动作 | 生成在事务外请求模型；工具 Task 先保存意图，再执行效果。 |
+| 历史与请求 | Entry 保存贡献，ContextView 选择范围；Task 和 Document 另表述工作与视图。 |
+| 扩展与控制 | 任务定义、hooks、Document 与接纳边界组织应用策略。 |
+
+## 分册阅读
 
 | 阅读顺序 | 要回答的问题 |
 |---|---|

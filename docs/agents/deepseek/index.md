@@ -7,12 +7,26 @@ baselines: ["deepseek-20261009"]
 sources: []
 depends_on: ["deepseek-plan", "deepseek-capabilities", "deepseek-context"]
 evidence: []
-verified_scope: "分册入口和已完成的初版专题对应；静态/冻结证据与运行未知分别登记。"
+verified_scope: "入口按共同职责定位并连接实现专题；正文的静态证据、历史范围与教学核验各自说明。"
 ---
 
 # DeepSeek Harness 分册
 
 DeepSeek Harness 通过插件上下文装配能力，AgentLoop 工厂管理运行资源，ReactLoopAgent 推进模型工具循环，Session 保存有序事件和模型可见 surface。
+
+## 在共同架构中定位
+
+先把本实现放到[共同职责地图](../../comparisons/common-model.md)，再沿下面的章节追到实际对象。这里对齐的是问题，具体类型和作用域仍按本分册解释。
+
+| 共同职责 | 本实现中的定位 |
+|---|---|
+| 产品宿主 | profile 与 Cordis 插件树装配 AgentLoop 及运行服务。 |
+| 工作推进 | ReactLoopAgent 的 phase 组织活动，turn/step 推进反馈。 |
+| 模型与动作 | llm 服务准备请求；tools 服务执行并记录调用与结果。 |
+| 历史与请求 | Session event 保存事实，surface 选择模型贡献，persistence handle 管存储。 |
+| 扩展与控制 | pre-step、审批、压缩和子执行由具体插件组合，不自动拥有统一默认策略。 |
+
+## 分册阅读
 
 | 章节 | 要回答的问题 |
 |---|---|

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="850" viewBox="0 0 960 850" role="img" aria-labelledby="title desc">
+<title id="title">职责分层：先定位问题，再定位模块</title><desc id="desc">产品宿主接纳并投递工作，运行控制准备请求、解释响应和推进，模型适配与工具执行产生外部结果；历史、工作记录和请求投影分开；执行政策和观测影响相应边界。</desc>
+<rect width="960" height="850" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">职责分层：先定位问题，再定位模块</text>
+<rect x="30" y="75" width="900" height="96" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="103" font-size="18" fill="#172554" font-weight="700">产品宿主</text>
+<text x="46" y="130" font-size="16" fill="#172554">CLI / Gateway / 编辑器 / SDK：身份、会话、资源生命周期与结果投递</text>
+<rect x="30" y="226" width="590" height="112" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="254" font-size="18" fill="#172554" font-weight="700">运行控制</text>
+<text x="46" y="281" font-size="16" fill="#172554">请求装配 → 响应解释 → 工具批次 / 等待</text>
+<text x="46" y="305" font-size="16" fill="#172554">队列、hook、继续与停止；规划按策略组织</text>
+<rect x="700" y="226" width="230" height="112" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="716" y="254" font-size="18" fill="#172554" font-weight="700">横切职责</text>
+<text x="716" y="281" font-size="16" fill="#172554">执行政策</text>
+<text x="716" y="305" font-size="16" fill="#172554">扩展与观察</text>
+<rect x="30" y="409" width="430" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="437" font-size="18" fill="#172554" font-weight="700">模型适配</text>
+<text x="46" y="464" font-size="16" fill="#172554">请求协议、消息转换、响应规范化</text>
+<rect x="500" y="409" width="430" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="516" y="437" font-size="18" fill="#172554" font-weight="700">工具执行</text>
+<text x="516" y="464" font-size="16" fill="#172554">定义 / handler / 参数 / 效果环境</text>
+<rect x="30" y="609" width="900" height="122" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="637" font-size="18" fill="#172554" font-weight="700">数据与状态</text>
+<text x="46" y="664" font-size="16" fill="#172554">历史：发生过什么；工作记录：当前推进位置与归属</text>
+<text x="46" y="688" font-size="16" fill="#172554">模型视图：本次可见的语义资料；记忆 / 知识 / 产物：按需进入请求</text>
+<text x="46" y="712" font-size="16" fill="#172554">提交、采用、发布与存储确认由各实现的契约决定</text>
+<path d="M325,171 V222" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M180,338 V405" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M360,409 V342" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="372" y="373" font-size="14" fill="#172554">响应</text>
+<path d="M475,338 V378 H715 V405" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M700,282 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M715,509 V605" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M30,670 H13 V282 H26" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="30" y="561" font-size="17" fill="#172554">模型与工具都可能在运行时之外产生效果；结果由主控制链承接。</text>
+<text x="30" y="796" font-size="16" fill="#172554">图是分析分工的参考模型；同一职责可以被合并或分散到多个真实对象。</text>
+</g></svg>

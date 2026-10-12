@@ -55,6 +55,119 @@ Plan Mode 还可能用于改变协作约定：当前先探索和商定方案，�
 | Plan 协作模式 | 有产品模式及相应行为入口 | 已切成 Planner/Executor 两个执行器 |
 | 明确 plan schema、步骤派发、结果与重规划边 | 有显式规划执行编排 | 一定比反馈循环更快或更准确 |
 
+## 让 Plan & Execute 真正成为可消费的流程
+
+![Planner 产生步骤及完成条件，Executor 获得目标、当前步骤和已知观察；结果保存后决定进入下一项、修订剩余计划或结束；Executor 内部仍可多轮请求模型和工具](../assets/plan-result-replan.svg)
+
+上面的三个名词只说明角色。要把它们变成运行机制，还需要回答：计划的哪一项被执行，执行器拿到什么，结果怎样改变剩余工作。下面的字段由本书为 CSV 任务定义，是**应用组装的教学设计**，不把它当作九对象共同的内置 schema。
+
+### 计划必须表达目标、步骤和完成条件
+
+假设 Planner 产出：
+
+```json
+{
+  "goal": "修复 CSV 字段转义并完成验证",
+  "steps": [
+    {"id": "inspect", "objective": "读取项目规则与实现",
+     "done_when": "获得具体规则及需要修改的位置", "status": "pending"},
+    {"id": "change", "objective": "按项目规则修复导出",
+     "done_when": "得到实际修改结果", "status": "pending"},
+    {"id": "verify", "objective": "验证逗号、引号和换行字段",
+     "done_when": "得到对应检查结果", "status": "pending"}
+  ]
+}
+```
+
+objective 描述语义工作；id 让程序能关联输入与返回；status 记录进度；done_when 提供判断结果是否满足该项的依据。这里的字段有明确消费者：外层控制选择下一项，把它交给 Executor，保存返回结果，再决定后续。
+
+如果只是把这段文字发给同一个主模型，却没有代码消费 steps，它依然可能是有计划提示的反馈循环。**是否显式规划执行，取决于消费关系，不取决于计划用了 JSON 还是 Markdown。**
+
+### Executor 输入不应只有一句子任务
+
+第一项执行器读取规则和代码，返回有关字段转义的观察。第二项需要使用这些事实；若启动一份新上下文，却只交一句“修复 CSV”，之前获取的项目约定就可能丢失。
+
+```json
+{
+  "goal": "修复 CSV 字段转义并完成验证",
+  "step": {"id": "change", "objective": "按项目规则修复导出"},
+  "observations": [
+    {"source": "docs/csv-rules.md", "fact": "特殊字段整体加引号，内部引号翻倍"},
+    {"source": "src/export.ts", "fact": "当前实现直接拼接字段"}
+  ],
+  "allowed_tools": ["read_source", "apply_patch", "run_checks"]
+}
+```
+
+allowed_tools 是本例传递的能力约定，实际执行政策还要在工具路径生效。Executor 可以使用一份模型—工具反馈循环，也可以在某步调用确定程序。一个 plan step 因此可能包含多个 tool call；“执行了一个步骤”不等于“只调用了一次工具”。
+
+### 结果不是一段完成宣告
+
+执行器返回后，应让外层知道它完成了哪一项、获得什么事实、产生什么结果。在本设计中，一个正常返回可以表达为：
+
+```json
+{
+  "step_id": "change",
+  "outcome": "completed",
+  "facts": ["已修改字段转义函数"],
+  "evidence": [
+    {"kind": "tool_result", "call_id": "edit-1", "source": "src/export.ts"}
+  ],
+  "remaining_question": "特殊字段的验证尚未执行"
+}
+```
+
+outcome 是本应用的步骤结果，不是 Pico5 TaskOutcome 或 DeerFlow RunStatus。evidence 将说明联系到具体观察；它的内容仍需按步骤完成条件解释，不能仅因为字段存在就认定已完成整个用户目标。
+
+外层此时更新 change 进度，并继续 verify。若验证发现仍缺换行处理，执行器给出对应验证事实，外层可以将该结果交给 Replanner。Replanner 修订的是**剩余工作**，不能把已经保存的观察当作没发生过。
+
+### 继续、修订和结束分别需要条件
+
+| 当前结果 | 外层动作 | 为什么 |
+|---|---|---|
+| inspect 获得规则与位置 | 选择 change，交接规则和代码观察 | 完成条件满足，后续输入已具备 |
+| change 修改已完成 | 选择 verify，并保留修改事实 | 用户目标仍要求验证 |
+| verify 发现具体遗漏 | 修订剩余步骤，例如补处理再验证 | 新事实改变了原计划的适用性 |
+| 全部目标有相应结果 | 综合说明并收口 | 计划结束与目标结果对齐 |
+| 某项缺必要输入 | 澄清或具名阻塞 | 不用一段模糊回答掩盖缺口 |
+
+参考控制骨架为：
+
+```python
+plan = planner(goal, initial_facts)
+while plan.has_remaining_work():
+    step = plan.select_next()
+    result = executor(goal, step, plan.observations)
+    plan.record_result(step.id, result)
+    decision = decide_progress(plan, result)
+    if decision.kind == "revise":
+        plan.replace_remaining(replanner(goal, plan, result))
+    elif decision.kind == "finish":
+        break
+return explain_result(goal, plan.results)
+```
+
+这一伪代码没有指定使用哪个框架，也没有把每次重规划都规定为额外模型调用；具体策略要说明谁判断、依据哪些资料。它教的是角色间的交接契约。用 LangGraph 组织外层节点、用 create_agent 构造 Executor，是一种可行的组装思路，不能当作 create_agent 默认已经内置这种外层计划。
+
+[Microsoft 的规划课程](https://github.com/microsoft/ai-agents-for-beginners/blob/4c9a2759522679611635efbddcde3f8dfc3e40ee/07-planning-design/README.md)用结构化子任务展示交接；本书进一步把执行结果和重规划条件接进同一案例。实际对象怎样支持仍见下表。
+
+## 不要将协作与调度混成规划策略
+
+可以让一个 Executor 自己完成计划项，也可以将它委派给子 Agent；可以串行推进，也可以在依赖允许时并行。它们分别改变执行载体与调度方式，不必改变 plan 的语义。
+
+例如一个协调者生成三个子任务，再用普通 for 循环调用三个 worker，职责上已经有协调与委派，执行上却仍是串行。不能看到角色名 Orchestrator 或 Workers 就推断并行，更不能由并行反推存在计划恢复。[Anthropic 的角色交接示例](https://github.com/anthropics/claude-cookbooks/blob/9c1e493ddd2b82df399d2a61b9c806c539e18be6/patterns/agents/orchestrator_workers.ipynb)。
+
+还可以加入评估与改进循环：先得到候选产物，依据明确标准评估，再把不足反馈给执行者。这种反馈可以改善任务推进，但“模型自评通过”“结构化校验通过”“工具验证通过”是不同证据。程序要说明采用哪一种判断，不能把名叫 critic 的模型直接当成业务验收。
+
+共同架构允许这些组合：外层定义目标、分工和收口，内层继续用模型—动作—观察推进。读者应在每层标出输入、结果与推进 owner，而不是给整个系统贴一个词后就停止分析。
+
+### 本节演算
+
+给出上面 change 的 completed 结果，用户目标是否已经完成？
+
+参考解答：没有。已知的是修改观察，remaining_question 也明确指出验证未执行；外层应该按目标条件继续 verify。若外层忽略该条件，仅按 outcome=completed 结束，就是把计划项结果误当整个目标结果。
+
+
 ## 各对象怎样支持
 
 下表的“默认”指本书分析的主链路，具体配置仍可能改变行为。扩展／框架组装表示可在相应机制上构建，不能当作已内置的完整产品模式；未证实独立 Planner 也不意味着没有规划能力。

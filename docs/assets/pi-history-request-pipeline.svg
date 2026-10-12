@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="825" viewBox="0 0 960 825" role="img" aria-labelledby="title desc">
+<title id="title">Pi：历史怎样成为当前模型请求</title><desc id="desc">磁盘历史与内存索引先沿leaf选择parent路径，最新摘要和可见编辑形成投影；AgentSession刷新Agent消息，agent loop再变换与转换为provider请求；结果事件回到历史。</desc>
+<rect width="960" height="825" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pi：历史怎样成为当前模型请求</text>
+<rect x="30" y="70" width="900" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="98" font-size="18" fill="#172554" font-weight="700">全部历史 Entry + 当前 leaf</text>
+<text x="46" y="125" font-size="16" fill="#172554">物理记录可含多条分支；索引保存 id / parentId</text>
+<rect x="30" y="216" width="590" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="244" font-size="18" fill="#172554" font-weight="700">当前路径 → 上下文 Entry</text>
+<text x="46" y="271" font-size="16" fill="#172554">沿 parent 回溯；最新 compaction + 保留段</text>
+<text x="46" y="295" font-size="16" fill="#172554">context_edit 只影响选中路径上的模型贡献</text>
+<rect x="30" y="375" width="590" height="95" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="403" font-size="18" fill="#172554" font-weight="700">buildSessionProjection</text>
+<text x="46" y="430" font-size="16" fill="#172554">保留 sourceEntry；生成 AgentMessage</text>
+<text x="46" y="454" font-size="16" fill="#172554">配置恢复与消息贡献分开解释</text>
+<rect x="30" y="530" width="590" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="558" font-size="18" fill="#172554" font-weight="700">AgentSession._refreshFinalizedContext</text>
+<text x="46" y="585" font-size="16" fill="#172554">用投影更新 Agent.state.messages</text>
+<text x="46" y="609" font-size="16" fill="#172554">运行中的请求和下一请求边界分开</text>
+<rect x="30" y="692" width="590" height="95" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="720" font-size="18" fill="#172554" font-weight="700">agent loop → provider</text>
+<text x="46" y="747" font-size="16" fill="#172554">transformContext → convertToLlm → normalize</text>
+<text x="46" y="771" font-size="16" fill="#172554">适配器按具体模型协议组织请求</text>
+<rect x="710" y="375" width="220" height="95" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="726" y="403" font-size="18" fill="#172554" font-weight="700">运行反馈</text>
+<text x="726" y="430" font-size="16" fill="#172554">message_end</text>
+<text x="726" y="454" font-size="16" fill="#172554">追加历史 Entry</text>
+<path d="M480,164 V190 H325 V212" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M325,316 V371" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M325,470 V526" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M325,634 V688" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M620,740 H820 V474" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M820,375 V198 H948 V113 H934" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+</g></svg>

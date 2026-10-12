@@ -96,6 +96,28 @@ Codex 有内置的 Default/Plan 协作模式。模式内容进入上下文，Pla
 
 学习自检：用户的一次修复要求为什么能对应多个 Step？工具和模型配置在何时固定？Plan 模式、update_plan 和 ToolOrchestrator 分别控制什么？
 
+## 用一条输入介入轨迹检验 Turn 与请求快照
+
+设一项 CSV 修复正在进行。第一次 Step 已公布工具和发送输入，模型请求读取；用户随后补充“保留公开接口”。下面的编号仅用于教学，不是新增持久 Step ID：
+
+| 时点 | 用户工作与资料 | 实际控制 |
+|---|---|---|
+| 第一次 Step 发出 | 修复目标、当时工具／环境和历史投影 | 这次采样使用捕获的 StepContext |
+| 用户补充到达 | 新要求进入待处理输入 | 不回头修改已经发出的 provider 请求 |
+| 采样及工具反馈完成 | 读取观察可进入活跃历史；循环检查待输入 | 根据有效接纳条件进入下一边界 |
+| 第二次 Step 准备 | 接纳补充，历史投影包含有效新资料 | 再捕获 StepContext，使当次上下文、工具和调用共享视图 |
+| 修改和验证反馈 | 用户目标与新约束仍属于该项工作 | 后续 Step 按观察推进 |
+| 正常收口 | 无反馈和待输入需要继续，Stop hooks 通过 | 当前任务结束；Thread 可接后续 Turn |
+
+这条轨迹回答一个设计问题：为什么既有长活 Session，又有 TurnContext 和 StepContext？Session 持有跨轮的历史和服务，TurnContext 绑定这次用户工作，StepContext 固定一次请求的选择。这样动态输入和配置可以在后续边界采用，而不让同一请求中的“公布工具”和“执行工具”各自读取不同配置。[接纳与快照控制](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L418)。
+
+自然语言补充影响模型理解目标，程序队列影响采用时点，两者不能合成一个“模型自动看到最新输入”。相似问题在 AgentSession 由 steering/followUp 和请求边界解释；Codex 的具体 Op、任务和输入接纳路径仍按 core 实现阅读。
+
+**演算。** 用户补充到达时，第一次工具是否必然已经遵守新约束？
+
+参考解答：不能必然推定。先确认补充何时接纳、哪次请求使用了它，以及具体工具路径的有效政策。后续消息采用并不等于已经发出的调用被改写。这里解释正常介入时序，不将所有取消或重试模式都假定为同一契约。
+
+
 ## 历史、压缩与持久确认
 
 `record_prepared_conversation_items` 先给历史项补元数据，更新内存 history，再转为 RolloutItem 交持久路径。RolloutRecorder.record_canonical_items 返回表示 AddItems 已进入后台队列；persist/flush 通过 oneshot ack 等待 writer 确认。这两类 await 对应不同的持久边界；断电耐久性还取决于 writer 与存储后端。
