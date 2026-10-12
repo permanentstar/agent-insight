@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="795" viewBox="0 0 920 795" role="img" aria-labelledby="title desc">
+<title id="title">请求准备：每一层拿到的资料都不同</title><desc id="desc">Agent 复制消息与工具；后续轮次按 prepareNextTurn 刷新；声明差异与输入消息发布并进入历史，prepareRequest 再取 canonical projection，随后 transform、convert、normalize 和 stream 得到 assistant。</desc>
+<rect width="920" height="795" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="36" font-size="23" fill="#172554" text-anchor="start" font-weight="700">请求准备：每一层拿到的资料都不同</text>
+<rect x="30" y="65" width="860" height="84" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="93" font-size="18" fill="#172554" text-anchor="start" font-weight="700">AgentContext：消息与可执行工具的运行起点</text>
+<text x="46" y="119" font-size="18" fill="#172554" text-anchor="start">第一次输入先由 runAgentLoop 接纳；后续 turn 才调用 prepareNextTurn</text>
+<rect x="30" y="194" width="560" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="222" font-size="18" fill="#172554" text-anchor="start" font-weight="700">本轮准备：资料与选择可更新</text>
+<text x="46" y="248" font-size="18" fill="#172554" text-anchor="start">后续 prepareNextTurn 可返回 context / messages</text>
+<text x="46" y="274" font-size="18" fill="#172554" text-anchor="start">采用返回的模型与 thinking，再接纳准备和队列消息</text>
+<rect x="30" y="333" width="560" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="361" font-size="18" fill="#172554" text-anchor="start" font-weight="700">declareToolChanges：形成模型可见声明</text>
+<text x="46" y="387" font-size="18" fill="#172554" text-anchor="start">有新消息时发布 message_start / message_end</text>
+<text x="46" y="413" font-size="18" fill="#172554" text-anchor="start">toolsAdded / toolsRemoved 描述变化，不包含 execute</text>
+<rect x="665" y="333" width="225" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="361" font-size="18" fill="#172554" text-anchor="start" font-weight="700">AgentSession 监听者</text>
+<text x="681" y="387" font-size="18" fill="#172554" text-anchor="start">await 事件处理</text>
+<text x="681" y="413" font-size="18" fill="#172554" text-anchor="start">新消息追加历史</text>
+<rect x="30" y="488" width="860" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="516" font-size="18" fill="#172554" text-anchor="start" font-weight="700">prepareRequest：本次请求再从历史读 canonical projection</text>
+<text x="46" y="542" font-size="18" fill="#172554" text-anchor="start">messages 来自选中历史；tools 保留可执行实现</text>
+<text x="46" y="568" font-size="18" fill="#172554" text-anchor="start">已有请求 hook 可进一步调整 context / model / thinking</text>
+<rect x="30" y="629" width="560" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="657" font-size="18" fill="#172554" text-anchor="start" font-weight="700">transformContext → convertToLlm</text>
+<text x="46" y="683" font-size="18" fill="#172554" text-anchor="start">产品消息变换后转为模型兼容消息</text>
+<text x="46" y="709" font-size="18" fill="#172554" text-anchor="start">normalizeContext 组织 transcript</text>
+<rect x="665" y="629" width="225" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="657" font-size="18" fill="#172554" text-anchor="start" font-weight="700">streamFunction</text>
+<text x="681" y="683" font-size="18" fill="#172554" text-anchor="start">请求实际模型</text>
+<text x="681" y="709" font-size="18" fill="#172554" text-anchor="start">返回 assistant</text>
+<path d="M310,149 V190" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M310,288 V329" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M590,388 H661" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M778,443 V471 H560 V484" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="680" y="474" font-size="16" fill="#172554" text-anchor="start">已接纳的历史</text>
+<path d="M310,443 V484" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M310,582 V625" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M590,675 H661" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="30" y="772" font-size="17" fill="#172554" text-anchor="start">assistant 可以包含 text 和 toolCall；工具效果进入下一幅图的管线。</text>
+</g></svg>

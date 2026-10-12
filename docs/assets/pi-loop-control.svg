@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="1095" viewBox="0 0 920 1095" role="img" aria-labelledby="title desc">
+<title id="title">继续或结束：判断有明确优先顺序</title><desc id="desc">finishTurn end 优先返回，否则依次判断工具自然续跑和 steering、followUp、显式 context-only 继续要求。没有继续路径才自然 agent_end，之后仍由产品层完成收口。</desc>
+<rect width="920" height="1095" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="36" font-size="23" fill="#172554" text-anchor="start" font-weight="700">继续或结束：判断有明确优先顺序</text>
+<rect x="30" y="62" width="860" height="84" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="90" font-size="18" fill="#172554" text-anchor="start" font-weight="700">一轮完成：finishTurn 返回 decision，随后发布 turn_end</text>
+<text x="46" y="116" font-size="18" fill="#172554" text-anchor="start">以下按实际字段与分支判断，不定义额外的统一状态枚举</text>
+<path d="M310,186.0 L580.0,240 L310,294.0 L40.0,240 Z" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="310" y="246" font-size="17" fill="#172554" text-anchor="middle" font-weight="700">decision?.action === &quot;end&quot;？</text>
+<rect x="665" y="198" width="225" height="84" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="226" font-size="18" fill="#172554" text-anchor="start" font-weight="700">是：明确结束内核</text>
+<text x="681" y="252" font-size="18" fill="#172554" text-anchor="start">emit agent_end</text>
+<text x="681" y="278" font-size="18" fill="#172554" text-anchor="start">return</text>
+<rect x="30" y="340" width="560" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="368" font-size="18" fill="#172554" text-anchor="start" font-weight="700">否则：保存继续要求，读取 steering</text>
+<text x="46" y="394" font-size="18" fill="#172554" text-anchor="start">explicitContinuation = action 为 continue</text>
+<text x="46" y="420" font-size="18" fill="#172554" text-anchor="start">pendingMessages = getSteeringMessages()</text>
+<path d="M310,466.0 L580.0,524 L310,582.0 L40.0,524 Z" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="310" y="518" font-size="17" fill="#172554" text-anchor="middle" font-weight="700">hasMoreToolCalls</text>
+<text x="310" y="542" font-size="17" fill="#172554" text-anchor="middle">或 pendingMessages.length &gt; 0？</text>
+<rect x="665" y="482" width="225" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="510" font-size="18" fill="#172554" text-anchor="start" font-weight="700">是：内层下一 turn</text>
+<text x="681" y="536" font-size="18" fill="#172554" text-anchor="start">清除显式继续标记</text>
+<text x="681" y="562" font-size="18" fill="#172554" text-anchor="start">准备消息并再次请求</text>
+<path d="M310,646.0 L580.0,704 L310,762.0 L40.0,704 Z" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="310" y="698" font-size="17" fill="#172554" text-anchor="middle" font-weight="700">取出 followUp 后</text>
+<text x="310" y="722" font-size="17" fill="#172554" text-anchor="middle">followUpMessages.length &gt; 0？</text>
+<rect x="665" y="661" width="225" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="689" font-size="18" fill="#172554" text-anchor="start" font-weight="700">是：外层续跑</text>
+<text x="681" y="715" font-size="18" fill="#172554" text-anchor="start">接纳 followUp 消息</text>
+<text x="681" y="741" font-size="18" fill="#172554" text-anchor="start">清除显式继续标记</text>
+<path d="M310,830.0 L580.0,884 L310,938.0 L40.0,884 Z" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="310" y="890" font-size="17" fill="#172554" text-anchor="middle" font-weight="700">explicitContinuation？</text>
+<rect x="665" y="842" width="225" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="870" font-size="18" fill="#172554" text-anchor="start" font-weight="700">是：context-only turn</text>
+<text x="681" y="896" font-size="18" fill="#172554" text-anchor="start">清除显式继续标记</text>
+<text x="681" y="922" font-size="18" fill="#172554" text-anchor="start">无新增输入也重入外层</text>
+<rect x="30" y="980" width="860" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="1008" font-size="18" fill="#172554" text-anchor="start" font-weight="700">否则：自然结束内核，emit agent_end</text>
+<text x="46" y="1034" font-size="18" fill="#172554" text-anchor="start">await 监听者 → finishRun 释放 activeRun</text>
+<text x="46" y="1060" font-size="18" fill="#172554" text-anchor="start">产品后处理还可续跑；最终 agent_settled 见下一幅图</text>
+<path d="M310,146 V182" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M580,240 H661" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="600" y="230" font-size="16" fill="#172554" text-anchor="start">是</text>
+<path d="M310,294 V336" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="327" y="321" font-size="16" fill="#172554" text-anchor="start">否</text>
+<path d="M310,434 V462" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M580,524 H661" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="600" y="513" font-size="16" fill="#172554" text-anchor="start">是</text>
+<path d="M310,582 V641" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="327" y="620" font-size="16" fill="#172554" text-anchor="start">否</text>
+<path d="M580,704 H661" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="600" y="693" font-size="16" fill="#172554" text-anchor="start">是</text>
+<path d="M310,762 V826" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="327" y="803" font-size="16" fill="#172554" text-anchor="start">否</text>
+<path d="M580,884 H661" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="600" y="873" font-size="16" fill="#172554" text-anchor="start">是</text>
+<path d="M310,938 V976" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="327" y="964" font-size="16" fill="#172554" text-anchor="start">否</text>
+</g></svg>

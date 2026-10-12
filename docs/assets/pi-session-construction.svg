@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="850" viewBox="0 0 920 850" role="img" aria-labelledby="title desc">
+<title id="title">两条入口在 SDK 汇合，再装配运行绑定</title><desc id="desc">CLI 工厂先创建 services，经 FromServices 进入 SDK；SDK 调用者直接进入同一 createAgentSession。读取历史后创建 Agent，再注入 AgentSession、安装回调和扩展绑定。构造不执行模型任务。</desc>
+<rect width="920" height="850" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="36" font-size="23" fill="#172554" text-anchor="start" font-weight="700">两条入口在 SDK 汇合，再装配运行绑定</text>
+<rect x="30" y="65" width="410" height="74" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="93" font-size="18" fill="#172554" text-anchor="start" font-weight="700">CLI 工厂 createRuntime</text>
+<text x="46" y="119" font-size="18" fill="#172554" text-anchor="start">先解析目标 cwd 的产品配置</text>
+<rect x="510" y="65" width="380" height="74" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="526" y="93" font-size="18" fill="#172554" text-anchor="start" font-weight="700">直接使用 SDK 的调用者</text>
+<text x="526" y="119" font-size="18" fill="#172554" text-anchor="start">提供显式选项或采用默认服务</text>
+<rect x="30" y="174" width="410" height="74" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="202" font-size="18" fill="#172554" text-anchor="start" font-weight="700">createAgentSessionServices</text>
+<text x="46" y="228" font-size="18" fill="#172554" text-anchor="start">建立模型、设置与资源服务</text>
+<rect x="30" y="283" width="410" height="74" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="311" font-size="18" fill="#172554" text-anchor="start" font-weight="700">createAgentSessionFromServices</text>
+<text x="46" y="337" font-size="18" fill="#172554" text-anchor="start">把既有 services 传给同一 SDK</text>
+<rect x="30" y="397" width="860" height="105" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="425" font-size="18" fill="#172554" text-anchor="start" font-weight="700">createAgentSession：装配入口汇合</text>
+<text x="46" y="451" font-size="18" fill="#172554" text-anchor="start">buildSessionContext 恢复当前分支消息；选择 model / thinking</text>
+<text x="46" y="477" font-size="18" fill="#172554" text-anchor="start">服务定义能力，历史提供执行起点</text>
+<rect x="30" y="548" width="410" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="576" font-size="18" fill="#172554" text-anchor="start" font-weight="700">new Agent</text>
+<text x="46" y="602" font-size="18" fill="#172554" text-anchor="start">messages / convertToLlm / streamFn</text>
+<text x="46" y="628" font-size="18" fill="#172554" text-anchor="start">tools 先为空，随后由产品层刷新</text>
+<rect x="510" y="548" width="380" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="526" y="576" font-size="18" fill="#172554" text-anchor="start" font-weight="700">new AgentSession</text>
+<text x="526" y="602" font-size="18" fill="#172554" text-anchor="start">注入 Agent、历史、资源与设置</text>
+<text x="526" y="628" font-size="18" fill="#172554" text-anchor="start">编排产品行为</text>
+<rect x="30" y="713" width="860" height="84" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="741" font-size="18" fill="#172554" text-anchor="start" font-weight="700">订阅执行事件，安装请求、工具与轮次边界回调</text>
+<text x="46" y="767" font-size="18" fill="#172554" text-anchor="start">_buildRuntime 装配 ExtensionRunner 与工具 registry</text>
+<path d="M235,139 V170" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M235,248 V279" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M235,357 V393" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M700,139 V393" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M235,502 V544" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M440,603 H506" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="455" y="588" font-size="16" fill="#172554" text-anchor="start">注入</text>
+<path d="M700,658 V709" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="30" y="831" font-size="17" fill="#172554" text-anchor="start">构造只连接能力；真正的模型与工具执行由后续 prompt 启动。</text>
+</g></svg>

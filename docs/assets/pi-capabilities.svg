@@ -15,6 +15,8 @@
 <text x="258" y="390.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">调用</text>
 <polyline points="460,475 540,475" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
 <text x="500.0" y="462" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">脚本模式</text>
+<polyline points="750,530 750,566 250,566 250,534" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="500" y="555" fill="#334155" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">ctx.executeTool：嵌套回接共享管线</text>
 <rect x="40" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
 <text x="58" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">ResourceLoader</text>
 <text x="58" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">加载工具、扩展、主题和模板</text>

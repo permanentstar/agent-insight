@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="890" viewBox="0 0 920 890" role="img" aria-labelledby="title desc">
+<title id="title">保存工厂与活动对象，是两个不同职责</title><desc id="desc">产品 runtime 初次调用工厂并保存 session/services 及工厂。切换会话打开目标历史，释放旧实例，再调用工厂、采用新结果并重绑宿主。</desc>
+<rect width="920" height="890" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="36" font-size="23" fill="#172554" text-anchor="start" font-weight="700">保存工厂与活动对象，是两个不同职责</text>
+<rect x="30" y="64" width="860" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="92" font-size="18" fill="#172554" text-anchor="start" font-weight="700">初次创建：createAgentSessionRuntime</text>
+<text x="46" y="118" font-size="18" fill="#172554" text-anchor="start">await createRuntime(options) → 得到 session / services</text>
+<text x="46" y="144" font-size="18" fill="#172554" text-anchor="start">new AgentSessionRuntime 保存活动对象与同一重建工厂</text>
+<rect x="30" y="202" width="560" height="92" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="230" font-size="18" fill="#172554" text-anchor="start" font-weight="700">runtime 当前持有</text>
+<text x="46" y="256" font-size="18" fill="#172554" text-anchor="start">_session / _services / createRuntime</text>
+<rect x="665" y="202" width="225" height="92" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="230" font-size="18" fill="#172554" text-anchor="start" font-weight="700">宿主读取活动对象</text>
+<text x="681" y="256" font-size="18" fill="#172554" text-anchor="start">终端 / RPC 等</text>
+<rect x="30" y="338" width="560" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="366" font-size="18" fill="#172554" text-anchor="start" font-weight="700">switchSession：选择目标历史</text>
+<text x="46" y="392" font-size="18" fill="#172554" text-anchor="start">before-switch 允许后，open SessionManager</text>
+<text x="46" y="418" font-size="18" fill="#172554" text-anchor="start">检查目标 cwd，准备重建所需输入</text>
+<rect x="30" y="476" width="560" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="504" font-size="18" fill="#172554" text-anchor="start" font-weight="700">teardownCurrent：释放旧会话</text>
+<text x="46" y="530" font-size="18" fill="#172554" text-anchor="start">await abort → shutdown → dispose</text>
+<text x="46" y="556" font-size="18" fill="#172554" text-anchor="start">旧运行先结束，不能把旧 ctx 带进新会话</text>
+<rect x="30" y="614" width="560" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="642" font-size="18" fill="#172554" text-anchor="start" font-weight="700">await createRuntime：装配新会话</text>
+<text x="46" y="668" font-size="18" fill="#172554" text-anchor="start">目标 cwd 与 SessionManager 交给工厂</text>
+<text x="46" y="694" font-size="18" fill="#172554" text-anchor="start">工厂复用，活动对象重新创建</text>
+<rect x="30" y="752" width="860" height="84" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="780" font-size="18" fill="#172554" text-anchor="start" font-weight="700">apply 新 session / services → finishSessionReplacement</text>
+<text x="46" y="806" font-size="18" fill="#172554" text-anchor="start">替换活动引用，再让产品宿主重新绑定事件与扩展上下文</text>
+<path d="M310,158 V198" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M590,248 H661" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="603" y="236" font-size="16" fill="#172554" text-anchor="start">持有</text>
+<path d="M310,294 V334" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M310,432 V472" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M310,570 V610" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M310,708 V748" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M890,794 H906 V248 H894" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="675" y="729" font-size="16" fill="#172554" text-anchor="start">采用后的活动对象</text>
+<text x="30" y="868" font-size="17" fill="#172554" text-anchor="start">普通 prompt 复用当前 session；切换会话改变的是宿主所持对象。</text>
+</g></svg>

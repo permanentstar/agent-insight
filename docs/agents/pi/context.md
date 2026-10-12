@@ -76,15 +76,18 @@ message 条目通常贡献一条消息；custom_message 可以贡献扩展消息
 ```ts
 if (entry.type === "message") {
   const message = entry.message;
-  // ... normalize null/missing content in older files
+  // 省略：兼容旧文件里缺失的 content；
+  // 普通消息保留原角色与调用身份。
   return [message];
 }
-// ... custom_message and branch_summary produce their respective message types
+// 省略：custom_message 转为扩展消息，branch_summary
+// 转为分支摘要消息。
 if (entry.type === "compaction") {
   const summary = createCompactionSummaryMessage(entry.summary, entry.tokensBefore, entry.timestamp);
   return entry.systemMessage ? [entry.systemMessage, summary] : [summary];
 }
-return []; // Configuration and structural entries need not contribute prose.
+// 配置或结构条目可以不贡献模型正文；条目数不等于消息数。
+return [];
 ```
 
 这解释了为什么记录数量不等于模型消息数量：一个结构条目可能没有贡献，也可能在需要时贡献摘要及 system 资料。[条目转换](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L439)。
@@ -127,7 +130,8 @@ for (const entry of path) {
 }
 if (!compaction) return path;
 const compactionIdx = path.findIndex((entry) => entry.id === compaction.id);
-// ... return path if compactionIdx is not found
+// 省略：找不到摘要索引时返回原 path；
+// 正常路径按摘要覆盖范围选取。
 const contextEntries: SessionEntry[] = [compaction];
 let foundFirstKept = false;
 for (let i = 0; i < compactionIdx; i++) {
@@ -147,13 +151,64 @@ return contextEntries;
 
 F 是 edit 调用 e1，G 是 e1 的结果。默认压缩准备选择合适的消息切点，不直接把普通 toolResult 当作切点。若只保留 G，模型得到一个没有对应动作请求的结果，语义与 provider 配对都可能不完整；从 F 保留则同时留下动作和观察。
 
-当前实现的 prepareCompaction 使用**已经投影过的消息**计算切点。findProjectedCutPoint 按有效消息和保留预算选择范围，再记录 firstKeptEntryId。这里的预算决定要保留多少近期细节，却不能取消调用配对的要求。[投影后的切点选择](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/compaction/compaction.ts#L799)、[压缩准备](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/compaction/compaction.ts#L872)。
+当前实现的 prepareCompaction 使用**已经投影过的消息**计算切点。findProjectedCutPoint 按有效消息和保留预算选择范围，再记录 firstKeptEntryId。这里的预算决定要保留多少近期细节，却不能取消调用配对的要求。
+
+下面按 `prepareCompaction` 的原顺序展示准备结果怎样形成，省略没有可压缩内容时的返回、旧摘要定位和文件操作提取。它不请求模型，而是先确定“哪些资料供摘要、哪些细节继续保留”：
+
+```ts
+const projection = buildSessionProjection(pathEntries);
+const projectedEntries = projection.entries;
+// 省略：找已有有效摘要，得到 previousSummary 及 boundaryStart。
+const boundaryEnd = projectedEntries.length;
+const cutPoint = findProjectedCutPoint(
+  projectedEntries, boundaryStart, boundaryEnd, settings.keepRecentTokens,
+);
+const firstKeptEntry = projectedEntries[cutPoint.firstKeptEntryIndex]?.sourceEntry;
+if (!firstKeptEntry?.id) return undefined;
+const firstKeptEntryId = firstKeptEntry.id;
+const historyEnd = cutPoint.isSplitTurn ? cutPoint.turnStartIndex : cutPoint.firstKeptEntryIndex;
+const messagesToSummarize = projectedEntries
+  .slice(boundaryStart, historyEnd)
+  .flatMap(getMessagesFromProjectedEntryForCompaction);
+const turnPrefixMessages = cutPoint.isSplitTurn
+  ? projectedEntries.slice(cutPoint.turnStartIndex, cutPoint.firstKeptEntryIndex)
+      .flatMap(getMessagesFromProjectedEntryForCompaction)
+  : [];
+// 省略：同时返回 previousSummary、tokensBefore、fileOps 和
+// settings。
+```
+
+在前面的演算里，我们假定切点选到 F，而没有实测 token 预算。这个假设足以解释准备结果：firstKeptEntryId 指向 F，F/G 等近期细节继续保留；需要总结的旧资料进入 messagesToSummarize，切开同一用户工作的前缀则进入 turnPrefixMessages。摘要输入与保留起点是成套产出，不能各自随意选取。[findProjectedCutPoint 从投影选择有效切点](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/compaction/compaction.ts#L802)负责选择位置，[prepareCompaction 构造摘要输入与保留边界](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/compaction/compaction.ts#L880)对应上面的代码。
 
 F 位于 E 启动的用户工作中间。为了让保留段仍能理解原目标，准备结果另有 turnPrefixMessages：先前历史与被切开工作前缀分别供摘要生成使用，再结合已有摘要和文件操作资料。读者不需要先掌握所有压缩分支，但必须知道摘要也要保留“当前为什么做这个动作”的必要语义。
 
 压缩完成后，旧 Entry 仍然保留；模型输入变短并不意味着历史文件同步变小。存储体积、恢复读取量与本次请求 token 量，是不同的工程问题。
 
+产品还要把准备结果交给摘要生成器，并让结果生效。下面按手工压缩的默认路径整理，省略扩展接管与事件通知；自动压缩也采用共享的默认摘要生成器：
+
+```ts
+const pathEntries = this.sessionManager.getBranch();
+const preparation = prepareCompaction(pathEntries, settings);
+// 省略：preparation 不存在时具名报错；
+// 扩展可以提供自己的摘要结果。
+const result = await this._runDefaultCompaction(
+  preparation, model, customInstructions,
+  this._compactionAbortController.signal, "manual",
+);
+// 省略：采用 result 的 summary、firstKeptEntryId、
+// tokensBefore、details、usage。
+if (this._compactionAbortController.signal.aborted) throw new Error("Compaction cancelled");
+this.sessionManager.appendCompaction(
+  summary, firstKeptEntryId, tokensBefore, details, fromExtension, usage,
+);
+this._refreshFinalizedContext();
+```
+
+只有摘要生成完成并追加 CompactionEntry，新的覆盖关系才进入历史；随后刷新活动视图，让下一请求采用。图中的 S 正是这份生成结果和覆盖边界的记录，不是“删掉旧消息”这个动作。[AgentSession 准备压缩输入](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L2777)、[生成、追加并刷新压缩结果](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L2828)是这段产品路径的依据。
+
 ## 4. context_edit：改变可见贡献，保留来源
+
+![原始 toolResult G 保留在历史中，后追加的 context_edit K 通过 targetId 指向 G；投影查找该目标的编辑并生成正文替换后的 G 消息，消息来源仍绑定 G，而 K 自身不贡献普通模型消息](../../assets/pi-context-edit.svg)
 
 压缩后仍可能有一份很长的工具结果。假设 G 的原文含几千行修改日志，但后续只需知道改了哪里、结果如何。Pi 可以追加一个 context_edit K，指向 G：
 
@@ -198,7 +253,7 @@ const projectedEntries = contextEntries.map((sourceEntry, index) => ({
 return {
   entries: projectedEntries,
   messages: projectedEntries.flatMap((entry) => entry.messages),
-  // ... thinkingLevel and model
+  // 省略：沿当前历史路径恢复的 thinkingLevel 和 model。
 };
 ```
 
@@ -229,7 +284,8 @@ private _refreshFinalizedContext(): void {
 ```ts
 const previousPrepareRequest = this.agent.prepareRequest;
 this.agent.prepareRequest = async (request, signal) => {
-  // ... clear the previous failed response
+  // 省略：读取并清除上一份失败响应记录，
+  // 避免后续请求沿用旧失败状态。
   const projection = this.sessionManager.buildSessionProjection();
   const canonicalContext = {
     ...request.context,
@@ -244,7 +300,8 @@ this.agent.prepareRequest = async (request, signal) => {
   const model = previous?.model ?? this.agent.state.model;
   const thinkingLevel = previous?.thinkingLevel ?? this.agent.state.thinkingLevel;
   if (!isVirtualModel(model)) return { ...previous, context, model, thinkingLevel };
-  // ... resolve a virtual model and recheck its request context
+  // 省略：虚拟模型先解析到具体模型，
+  // 再按实际模型重新检查请求上下文。
 };
 ```
 
@@ -263,6 +320,25 @@ this.agent.prepareRequest = async (request, signal) => {
 | 模型适配 | 模型兼容消息与工具声明 | provider 实际协议请求 |
 
 不同模型对 system 与工具定义有不同协议要求。normalizeContext 负责将相应资料组织成 transcript，provider 再按自己的契约编码。不要把“历史里的几条 message”直接当作完整网络请求；也不要把 provider 转换再次称作历史压缩。[产品消息转换](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/messages.ts#L148)、[请求变换顺序](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/agent/src/agent-loop.ts#L381)、[transcript 规范化](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/ai/src/utils/transcript.ts#L30)。
+
+最后一次消息角色转换可以直接对照 `convertToLlm` 的摘要分支。下面节选 switch 中的 compactionSummary 与普通消息路径，省略其他产品角色：
+
+```ts
+case "compactionSummary":
+  return {
+    role: "user",
+    content: [{ type: "text" as const,
+      text: COMPACTION_SUMMARY_PREFIX + m.summary + COMPACTION_SUMMARY_SUFFIX }],
+    timestamp: m.timestamp,
+  };
+case "system":
+case "user":
+case "assistant":
+case "toolResult":
+  return m;
+```
+
+因此 Entry S 先贡献产品角色 compactionSummary，再在模型适配时成为带摘要说明的 user 消息；F/G 等普通模型消息则保留角色。摘要结构不会直接作为一个 SessionEntry JSON 发给 provider。上面的角色交接来自 [convertToLlm 的摘要与普通消息转换](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/messages.ts#L176)。
 
 更新采用影响后续请求材料，不会回头改变已经发出的模型请求。输入介入和后续工作需要进入合适的循环边界，见[一次输入](loop.md)。
 

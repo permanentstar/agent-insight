@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="770" viewBox="0 0 920 770" role="img" aria-labelledby="title desc">
+<title id="title">工具调用：动作请求到真实效果再到模型观察</title><desc id="desc">工具定义查找、参数准备、schema 校验和前置 hook 得到 immediate 或 prepared。immediate 不执行；prepared 进入真实 tool.execute 与结果 hook。两者最终形成并发布对应 toolResult。</desc>
+<rect width="920" height="770" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="36" font-size="23" fill="#172554" text-anchor="start" font-weight="700">工具调用：动作请求到真实效果再到模型观察</text>
+<rect x="30" y="64" width="560" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="92" font-size="18" fill="#172554" text-anchor="start" font-weight="700">prepareToolCall：准备一个模型动作</text>
+<text x="46" y="118" font-size="18" fill="#172554" text-anchor="start">按 name 查找工具 → 参数准备 → schema 校验</text>
+<text x="46" y="144" font-size="18" fill="#172554" text-anchor="start">beforeToolCall 接入前置处理与拦截</text>
+<path d="M310,204.0 L580.0,259 L310,314.0 L40.0,259 Z" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="310" y="253" font-size="17" fill="#172554" text-anchor="middle" font-weight="700">preparation.kind</text>
+<text x="310" y="277" font-size="17" fill="#172554" text-anchor="middle">immediate 还是 prepared？</text>
+<rect x="665" y="205" width="225" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="681" y="233" font-size="18" fill="#172554" text-anchor="start" font-weight="700">immediate</text>
+<text x="681" y="259" font-size="18" fill="#172554" text-anchor="start">准备失败 / 被拦截</text>
+<text x="681" y="285" font-size="18" fill="#172554" text-anchor="start">已得到具名错误结果</text>
+<rect x="30" y="354" width="560" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="382" font-size="18" fill="#172554" text-anchor="start" font-weight="700">prepared：携带真实 tool 和 validatedArgs</text>
+<text x="46" y="408" font-size="18" fill="#172554" text-anchor="start">executePreparedToolCall → await tool.execute</text>
+<text x="46" y="434" font-size="18" fill="#172554" text-anchor="start">此处发生文件或网络等实际效果</text>
+<rect x="30" y="493" width="560" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="521" font-size="18" fill="#172554" text-anchor="start" font-weight="700">finalizeExecutedToolCall</text>
+<text x="46" y="547" font-size="18" fill="#172554" text-anchor="start">afterToolCall 处理执行结果</text>
+<text x="46" y="573" font-size="18" fill="#172554" text-anchor="start">返回 finalized：结果、错误标记及调用身份</text>
+<rect x="30" y="633" width="860" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="661" font-size="18" fill="#172554" text-anchor="start" font-weight="700">两条路径汇合：形成 toolResultMessage</text>
+<text x="46" y="687" font-size="18" fill="#172554" text-anchor="start">发布 tool_execution_end 与消息事件；产品监听者追加历史</text>
+<text x="46" y="713" font-size="18" fill="#172554" text-anchor="start">循环随后把结果追加到上下文，供下一次模型决策</text>
+<path d="M310,174 V200" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M580,259 H661" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="595" y="248" font-size="16" fill="#172554" text-anchor="start">immediate</text>
+<path d="M310,314 V350" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="327" y="340" font-size="16" fill="#172554" text-anchor="start">prepared</text>
+<path d="M310,448 V489" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M310,587 V629" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M778,315 V629" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="665" y="454" font-size="17" fill="#172554" text-anchor="start">跳过 execute</text>
+<text x="665" y="480" font-size="17" fill="#172554" text-anchor="start">也跳过执行后 hook</text>
+</g></svg>

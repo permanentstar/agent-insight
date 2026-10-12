@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="670" viewBox="0 0 920 670" role="img" aria-labelledby="title desc">
+<title id="title">内容可以变短，来源仍然保留</title><desc id="desc">原始工具结果 G 保留，K 的 targetId 指向 G。投影采用 replacement 改变 G 的可见正文，保留来源和调用身份；K 自己不贡献普通消息。</desc>
+<rect width="920" height="670" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="36" font-size="23" fill="#172554" text-anchor="start" font-weight="700">内容可以变短，来源仍然保留</text>
+<rect x="30" y="65" width="390" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="93" font-size="18" fill="#172554" text-anchor="start" font-weight="700">原始 G：toolResult</text>
+<text x="46" y="119" font-size="18" fill="#172554" text-anchor="start">原正文 + e1 调用关联</text>
+<text x="46" y="145" font-size="18" fill="#172554" text-anchor="start">原始记录保留在历史中</text>
+<rect x="500" y="65" width="390" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="516" y="93" font-size="18" fill="#172554" text-anchor="start" font-weight="700">后追加 K：context_edit</text>
+<text x="516" y="119" font-size="18" fill="#172554" text-anchor="start">targetId = G</text>
+<text x="516" y="145" font-size="18" fill="#172554" text-anchor="start">replacement.content = 较短正文</text>
+<rect x="30" y="235" width="860" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="263" font-size="18" fill="#172554" text-anchor="start" font-weight="700">buildSessionProjection：收集可见编辑</text>
+<text x="46" y="289" font-size="18" fill="#172554" text-anchor="start">按目标 ID 查找最后一份 edit；保留 sourceEntry</text>
+<text x="46" y="315" font-size="18" fill="#172554" text-anchor="start">K 本身不变成普通消息</text>
+<rect x="30" y="389" width="390" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="417" font-size="18" fill="#172554" text-anchor="start" font-weight="700">G 的当前消息贡献</text>
+<text x="46" y="443" font-size="18" fill="#172554" text-anchor="start">其余消息字段保留</text>
+<text x="46" y="469" font-size="18" fill="#172554" text-anchor="start">content 改为 replacement.content</text>
+<rect x="500" y="389" width="390" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="516" y="417" font-size="18" fill="#172554" text-anchor="start" font-weight="700">来源对应仍指向 G</text>
+<text x="516" y="443" font-size="18" fill="#172554" text-anchor="start">sourceEntry.id = G</text>
+<text x="516" y="469" font-size="18" fill="#172554" text-anchor="start">K.targetId 解释编辑关系</text>
+<rect x="30" y="560" width="860" height="84" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="588" font-size="18" fill="#172554" text-anchor="start" font-weight="700">AgentSession 采用投影 → 下一次请求使用短正文</text>
+<text x="46" y="614" font-size="18" fill="#172554" text-anchor="start">编辑改变模型看见的贡献，不删除原始 G，也不改写已经发出的请求</text>
+<path d="M225,175 V231" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M695,175 V231" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M225,329 V385" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M695,329 V385" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M225,499 V556" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M695,499 V556" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+</g></svg>

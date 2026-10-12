@@ -28,7 +28,25 @@ AgentSession 中的资源层提供定义，ExtensionRunner 提供事件处理，
 | active loadout | 当前选用的工具集合 | AgentSession 更新工具与相应 system prompt |
 | extension context | 指向当前会话操作能力的句柄 | session 替换/reload 后旧句柄失效 |
 
-入口 `createAgentSession` 采用注入的 ResourceLoader 或默认实现；需要时 reload 资源。资源加载后 `_buildRuntime` 创建 runner，设置当前引用、绑定会话动作并刷新工具 registry。来源：[SDK](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/sdk.ts#L191)、[资源加载](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L513)、[runner 构造](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3637)。
+入口 `createAgentSession` 采用注入的 ResourceLoader 或默认实现，构造位置已在[架构章](architecture.md#启动时为什么先读历史-再创建执行对象)展开。本章从资源加载后的结果继续：`AgentSession._buildRuntime` 创建 ExtensionRunner，设置当前引用、绑定会话动作并刷新工具 registry。这里的 `_buildRuntime` 是扩展装配方法，和管理整份活动会话的 AgentSessionRuntime 不同。
+
+DefaultResourceLoader 不把所有资料混成一个字符串，而是保存不同资源集合。下面按 reload 的源码整理，省略路径发现、信任筛选和诊断的展开：
+
+```ts
+const extensionsResult = await this.loadFinalExtensionSet(extensionPaths, preTrustExtensions);
+this.extensionsResult = this.extensionsOverride
+  ? this.extensionsOverride(extensionsResult)
+  : extensionsResult;
+this.applyExtensionSourceInfo(this.extensionsResult.extensions, metadataByPath);
+// 省略：合并启用的 skill 路径，得到 skillPaths。
+this.lastSkillPaths = skillPaths;
+this.updateSkillsFromPaths(skillPaths, metadataByPath);
+// 省略：合并启用的 prompt 路径，得到 promptPaths。
+this.lastPromptPaths = promptPaths;
+this.updatePromptsFromPaths(promptPaths, metadataByPath);
+```
+
+扩展结果中的定义和 runtime 交给 ExtensionRunner；skill 和 prompt 内容则由输入展开阶段消费。资源已加载、定义已注册和本次执行已发生，是三个不同结论。上面的分类保存来自 [ResourceLoader 采用扩展、skill 与 prompt 加载结果](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L585)，接下来跟随扩展定义进入运行绑定。
 
 ## 注册、激活、请求、效果点
 
@@ -43,7 +61,7 @@ AgentSession 中的资源层提供定义，ExtensionRunner 提供事件处理，
 | 工具调用 | Agent.beforeToolCall → 当前 runner.emitToolCall | block 提前返回；异常由调用边界阻止效果继续 |
 | 工具完成 | Agent.afterToolCall → 当前 runner.emitToolResult | 可改内容、details、isError 等结果字段 |
 
-证据：[注册](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/loader.ts#L289)、[激活](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1518)、[prompt 顺序](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1968)、[工具 hook 安装](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L649)。注册、激活、模型选择和真实 execute 是连续的不同边界；具体 prepare/execute/finalize 见[循环章](loop.md)。
+表中注册、激活和工具 hook 的对应代码在下面逐段展开；prompt 的命令与输入处理已在[一次输入的产品分派](loop.md#第一步-产品输入先变成可执行的请求材料)展开，prepare/execute/finalize 则在[工具效果路径](loop.md#第二步-一个-turn-怎样从消息走到效果)展开。这样每个链接都承接一个明确的边界，而不是把方法名并排列成另一张目录。
 
 ### 定义怎样成为当前运行绑定
 
@@ -52,7 +70,8 @@ AgentSession 中的资源层提供定义，ExtensionRunner 提供事件处理，
 ```ts
 registerTool(tool: ToolDefinition): void {
   assertActive();
-  // ... require an object parameter schema
+  // 省略：检查 parameters 是对象 schema；
+  // 无效定义在注册阶段报错。
   extension.tools.set(tool.name, {
     definition: tool,
     sourceInfo: extension.sourceInfo,
@@ -74,7 +93,7 @@ this._extensionRunner = new ExtensionRunner(
 if (this._extensionRunnerRef) this._extensionRunnerRef.current = this._extensionRunner;
 this._bindExtensionCore(this._extensionRunner);
 this._applyExtensionBindings(this._extensionRunner);
-// ... derive baseActiveToolNames from options or defaults
+// 省略：优先采用显式 activeToolNames，否则采用默认内置工具名。
 this._refreshToolRegistry({
   activeToolNames: baseActiveToolNames,
   includeAllExtensionTools: options.includeAllExtensionTools,
@@ -83,23 +102,70 @@ this._refreshToolRegistry({
 
 这里的 current 引用和 core/UI 绑定让定义能操作当前产品会话。激活又是另一段：`_setActiveTools` 调用 `_applyToolLoadout`，清除对应 pending 名称，再按实际工具名 `_rebuildSystemPrompt`。因此注册改变可用定义，激活改变当前选择及声明；两者都没有触发 execute。[注册执行点](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/loader.ts#L289)、[运行装配](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3637)、[激活实现](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1527)。
 
+`bindCore` 又如何把扩展 API 接回产品？下面从它的两个参数对象中选取代表回调，省略其他会话操作和通知字段：
+
+```ts
+runner.bindCore({
+  sendMessage: (message, options) => {
+    // 扩展发消息，实际接回当前 AgentSession 的 custom
+    // 消息入口。
+    this.sendCustomMessage(message, options).catch((err) => {
+      // 省略：runner.emitError 记录 send_message 失败，不把
+      // Promise 丢掉。
+    });
+  },
+  appendEntry: (customType, data) => {
+    // 扩展状态写入仍由当前 SessionManager 管理，
+    // 不另建历史文件。
+    const entryId = this.sessionManager.appendCustomEntry(customType, data);
+    const entry = this.sessionManager.getEntry(entryId);
+    if (entry) this._emit({ type: "entry_appended", entry });
+  },
+  setActiveTools: (toolNames) => this.setActiveToolsByName(toolNames),
+  // 省略：其他消息、模型和会话操作。
+}, {
+  getModel: () => this.model,
+  isIdle: () => this.isIdle,
+  getSignal: () => this.agent.signal,
+  // 省略：其他运行状态读取与停止操作。
+});
+```
+
+前一个对象提供动作，后一个对象提供当前状态读取；runner 创建的扩展上下文因此能使用当前会话能力。它们通过闭包回到产品所有者，既没有把 SessionManager 复制给扩展，也没有让扩展拥有另一个 Agent。[AgentSession 将扩展能力绑定到产品动作与状态](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3386)对应这个绑定点。
+
+激活的真实方法只有三步，可以直接看源码：
+
+```ts
+private _setActiveTools(toolNames: string[]): void {
+  const tools = this._applyToolLoadout(toolNames);
+  for (const tool of tools) this._pendingToolNames.delete(tool.name);
+  this._rebuildSystemPrompt(tools.map((tool) => tool.name));
+}
+```
+
+先采用实际 loadout，再移除已经注册的 pending 名称，最后同步 Prompt。这是注册定义走向当前请求材料的交接；模型可见声明仍会在请求边界与可执行集合对齐。[采用当前工具集合与重建 Prompt](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1527)可核对这三步。
+
 ## Hook 分发与失败
+
+![Agent 的 beforeToolCall 在实际调用时读取当前 ExtensionRunner，逐个 await tool_call handler；block 结果直接返回并阻止 execute，未拦截才执行工具；之后 tool_result handler 累计修改结果，某个结果 handler 报错会记录错误并继续后续 handler](../../assets/pi-extension-hooks.svg)
 
 `emitToolCall` 按处理器快照逐个 await，遇到 block 直接返回；处理器异常会向调用边界传播。`emitToolResult` 把每次修改累计到 currentEvent，某个 handler 报错时记录 extension error 并继续处理其余结果 hook。两种错误策略不同，不能把“hook 失败”统一写成忽略或中止。
 
 产品安装的 hook 不捕获某一个旧 runner。下面按源码整理绑定与调用段，省略 parentToolCallId 展开和异常文案：
 
 ```ts
-// _installAgentToolHooks()
+// 构造时 _installAgentToolHooks() 只安装回调，不触发工具调用。
 this.agent.beforeToolCall = (context) => this._beforeToolCall(context);
 this.agent.afterToolCall = (context) => this._afterToolCall(context);
 
-// _beforeToolCall({ toolCall, args }, parentToolCallId?)
+// 真正调用 _beforeToolCall 时，再读取当前 runner，避免捕获
+// reload 前的旧实例。
 const runner = this._extensionRunner;
 if (!runner.hasHandlers("tool_call")) return undefined;
 return await runner.emitToolCall({
   type: "tool_call", toolName: toolCall.name, toolCallId: toolCall.id,
-  // ... optional parentToolCallId
+  // 省略：嵌套调用附上 parentToolCallId，
+  // 让扩展知道它属于哪个父工具。
   input: args as Record<string, unknown>,
 });
 ```
@@ -146,19 +212,21 @@ const oldRunner = this._extensionRunner;
 const previousFlagValues = oldRunner.getFlagValues();
 await emitSessionShutdownEvent(oldRunner, { type: "session_shutdown", reason: "reload" });
 oldRunner.invalidate();
-// ... remember the previous default tool selection
+// 省略：记下旧默认工具选择，重载后才能识别设置新增的默认工具。
 await this.settingsManager.reload();
 this.syncQueueModesFromSettings();
 resetApiProviders();
 await this._resourceLoader.reload();
-// ... compute addedDefaultTools
+// 省略：比较前后设置，得到本次新增的默认工具名
+// addedDefaultTools。
 for (const name of this.getActiveToolNames()) this._pendingToolNames.add(name);
 this._buildRuntime({
   activeToolNames: [...this.getActiveToolNames(), ...addedDefaultTools],
   flagValues: previousFlagValues,
   includeAllExtensionTools: true,
 });
-// ... rebind the new runner and emit session_start(reason: "reload")
+// 省略：新 runner 重新绑定宿主，并在有运行绑定时发布
+// session_start(reason: "reload")。
 ```
 
 持久历史的 SessionManager 没有在这里被替换。替换的是资源定义及扩展运行绑定；旧 ctx 失效、新工具逐步注册和原历史继续保留可以同时成立。[重载顺序](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3661)。
