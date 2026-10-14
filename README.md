@@ -32,6 +32,7 @@ npm run preview
 
 维护资料与阅读内容分开存放，不进入书籍构建或搜索：
 
+- [写作与教学评审规范](maintenance/writing.md)：后续新增和修订内容共同遵循的主线、段落、概念、图文与源码讲解要求。
 - [教学资料筛选](maintenance/research-sources.md)：外部 GitHub 教程的观察点、采用方式与不采用的结论。
 - [教学深化与更新计划](maintenance/update.md)与[元数据契约](maintenance/contracts.md)：教学补充顺序、源码更新与换机入口。
 - [对象模板](templates/project.md)、[机制模板](templates/mechanism.md)与[比较模板](templates/comparison.md)：统一研究问题和章节结构。
