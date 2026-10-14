@@ -12,7 +12,7 @@ verified_scope: "21 份原稿重要主题已提炼并登记；校验原文不变
 
 # 参考材料登记与证据边界
 
-21 份历史原稿的重要结论、独有机制、学习目标与未知边界已提炼为正文，迁移状态全部为 digested；原文件仍按登记字节和 SHA-256 保留。初版整理完成不表示所有目标能力经过运行验证，也不表示 Claude 缺失源码或外部服务实现已经补齐。
+21 份历史原稿的重要结论、独有机制、学习目标与未知边界已提炼为正文，迁移状态全部为 digested；原文件仍按登记字节和 SHA-256 保留。初版整理完成不表示所有目标能力经过运行验证，也不表示私有依赖或外部服务实现已经补齐。
 
 [migration.json](https://github.com/permanentstar/agent-insight/blob/main/migration.json) 是原稿 ID/revision、校验信息、targets、coverage 和 known_limits 的唯一登记来源。remaining_scope 为空表示没有初版材料整理事项遗留，known_limits 登记证据/运行边界。以下为登记快照；[archive 原稿](https://github.com/permanentstar/agent-insight/tree/main/archive)不进入站点与搜索。
 
@@ -26,9 +26,9 @@ verified_scope: "21 份原稿重要主题已提炼并登记；校验原文不变
 | `deerflow-runtime` / 6 | [DeerFlow / deerflow-runtime](../docs/agents/deerflow/runtime.md) | 多 worker/重启/lease 故障未运行；事件批次 best effort，不声明完整交付。 |
 | `deerflow-prompt` / 19 | [DeerFlow / deerflow-context](../docs/agents/deerflow/context-prompt.md) | 真实 provider 缓存命中与抗注入未测；标签建议作为候选契约。 |
 | `deerflow-harness` / 23 | [DeerFlow / deerflow-capabilities](../docs/agents/deerflow/capabilities.md)、[DeerFlow / deerflow-context](../docs/agents/deerflow/context-prompt.md) | 同类工具合并按效果边界解释；所有后端与 sandbox 平台未运行。 |
-| `claude-march` / 152 | [Claude Code / claude-migrated](../docs/agents/claude/architecture.md)、[Claude Code / claude-context](../docs/agents/claude/context.md)、[Claude Code / claude-capabilities](../docs/agents/claude/capabilities.md) | 原 snapshot SHA 未知，snip/collapse、部分 gates 和显式 teammate 接单缺原实现，保持冻结未知。 |
+| `claude-march` / 152 | [Claude Code / claude-migrated](../docs/agents/claude/architecture.md)、[Claude Code / claude-context](../docs/agents/claude/context.md)、[Claude Code / claude-capabilities](../docs/agents/claude/capabilities.md) | 已补固定原始源码快照，query、压缩、工具及相关宿主重新核验；snip/collapse 缺实际模块，线上 gates 和跨崩溃接单确认仍未知。 |
 | `claude-official` / 33 | [Claude / claude-practices](../docs/agents/claude/practices.md) | 官方实践作为历史转述；Code/API/Managed Agents 分开，不核验当前页面或服务。 |
-| `claude-legacy` / 4 | [Claude Code / claude-capabilities](../docs/agents/claude/capabilities.md)、[Claude Code / claude-migrated](../docs/agents/claude/architecture.md) | 旧 QueryEngine/IDE Bridge 与 3 月 snapshot 的版本关系未知，不拼成一种当前实现。 |
+| `claude-legacy` / 4 | [Claude Code / claude-capabilities](../docs/agents/claude/capabilities.md)、[Claude Code / claude-migrated](../docs/agents/claude/architecture.md) | QueryEngine 与 IDE transport 已按固定源码核验；旧资料的版本关系保留，不拼成当前线上实现。 |
 | `codex-official` / 8 | [Codex / codex-plan](../docs/agents/codex/architecture.md)、[Codex / codex-context](../docs/agents/codex/context-capabilities.md)、[Codex / codex-official-migrated](../docs/agents/codex/official-practices.md) | 历史建议对应当前固定源码执行点；模型价格/参数、30 天安排和模板建议不转成当前 API 契约。 |
 | `hermes` / 10 | [Hermes / hermes-context](../docs/agents/hermes/context.md)、[Hermes / hermes-capabilities](../docs/agents/hermes/capabilities.md)、[Hermes / hermes-migrated](../docs/agents/hermes/architecture.md) | 所有平台/provider 与 cron/压缩取消交接未运行；隔离 worker 契约不泛化到所有任务。 |
 | `langchain-overview` / 40 | [LangChain / LangGraph / langchain-learning](../docs/frameworks/langchain/learning.md) | 外部课程、按天安排与无统计比例留归档；学习目标已归并，练习未执行。 |
@@ -44,7 +44,7 @@ verified_scope: "21 份原稿重要主题已提炼并登记；校验原文不变
 
 | 内容类型 | 正文处理 | 保存理由 |
 |---|---|---|
-| 层次、构造、执行链、状态/恢复、独有机制 | 用统一章节提炼并给固定源码证据；Claude 单独标历史 | 后续 agent 按机制差异更新，不重新猜模板 |
+| 层次、构造、执行链、状态/恢复、独有机制 | 用统一章节提炼并给固定源码证据；Claude 按冻结源码与历史平台实践分别标注 | 后续 agent 按机制差异更新，不重新猜模板 |
 | 原稿过度概括或与主干冲突 | 当页纠正，例如 LastValue、bind_tools、middleware 编译与 Bridge 版本 | 防止旧结论被日期刷新后继续传播 |
 | 教学例子、练习、自检 | 提炼输入输出、学习目的和执行点；长代码原样留归档 | 未实际执行，不能写测试通过；旧代码不作为最新接口样例 |
 | 外部课程、学习天数、无样本比例、版本默认计时 | 只在归档保留 | 不作为当前产品/性能契约 |

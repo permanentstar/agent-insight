@@ -49,3 +49,5 @@ npm run test:contracts
 ```
 
 sources 只读本地 checkout 与缓存的 origin ref，不联网、拉取或改写版本登记。引用固定源码，正文不把本机 WIP 作为上游实现。
+
+Claude 源码采用 baselines.json 中登记的冻结原始提交，不纳入定时主干更新。新 checkout 的 source-status 只核对该提交可读，不要求其 HEAD 与源码快照相同。

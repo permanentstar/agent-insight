@@ -18,14 +18,14 @@ MCP roots/elicitation 与其他扩展不同；缺失实现不能由名称或官�
 <rect x="40" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
 <text x="58" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">REPL / AppState / 命令</text>
 <text x="58" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">交互模式与呈现状态</text>
-<text x="58" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">远控与 IDE 通道的模块关系未知</text>
+<text x="58" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">远控子进程、REPL桥、IDE接入分开</text>
 <rect x="540" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
 <text x="558" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">query / model loop</text>
 <text x="558" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">主线程、子 Agent、团队分层</text>
 <text x="558" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">MCP schema 按需发现</text>
 <rect x="40" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
 <text x="58" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">Tool executor / 权限</text>
-<text x="58" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">校验 → allow / deny / ask</text>
+<text x="58" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">校验 / hook → 权限协调 → call</text>
 <text x="58" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">并行组与预算分别控制</text>
 <rect x="540" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
 <text x="558" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">MCP / Bridge 接入</text>
@@ -37,7 +37,7 @@ MCP roots/elicitation 与其他扩展不同；缺失实现不能由名称或官�
 <text x="58" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">最终回答不能代证业务成功</text>
 <rect x="540" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
 <text x="558" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">实现边界</text>
-<text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">部分 gates 与队友接单链尚不明确</text>
+<text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">缺失 gates；跨崩溃接单确认未证</text>
 <text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">定义、可见性、授权分别判断</text>
 <text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">远控工作宿主与 IDE 消息通道分别讨论，完成回报不代替工具效果确认。</text>
 <text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">MCP roots/elicitation 与其他扩展不同；缺失实现不能由名称或官方产品文档补齐。</text>

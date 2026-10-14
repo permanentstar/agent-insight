@@ -16,6 +16,9 @@ LangChain 是应用组合框架。Runnable 统一调用形态，messages/model/t
 
 ![LangChain 的 create_agent 生成节点与边，compiled graph 由 LangGraph 驱动，BaseChatModel 与 BaseTool 把请求交给 partner 和 handler](../../assets/langchain.svg)
 
+
+本章沿一次图调用展开：第一步由应用提供组件并构图，第二步把当前状态组织成 ModelRequest，第三步消费模型的工具决定并回填观察，第四步依据路由收口。先解释这条正常主线，再把 middleware 放回相应阶段；显式 Plan & Execute 是主线讲完后的组合方式。
+
 ## 概念与生命周期
 
 | 概念 | 层次与含义 | owner / 生命周期 | 状态边界 |
@@ -31,7 +34,7 @@ LangChain 是应用组合框架。Runnable 统一调用形态，messages/model/t
 
 依据：[Runnable](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/runnables/base.py#L134)、[ChatModel](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/language_models/chat_models.py#L475)、[BaseTool](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/tools/base.py#L433)、[factory](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L892)。
 
-## 构造与一次请求
+## 第一步：构造图，再提交输入
 
 create_agent 收集工具、middleware 的额外工具与 schema，形成 ToolNode、model 节点和 hook 节点，添加条件边，注入 checkpointer/store/cache 后 compile。调用 compiled graph 才开始执行；是否跨调用保留状态取决于应用是否配置存储和 thread 寻址。
 
@@ -47,7 +50,7 @@ create_agent 收集工具、middleware 的额外工具与 schema，形成 ToolNo
 
 依据：[模型节点与真实调用](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1493)、[构图](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1611)、[工具返回路由](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L2072)。
 
-## 沿一项任务看 messages 怎样驱动图
+## 第二步：由状态构造请求，由模型提出动作
 
 ![用户消息进入模型节点；AIMessage 的待执行 tool_calls 路由到工具；ToolMessage 按 call ID 回填，模型再决策；没有待续工作时走结束](../../assets/langchain-loop-flow.svg)
 
@@ -82,7 +85,22 @@ ToolMessage(content="exportCsv 直接拼接字段，已有验证覆盖普通字�
 
 这也是自然语言组织方式：框架不把所有正文变成一个固定 intent_class，而用消息角色、内容块和调用关联约束材料的解释。结构化输出又是另一种返回契约；它可以影响工厂结束条件，不能和“工具调用结果”混称。
 
-## 从工具契约到一次完整图调用
+### 从 ModelRequest 到实际模型调用
+
+请求先经过 wrapper，抵达 `_execute_model_sync` 后才进入真实模型。下面节选终端 handler 的主要路径，省略响应命名及结构化结果包装；异步路径采用相同交接并调用 `ainvoke`。
+
+```python
+model_, effective_response_format = _get_bound_model(request)
+messages = request.messages
+if request.system_message:
+    messages = [request.system_message, *messages]
+output = model_.invoke(messages)
+handled_output = _handle_model_output(output, effective_response_format)
+```
+
+`_get_bound_model` 将有效工具和输出约束绑定到模型；`system_message` 在终端调用前才与普通消息组合。输出经 `_handle_model_output` 转成后续状态更新所需的消息与结构化结果，再由 `_build_commands` 交给图执行。这解释了为什么“改当次 request”与“更新 state”需要两个不同入口。[查看模型节点、wrapper 和终端 handler 的交接](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1493)。
+
+## 第三步：执行工具并把观察交回模型
 
 将任务交给 create_agent，应用仍要提供实际能力；工厂不会凭“修复 CSV”这几个字自动生成读文件和验证代码。为手工演算，定义以下三个应用工具，名字与输出为教学约定：
 
@@ -129,21 +147,19 @@ R1 让模型知道实际代码，R2 让它知道动作结果，R3 让它知道�
 参考解答：不违反。model/tools 的协作骨架保持相同，具体工具与轮数由当次决定和程序控制共同形成。该轨迹可能多出观察和请求，不能从本表的教学顺序推定工厂强制读→改→测。
 
 
+## 第四步：根据有效路由继续或收口
+
+工具结果更新消息后，路由决定回到模型；没有待执行工具、取得有效结构化响应或遇到 `return_direct` 等条件时，走向收尾。middleware 的允许跳转也参与决定。因而工具 handler 返回只结束这次动作，图路由到 END 才结束本次图调用；应用还需检查任务要求是否满足。
+
+现在主线已经闭合。接下来解释 middleware 为什么能在相同图中改变准备、执行与返回，而不必另写一套驱动循环。
+
 ## middleware 怎样改变同一条主线
 
 before_model/after_model 作为图中的节点，可返回状态更新或允许的跳转；wrap_model_call 是模型调用的包裹，可以改当次请求或结果。比如只想为这次请求附上时间信息，可以 override request，而不必把时间永久追加为用户消息。
 
-工具层同理。wrap_tool_call 可以在 handler 之前决定是否调用、怎样调用，或规范化结果。它是实际工具效果路径的一部分；而把某工具移出模型 schema，只影响这次请求的可见性。更完整的 hook 顺序见下表。
+工具层同理。wrap_tool_call 可以在 handler 之前决定是否调用、怎样调用，或规范化结果。它是实际工具效果路径的一部分；而把某工具移出模型 schema，只影响这次请求的可见性。完整的时间轴与 hook 顺序在后两节展开。
 
 TodoListMiddleware 添加 write_todos 和 todos 状态，工具以 Command 更新清单并返回 ToolMessage。它让任务进度成为结构资料，下一步动作仍由模型与路由决定，不能将清单误读为自动逐项执行的调度器。[Todo 状态更新](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/middleware/todo.py#L140)。
-
-## 用框架组织 Plan & Execute
-
-如果应用要把规划和执行分开，可以定义 Planner 的结构化输出、Executor 接受的步骤，以及 Replanner 消费的完成结果。Planner 本身可以是一份模型调用；Executor 可以是一份 create_agent；外层再用 StateGraph 连接它们。这是框架的组合方式，不是 create_agent 默认主线自动拥有的三份模块。
-
-在本案例中，外层计划可以保存“实现转义”这一项，而 Executor 内部独立读取、修改、测试多次。外层计划项与内层 tool call 是不同粒度。只有将输入输出契约和状态位置写清楚，组合后才不会出现两层都以为对方负责推进的情况。
-
-学习自检：AIMessage.content、tool_calls 与 ToolMessage 各承担什么？如果同一图开始新请求，哪些对象复用、哪些 request 新建？为什么 Runnable 的统一调用接口不等于业务状态机？
 
 ## 一次 middleware 调用的完整资料时间轴
 
@@ -189,6 +205,14 @@ U 是用户目标。本例 middleware 的三项职责都由应用定义，不是
 | after_agent | 收尾图节点 | B → A | 在 END 前收口；不是所有工具各跑一次 |
 
 源码通过边直接表达 after 的反序，而不是简单对每个方法调用一遍。hook 的 dict 是状态写入，不是立即修改所有对象；request.override 只改变指定请求。依据：[wrap 合成](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L281)、[前后节点边](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1715)、[after 反序与 compile](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1855)。
+
+## 用框架组织 Plan & Execute
+
+如果应用要把规划和执行分开，可以定义 Planner 的结构化输出、Executor 接受的步骤，以及 Replanner 消费的完成结果。Planner 本身可以是一份模型调用；Executor 可以是一份 create_agent；外层再用 StateGraph 连接它们。这是框架的组合方式，不是 create_agent 默认主线自动拥有的三份模块。
+
+在本案例中，外层计划可以保存“实现转义”这一项，而 Executor 内部独立读取、修改、测试多次。外层计划项与内层 tool call 是不同粒度。只有将输入输出契约和状态位置写清楚，组合后才不会出现两层都以为对方负责推进的情况。
+
+学习自检：AIMessage.content、tool_calls 与 ToolMessage 各承担什么？如果同一图开始新请求，哪些对象复用、哪些 request 新建？为什么 Runnable 的统一调用接口不等于业务状态机？
 
 ## 故障、工具与取舍
 

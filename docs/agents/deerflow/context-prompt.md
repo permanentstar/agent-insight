@@ -16,6 +16,18 @@ DeerFlow 的 prompt 由构建期规则、持久事实和请求级提醒组合。
 
 ![构建期模板提供规则，ThreadState 保存摘要与能力记录，请求 wrapper 临时渲染事实，合并后交模型；压缩单独写 checkpoint](../../assets/deerflow-context.svg)
 
+
+上一章已经定位模型 wrapper。本章从一次请求所需资料继续：先辨认来源，再把持久状态渲染为当前请求；历史过长时，压缩流程更新 checkpoint，下一次渲染采用新状态。
+
+| 主线位置 | 谁处理 | 交给下一位置的资料 |
+|---|---|---|
+| 1. 准备来源 | Prompt builder 与状态更新 hook | 基础规则、消息、摘要和任务资料 |
+| 2. 渲染请求 | DurableContext、其他 model wrappers | 规则消息及带来源的数据消息 |
+| 3. 长历史压缩 | Summarization 或手工 compact | 保留消息、summary_text、task_history |
+| 4. 后续采用 | checkpointer 与新 model request | 当前状态经 wrapper 再次形成请求 |
+
+## 第一步：明确每份资料的来源与保存周期
+
 | 来源 | 构造/消费 | 作用域与是否持久 | 注入与退出 |
 |---|---|---|---|
 | role、thinking、clarification、工作区和引用规则 | lead prompt builder → create_agent | 图构建期规则 | model request 加基础 system，重建图才换基础配置 |
@@ -27,15 +39,34 @@ DeerFlow 的 prompt 由构建期规则、持久事实和请求级提醒组合。
 | Todo / goal / budget / loop 提醒 | 对应 hooks/wrappers | 状态与提醒分别管理 | 停止条件由代码判定，不由提示文字自证 |
 | 子 Agent prompt | executor._build_initial_state | 子运行自己的 messages | create_agent(system_prompt=None)，初始 state 已包含 SystemMessage |
 
-## 持久数据，临时渲染
+## 第二步：从持久字段渲染本次请求
 
 DurableContext before/after_model 捕捉 delegation 与已读 Skill 信息进入字段。wrap_model_call 从 state 取 summary、delegations、skills、task notes/history、artifacts 和 goal，插入 authority contract 的 SystemMessage 与数据 HumanMessage，再 request.override；数据块标记 hide_from_ui 与 provenance。它没有把临时渲染结果永久追加到 state。
 
-这也解释为什么“把 durable context 放 system prompt”不准确：规则和历史数据用两种消息角色，持久事实与本次投影又是两层。task notes 是模型报告，仍需按 source IDs 核验。[捕捉与请求投影](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/durable_context_middleware.py#L389)。
+规则与历史数据分别使用 SystemMessage 和 HumanMessage；state 保存事实，wrapper 生成当次投影。task notes 是模型报告，仍需按 source IDs 核验。[捕捉与请求投影](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/durable_context_middleware.py#L389)。
 
-## 压缩、summary 与 memory
+DurableContext 的 _inject 先从 state 生成 data_block，再插入两类消息。下面是按源码整理的骨架，省略数据净化和字段渲染：
 
-自动 Summarization 在 before_model 判断，使用独立摘要模型与内部 prompt，保留需要的尾部/消息配对，并维护 summary_text；Memory 在自己的生命周期处理长期资料，不是同一个缓存。摘要调用可以不对 UI stream，空/失败结果与无需压缩分别处理。
+```python
+state = request.state or {}
+# 省略：summary、delegations、skills、notes 等字段渲染成 data_block。
+if not data_block:
+    return request
+messages = insert_after_leading_system_messages(
+    list(request.messages),
+    [
+        SystemMessage(content=authority_contract, additional_kwargs=rule_provenance),
+        HumanMessage(content=data_block, additional_kwargs=data_provenance),
+    ],
+)
+return request.override(messages=messages)
+```
+
+authority_contract、rule_provenance 和 data_provenance 是这里用于解释的名字，真实实现使用常量及 provenance_kwargs。规则说明如何解释历史资料，数据消息承载当前事实；handler 随后使用 override 后的请求。[持久字段的请求投影](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/durable_context_middleware.py#L400)。
+
+## 第三步：压缩旧消息，并更新 checkpoint
+
+自动 Summarization 在 before_model 判断，使用独立摘要模型与内部 prompt，保留需要的尾部/消息配对，并维护 summary_text；Memory 在独立生命周期处理长期资料。摘要调用可以不对 UI stream，空/失败结果与无需压缩分别处理。
 
 手工 compact 从 checkpoint accessor 读 materialized state，构造压缩 middleware，`acompact_state(...raise_on_failure=True)` 后以 Overwrite(preserved_messages) 写 messages，并更新 summary_text/task_history。这里的压缩既涉及消息覆盖，也更新摘要与任务历史。独立修改通过 mutation accessor 完成，不需要重新构建完整 lead 图。
 
@@ -48,6 +79,30 @@ DurableContext before/after_model 捕捉 delegation 与已读 Skill 信息进入
 | 未知旧 checkpoint agent binding | 不凭 body hint 授权 memory 写 | 绑定提示可选兼容模型，不等于资料 owner |
 
 [摘要实现](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/summarization_middleware.py)、[手工读/生成/Overwrite](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/runtime/context_compaction.py#L132)、[准入与错误 HTTP 映射](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/app/gateway/routers/threads.py#L1506)。
+
+手工 compact 的正常主线由读取、摘要、更新三段组成。下面按 compact_thread_context 整理，省略 agent/model 选择、无需压缩及失败返回；操作准入由 Gateway 路由的 reservation 提供：
+
+```python
+snapshot = await accessor.aget(read_config)
+# 省略：从 snapshot.values 构造 messages、summary_text、task_history。
+result = await middleware.acompact_state(state, runtime, force=force, raise_on_failure=True)
+# 省略：result 为 None 时返回无需压缩，成功才进入更新。
+updated_config = await accessor.aupdate(
+    update_config,
+    {
+        "messages": Overwrite(list(result.preserved_messages)),
+        "summary_text": result.summary_text,
+        **({"task_history": result.task_history} if getattr(result, "task_history", None) is not None else {}),
+    },
+    as_node="manual_compaction",
+)
+```
+
+Overwrite 指定新的消息值，摘要和任务历史与它一并更新。checkpoint 采用完成后，后续图调用读取这个状态。[手工压缩的三段实现](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/runtime/context_compaction.py#L132)。
+
+## 第四步：从新状态准备后续请求
+
+例如旧代码阅读记录被总结，近期修改与验证消息保留；summary_text 提供之前确认的约束，messages 提供最近观察。下一轮 wrapper 从当前 state 重新渲染，模型据这两类资料决定继续修复或回答。event store 仍可保留界面历史，模型请求使用 checkpoint 中当前的消息范围。
 
 ## 为新插件选注入点
 

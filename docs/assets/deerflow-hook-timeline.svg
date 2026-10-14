@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="765" viewBox="0 0 1000 765" role="img" aria-labelledby="title desc">
+<title id="title">DeerFlow：按执行阶段定位中间件</title><desc id="desc">输入与图初始化：用户消息与调用环境已提供，当前 state 交给初始化 hook；每次模型节点前：before_model 处理当前 state，model wrapper 组织实际请求；模型响应返回：响应成为图内消息，后处理可影响继续和路由；有工具调用时：tool wrapper 检查、执行或提前返回，结果成为 ToolMessage，供后续请求；图正常结束：完成本次图的产品收尾，Gateway worker 再处理 run 终态</desc>
+<rect width="1000" height="765" fill="#ffffff"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker></defs>
+<g font-family="Arial, sans-serif">
+<text x="30" y="38" font-size="24" fill="#172554" font-weight="700">DeerFlow：按执行阶段定位中间件</text>
+<rect x="30" y="70" width="610" height="96" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="98" font-size="18" fill="#172554" font-weight="700">输入与图初始化</text>
+<text x="46" y="123" font-size="17" fill="#172554">用户消息与调用环境已提供</text>
+<text x="46" y="148" font-size="17" fill="#172554">当前 state 交给初始化 hook</text>
+<rect x="690" y="70" width="280" height="96" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="705" y="99" font-size="17" fill="#172554">before_agent</text>
+<text x="705" y="124" font-size="17" fill="#172554">返回初始化状态更新</text>
+<path d="M640 118H685" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M335 166V191" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="195" width="610" height="96" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="223" font-size="18" fill="#172554" font-weight="700">每次模型节点前</text>
+<text x="46" y="248" font-size="17" fill="#172554">before_model 处理当前 state</text>
+<text x="46" y="273" font-size="17" fill="#172554">model wrapper 组织实际请求</text>
+<rect x="690" y="195" width="280" height="96" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="705" y="224" font-size="17" fill="#172554">before_model</text>
+<text x="705" y="249" font-size="17" fill="#172554">wrap_model_call</text>
+<path d="M640 243H685" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M335 291V316" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="320" width="610" height="96" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="348" font-size="18" fill="#172554" font-weight="700">模型响应返回</text>
+<text x="46" y="373" font-size="17" fill="#172554">响应成为图内消息</text>
+<text x="46" y="398" font-size="17" fill="#172554">后处理可影响继续和路由</text>
+<rect x="690" y="320" width="280" height="96" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="705" y="349" font-size="17" fill="#172554">after_model</text>
+<text x="705" y="374" font-size="17" fill="#172554">读取响应及状态</text>
+<path d="M640 368H685" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M335 416V441" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="445" width="610" height="96" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="473" font-size="18" fill="#172554" font-weight="700">有工具调用时</text>
+<text x="46" y="498" font-size="17" fill="#172554">tool wrapper 检查、执行或提前返回</text>
+<text x="46" y="523" font-size="17" fill="#172554">结果成为 ToolMessage，供后续请求</text>
+<rect x="690" y="445" width="280" height="96" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="705" y="474" font-size="17" fill="#172554">wrap_tool_call</text>
+<text x="705" y="499" font-size="17" fill="#172554">包住实际 handler</text>
+<path d="M640 493H685" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M30 493H10V243H26" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="35" y="559" font-size="16" fill="#334155">工具结果按路由回到下一次模型请求</text>
+<path d="M640 368H665V618H645" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="668" y="559" font-size="16" fill="#334155">无工具且决定结束</text>
+<rect x="30" y="570" width="610" height="96" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="598" font-size="18" fill="#172554" font-weight="700">图正常结束</text>
+<text x="46" y="623" font-size="17" fill="#172554">完成本次图的产品收尾</text>
+<text x="46" y="648" font-size="17" fill="#172554">Gateway worker 再处理 run 终态</text>
+<rect x="690" y="570" width="280" height="96" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="705" y="599" font-size="17" fill="#172554">after_agent</text>
+<text x="705" y="624" font-size="17" fill="#172554">生命周期收尾</text>
+<path d="M640 618H685" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="30" y="743" font-size="16" fill="#334155">图按主阶段定位入口；实际 wrapper 嵌套与跳转由装配列表和图规则决定。</text>
+</g></svg>

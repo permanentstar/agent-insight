@@ -16,6 +16,9 @@ verified_scope: "核验 callback/tracer 组树、OpenAI partner 请求分支与 
 
 ![RunnableConfig 向子调用传播 callbacks；Tracer 用 parent_run_id 组树；ChatModel 到 Partner SDK 再回到消息](../../assets/observability.svg)
 
+
+这张图有一条执行线和一条观察线。执行线把输入归一成消息，进入 Partner 的 SDK，再把响应交回模型接口；观察线随这些调用传递父子身份，记录开始、结束和错误。先按调用顺序走执行线，随后解释回调怎样在相同路径上组树，最后看应用如何装配这两层。
+
 | 对象 | 所属层 | 构造与消费 | 生命周期/权威范围 |
 |---|---|---|---|
 | RunnableConfig | 调用配置 | 调用根配置，子调用继承/patch | tags、metadata、callbacks、并发；不是业务 state |
@@ -24,7 +27,13 @@ verified_scope: "核验 callback/tracer 组树、OpenAI partner 请求分支与 
 | Partner | provider 集成 | init_chat_model 或应用工厂构造 BaseChatModel 子类 | 客户端、参数转换、响应归一、能力声明 |
 | standard-tests | 集成质量契约 | 集成类继承测试基类并声明能力 | 有用例不代表此书执行过或厂商全部功能一致 |
 
-## 回调主链路
+## 第一步：从模型接口进入 Partner
+
+create_agent 的 model 节点 → BaseChatModel.invoke/ainvoke → prompt/messages 归一与缓存/回调 → partner `_generate/_agenerate` 或流式路径。ChatOpenAI._generate 先构造 payload，再按 response_format、Responses API、Chat Completions 分支调用 SDK，并把响应封装为 ChatResult。因此公开 invoke 对应的 SDK 调用，需要按所选请求分支判断。
+
+工具绑定与结构化输出各自有 provider 协议限制；最小继承 `_generate/_llm_type` 足以实现基础调用，但不是能接入全部 Agent 功能的证明。能力 metadata、usage、流式 chunk 合并、工具 schema、错误和异步均需针对集成检查。[OpenAI 实际请求分支](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/partners/openai/langchain_openai/chat_models/base.py#L1927)、[工具绑定](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/partners/openai/langchain_openai/chat_models/base.py#L2494)、[标准测试入口](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/standard-tests/langchain_tests/unit_tests/chat_models.py#L277)。
+
+## 第二步：随执行传播回调并形成树
 
 最外层配置 callbacks/tags/metadata → 组件开始 run → 子组件使用 child callback manager → tracer 按 parent_run_id 查 order_map/run_map → 继承 trace_id 并扩展 dotted_order → end/error 时完成记录。dotted_order 用开始时间与 ID 构成层级排序键，不是提交顺序或因果持久水位。缺少父记录时实现会把该 run 视作根，不能声称所有散落调用都必然自动归树。
 
@@ -32,13 +41,23 @@ verified_scope: "核验 callback/tracer 组树、OpenAI partner 请求分支与 
 
 证据：[callback 配置与去重](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/callbacks/manager.py#L2389)、[Tracer 父子与缺失父项](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/tracers/core.py#L150)、[CI tracing 插件](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/standard-tests/langchain_tests/_langsmith_plugin.py)。
 
-## 模型实际执行点
+Tracer 取得 parent_run_id 后查找父记录，并把层级关系扩展到当前 run。下面节选 `_start_trace` 中找到父项的路径；根 run、缺失父项及外部记录计数分支省略。
 
-create_agent 的 model 节点 → BaseChatModel.invoke/ainvoke → prompt/messages 归一与缓存/回调 → partner `_generate/_agenerate` 或流式路径。ChatOpenAI._generate 先构造 payload，再按 response_format、Responses API、Chat Completions 分支调用 SDK，并把响应封装为 ChatResult。因此公开 invoke 对应的 SDK 调用，需要按所选请求分支判断。
+```python
+if run.parent_run_id:
+    if parent := self.order_map.get(run.parent_run_id):
+        run.trace_id, run.dotted_order = parent
+        run.dotted_order += "." + current_dotted_order
+        if parent_run := self.run_map.get(str(run.parent_run_id)):
+            self._add_child_run(parent_run, run)
+# 完整实现先处理根与缺失父项，再统一登记当前项。
+self.order_map[run.id] = (run.trace_id, run.dotted_order)
+self.run_map[str(run.id)] = run
+```
 
-工具绑定与结构化输出各自有 provider 协议限制；最小继承 `_generate/_llm_type` 足以实现基础调用，但不是能接入全部 Agent 功能的证明。能力 metadata、usage、流式 chunk 合并、工具 schema、错误和异步均需针对集成检查。[OpenAI 实际请求分支](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/partners/openai/langchain_openai/chat_models/base.py#L1927)、[工具绑定](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/partners/openai/langchain_openai/chat_models/base.py#L2494)、[标准测试入口](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/standard-tests/langchain_tests/unit_tests/chat_models.py#L277)。
+这段解决的是“这次调用属于哪个父调用”。比如检索、模型和工具各有 run，只有回调上下文沿父调用传下去，树才呈现它们的关系；它没有把兄弟调用变成同一状态提交。[查看父项查找与根项处理](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/tracers/core.py#L150)。
 
-## 与 DeerFlow 的组合
+## 第三步：在应用中绑定模型与观察后端
 
 DeerFlow 按 `module:Class` 配置 resolve_class，检查是类且继承 BaseChatModel，然后加入产品参数、thinking/profile 与 tracing 配置。类能导入不代表 provider 权限、网络、模型能力都可用；“换厂商只改配置”只描述组合边界，不能承诺协议完全等价。
 

@@ -16,6 +16,9 @@ DeepSeek 的会话日志和 model surface 分开：压缩保留审计事件，�
 
 ![选择 surface 区间，记录 compaction/start，事务外生成摘要，稳定检查后 append summary 和替换消息，end 后 flush；原审计日志保留](../../assets/deepseek-context.svg)
 
+
+本章沿一次手工压缩走四步：确定可以维护的运行边界与覆盖区间，生成候选摘要，确认区间仍稳定后提交投影变更，最后完成持久屏障，维护收口后再由下一请求采用。概念表先说明各份记录的消费者；随后只沿这条正常路径展开，自动压缩和结果裁剪放在后面比较。
+
 | 概念 | 层次 / owner | 生命周期与消费者 |
 |---|---|---|
 | Session event log / seq | 会话事实 | 完整事件，包括 log-only 控制/审计 |
@@ -25,15 +28,45 @@ DeepSeek 的会话日志和 model surface 分开：压缩保留审计事件，�
 | user/message + surfaceOp | 投影变更 | summary checkpoint message 替换指定 startSeq/endSeq 区间 |
 | flush | storage 屏障 | 确认已排队保存；不撤销外部模型/工具效果 |
 
-## 手工压缩主链路
+## 第一步：取得维护边界并选定覆盖区间
 
 CompactionEngine 是可选能力，Basic provider 的 compactNow 进入 Agent.runMaintenance，要求 idle 且没有 waking queued work；选择可用区间，组合 Agent 与命令 signal，调用 compactSurfaceRegion，传 selected-span 稳定契约与 sessions.flush。忙时抛 ManualCompactionError(busy)，不是往活跃模型流里随时插摘要。
 
-region 检查没有未关闭压缩及自动/手工 turn owner，追加 start；prepare/summarize 在事务外调用模型；结束前 assertStable，保证所选 surface 仍符合原快照。提交体追加 summary，再追加 checkpoint user/message(surfaceOp replace, sourceEventSeqs)，随后 end 关闭生命周期。失败按 summary/commit/persistence 等阶段归因并尽力关闭 end；append 不等同外部事务原子回滚。
+## 第二步：生成候选摘要
 
-证据：[手工 idle 边界与 flush](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/compaction/compaction-basic/src/index.ts#L383)、[start、稳定核验与关闭](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/compaction/compaction-basic/src/region.ts#L193)、[真正 surface 写入](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/compaction/compaction-basic/src/region.ts#L491)。
+`compactSurfaceRegion` 检查没有未关闭压缩，并确认自动或手工调用的 turn 归属，然后追加 `compaction/start`。prepare/summarize 在事务外调用模型，输入是选定区间的消息和请求所需的配置；输出先是候选摘要。生成完成后，`assertStable` 确认所选 surface 仍符合原快照，才进入提交。
 
-## 与自动、结果裁剪的区别
+## 第三步：写入摘要来源并替换模型投影
+
+提交体先追加 `compaction/summary`，保存摘要及被覆盖的来源，再追加承载摘要的 checkpoint 消息。下面是按源码顺序抽出的记录骨架；命令来源、原始模型输出与调用标记、usage 等统计字段省略，变量都来自已选定区间及摘要结果。
+
+```ts
+const summaryEvent = session.append('compaction/summary', {
+  compactionId: startEvent.data.compactionId,
+  summary,
+  shadowedRange: { start, end },
+  shadowedSeqs: [...shadowedSeqs],
+  shadowedTokenCount,
+  provider,
+  model,
+})
+session.append('user/message', checkpointMessage, {
+  surfaceOp: { op: 'replace', startSeq: start, endSeq: end },
+  sourceEventSeqs: [startEvent.seq, summaryEvent.seq, ...shadowedSeqs],
+})
+```
+
+第一条为审计和来源服务，第二条改变模型可见贡献。`replace` 的对象是选定 surface 区间；原事件仍保留在日志里，新的模型视图以摘要消息代替该区间。随后 `compaction/end` 关闭本次尝试。[查看摘要与 surface 写入的对应关系](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/compaction/compaction-basic/src/region.ts#L491)。
+
+## 第四步：完成 flush，再由下一请求采用
+
+`sessions.flush` 先确认保存边界，手工维护返回并释放 maintenance 后，后续请求才能继续。正常路径是追加 end、等待 flush、返回压缩结果，再结束维护；图与正文使用这一顺序。[查看 end 后的 flush 与返回](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/compaction/compaction-basic/src/region.ts#L253)。
+
+下一次 `buildRequest` 调用 `deriveMessages()`，读取的已经是变更后的 surface。假设之前的消息依次为“修复目标、读取、读取结果、修改、验证结果”，所选前段被摘要覆盖，下一请求便使用“摘要、保留的近期消息”；审计侧仍能查回原步骤。
+
+摘要生成、surface 变更和持久确认解决不同问题：模型怎样理解既往工作、哪些消息进入请求、这些记录是否能跨崩溃存活。失败按 summary/commit/persistence 等阶段归因，并尽力关闭 end；单次 append 不能被解释成外部事务的原子回滚。
+
+## 两条相关支路：自动压缩与结果裁剪
 
 自动压缩可在 open turn 的 pre-step 使用 whole-surface 稳定约束；手工可在没有 turn 时维护 selected span。两者必须保持 tool call/result 配对，不能把半个工具交换折叠为摘要。tool-result pruner 与 image offload 是兄弟策略，修改可见结果/媒体的方式不同，不由 compaction-basic 一包概括。
 

@@ -12,11 +12,22 @@ verified_scope: "CLI/Gateway 构造、原生对话阶段、工具分派与消息
 
 # Hermes：宿主生命周期、对话循环与存储边界
 
-Hermes 的共用编排门面是 AIAgent，但其生命周期由宿主决定：CLI 持有自身 Agent，Gateway 按会话/配置条件复用缓存实例，ACP 有独立协议宿主。一次 run_conversation 可以包含多次模型及工具轮次；SQLite 会话行、Agent 活实例与当前 turn 不能合成一个“session”。
+Hermes 的共用编排门面是 AIAgent，但其生命周期由宿主决定：CLI 持有自身 Agent，Gateway 按会话/配置条件复用缓存实例，ACP 有独立协议宿主。一次 run_conversation 可以包含多次模型及工具轮次；SQLite 保存历史，AIAgent 保留运行服务，本轮 turn 保存当次输入与过程。
 
 ![Hermes 宿主加载会话后构造或复用 AIAgent，对话循环跨模型 transport 与工具 registry，SessionDB 与记忆分别存储](../../assets/hermes.svg)
 
-## 概念与构造
+
+本章先说明宿主怎样取得 AIAgent，再沿一份 CSV 输入走五个阶段：初始化 turn、准备一次 API 请求、调用并规范化模型响应、执行工具、回填反馈或收口。DB 写入贯穿过程，主线之后单独解释提交位置。
+
+| 阶段 | 消费的资料 | 输出 |
+|---|---|---|
+| 1. 本轮初始化 | 用户输入、历史、有效 Prompt | 当前 turn 与 _LoopState |
+| 2. 请求准备 | 当前消息、工具与运行配置 | api_kwargs 与前置控制结果 |
+| 3. 模型响应 | provider 请求 | 统一 assistant_message |
+| 4. 工具反馈 | tool_calls | 按调用次序组织的结果消息 |
+| 5. 继续或收口 | 阶段控制动作与当前消息 | 下一 iteration 或宿主结果边界 |
+
+## 运行前：宿主取得对象和服务
 
 | 概念 | 层次、职责 | owner / 生命周期 | 状态边界 |
 |---|---|---|---|
@@ -30,7 +41,7 @@ Hermes 的共用编排门面是 AIAgent，但其生命周期由宿主决定：CL
 
 `CLIAgentSetupMixin._init_agent` 把 model/runtime、session_id、SessionDB 与宿主回调传给 AIAgent。Gateway TurnRunner 先查缓存，再按身份与配置条件复用或构造；压缩可能改变 session_id，宿主需同步新的会话关系。依据：[CLI 构造](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/hermes_cli/cli_agent_setup_mixin.py#L625)、[Gateway 构造与缓存判断](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/gateway/run_turn_runner.py#L1055)、[AIAgent 门面](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/run_agent.py#L214)。
 
-## 一次原生对话的主链路
+## 五个阶段分别在哪里执行
 
 | 当前位置 | 调用链 | 输入输出及提前结束 |
 |---|---|---|
@@ -42,9 +53,9 @@ Hermes 的共用编排门面是 AIAgent，但其生命周期由宿主决定：CL
 | 工具阶段 | run_tool_round → AIAgent._execute_tool_calls | 分段串行/并行；结果反馈给下一 iteration |
 | 最终收口 | finalize_turn → export_current_turn_boundary | 返回结果及边界；失败 turn 可另补 durable closer |
 
-依据：[原生循环](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1547)。`api_mode == codex_app_server` 是明显旁路：可把完整 turn 交给 Codex 子进程，不走上述每个本地模型/工具阶段。不能因类名仍是 AIAgent，就把该旁路解释成纯协议转换。
+依据：[原生循环](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1547)。`api_mode == codex_app_server` 是明显旁路：可把完整 turn 交给 Codex 子进程，不走上述每个本地模型/工具阶段。该旁路将整轮执行交给 Codex。
 
-## 把一个用户 Turn 分解成多次 iteration
+## 第一步：初始化 Turn，再沿阶段推进
 
 ![Hermes 宿主取得 AIAgent 后初始化本轮消息和局部状态，每次 iteration 组装请求、通过前置检查、调用模型并规范化结果，有工具则执行回填；Codex app-server 是接管整轮的旁路](../../assets/hermes-turn-flow.svg)
 
@@ -70,16 +81,40 @@ while iteration_budget_allows():
     response = request_model_with_retry(state)
     assistant = normalize_model_response(response)
     if assistant.tool_calls:
-        run_tool_round(assistant, state)  # results enter subsequent messages
+        run_tool_round(assistant, state)  # 结果进入后续消息
     else:
         finish_text_response(assistant, state)
-        break  # normal final-response path
+        break  # 正常文本回答收口
 return finalize_and_export_turn_boundary(state)
 ```
 
-实际 preflight 和响应处理返回控制动作，因此不总是沿伪代码一路走到底；这属于程序控制。下一次该读、改还是验证，则由模型结合消息判断。这两种控制合作构成原生反馈循环，而不是一份预先固定的任务脚本。[循环阶段与响应分流](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1645)。
+实际 preflight 和响应处理返回控制动作，因此不总是沿伪代码一路走到底；这属于程序控制。下一次该读、改还是验证，则由模型结合消息判断。这两种控制合作构成原生反馈循环，模型依据更新后的消息选择后续动作。[循环阶段与响应分流](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1645)。
 
-## 长期对象与本轮状态为什么分开
+### 第五步的控制来自阶段返回值
+
+主循环在规范化响应后选择工具阶段或文本阶段。下面是实际源码节选，省略异常处理及重试重启；_run_phase 返回 action，将阶段结果接回循环：
+
+```python
+_ri = _run_phase(normalize_model_response, agent, s)
+if _ri.action == "return":
+    return _ri.result
+if _ri.action == "continue":
+    continue
+_v = _run_phase(
+    run_tool_round if s.assistant_message.tool_calls else finish_text_response,
+    agent, s,
+)
+if _v.action == "return":
+    return _v.result
+if _v.action == "break":
+    break
+if _v.action == "continue":
+    continue
+```
+
+模型通过 tool_calls 提出动作，阶段函数决定怎样执行和反馈；action 管程序是否继续本轮。循环退出后 finalize_turn 整理结果，外层 run_conversation 为返回消息导出当前 turn 边界，宿主继续保存或投递。[原生响应分流](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1681)。
+
+## 初始化补充：长期对象与本轮状态的交接
 
 Gateway 可以缓存 AIAgent，客户端连接与能力配置因此具有跨轮生命周期；本轮 API 计数、重试资料、即时评论去重和消息边界则不能泄漏到下一次用户输入。源码在初始化后重置相关 turn 状态，再建立 _LoopState。把“Agent 对象仍存在”误解为“上个工作仍在执行”，会同时误判资源复用和运行状态。[本轮初始化与状态重置](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1593)。
 
@@ -109,15 +144,15 @@ AIAgent 被 Gateway 复用时，本次 _LoopState 和 turn 相关局部资料仍
 参考解答：不应该。应追到请求构造、消息变更与持久路径，分别确认它的角色与范围。临时资料影响模型响应，其内容也可能出现在响应中；这不同于它自己已经成为原始用户输入。
 
 
-## 模型、工具与扩展
+## 第二步至第四步：请求适配与实际工具调用
 
 ProviderTransport 的契约把消息、工具、kwargs 和 NormalizedResponse 处理集中在协议层；provider 选择、凭据与模型元数据另有责任。这比让每个 loop 分支直接理解所有 API 更容易替换，但 fallback、streaming 与 app-server 旁路仍要单独追。
 
 工具执行有两层：agent/tool_executor 处理一轮调用的分段、并发、interrupt 和结果顺序；model_tools.handle_function_call / _execute_tool 再经执行 middleware 到 registry.dispatch 或 connector dispatch。并行 executor 的结果按原调用次序回填；并发安全的判定是具体策略，不能只凭“读工具”名字推断。依据：[分段门面](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/run_agent.py#L1294)、[并行执行](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/tool_executor.py#L1563)、[handler 分派](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/model_tools.py#L822)、[transport 契约](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/transports/base.py#L12)。
 
-有些 hook 是可替换结果的观察点，并不是安全门禁。`transform_tool_result` 失败按源码处理为保留原结果；不能将所有插件错误都称作 fail-closed。审批、guardrail 和 shell sandbox 需要由具体工具消费；工具可用性检查不代替执行授权。
+结果变换 hook 调整反馈内容，执行门禁在调用前检查。`transform_tool_result` 失败按源码处理为保留原结果；不能将所有插件错误都称作 fail-closed。审批、guardrail 和 shell sandbox 需要由具体工具消费；工具可用性检查不代替执行授权。
 
-## 持久化、压缩与故障
+## 记录旁路：批次写入成功后采用持久标记
 
 `_db_flush_write` 用 append_messages_batch 提交新增消息，成功后才更新本地“已持久化”标记。展示文本可与模型请求文本不同；某些 scaffolding 不适合成为永久对话。记忆抽取、trajectory 与 DB 消息也不是同一份事实。
 
@@ -131,6 +166,22 @@ ProviderTransport 的契约把消息、工具、kwargs 和 NormalizedResponse �
 | session_id 变化 | Gateway 同步新的身份与历史关系 | session ID 与 Agent 对象永远一对一 |
 
 依据：[消息批次](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/session_persistence.py#L290)、[失败收口](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1813)、[压缩约束说明](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_compression.py#L1)。压缩的提交 fence、coverage watermark 和 DB lineage 是需要单独深入的独有机制；当前只定位其契约，未以注释替代完整实现证明。
+
+正常消息批次的写入位置可直接节选。数据库提交返回后，再同步对应消息的持久标记；后续失败处理和旧 checkpoint 清理省略：
+
+```python
+if not batch_rows:
+    return
+agent._session_db.append_messages_batch(
+    session_id=agent.session_id, messages=batch_rows,
+    compression_lock_holder=getattr(agent, "_active_compression_lock_holder", None),
+    turn_lease_holder=getattr(agent, "_active_session_turn_lease_holder", None),
+    turn_lease_ttl_seconds=getattr(agent, "_active_session_turn_lease_ttl_seconds", 300.0) or 300.0,
+)
+sync_flushed_message_markers(batch_msgs, batch_rows)
+```
+
+这一边界使内存的“已保存”标记对应成功提交的数据库行，下一轮历史加载据此恢复资料。[消息提交与标记采用](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/session_persistence.py#L290)。
 
 ## 门面与执行模块的分工
 

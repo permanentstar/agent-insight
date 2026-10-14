@@ -3,7 +3,7 @@ id: "claude-index"
 title: "Claude Code 分册"
 subject: "claude"
 status: "index"
-baselines: ["claude-frozen-documents"]
+baselines: ["claude-source-20260331", "claude-frozen-documents"]
 sources: ["claude-march", "claude-official", "claude-legacy"]
 depends_on: ["claude-migrated", "claude-context", "claude-capabilities", "claude-practices"]
 evidence: []
@@ -20,7 +20,7 @@ Claude Code 的机制可以按会话宿主、query 循环、工具执行和上�
 
 | 共同职责 | 本实现中的定位 |
 |---|---|
-| 产品宿主 | 历史研究中的 REPL/AppState 与 QueryEngine 分担交互和非交互会话。 |
+| 产品宿主 | 冻结源码中的 REPL/AppState 与 QueryEngine 分担交互和非交互会话。 |
 | 工作推进 | query 以生成器组织模型、工具反馈与收口检查。 |
 | 模型与动作 | 模型产生 tool_use；执行器校验、询问权限并调用 Tool。 |
 | 历史与请求 | transcript、messagesForQuery、压缩与长期 memory 分开解释。 |
@@ -35,4 +35,4 @@ Claude Code 的机制可以按会话宿主、query 循环、工具执行和上�
 | [工具、MCP 与 Bridge](capabilities.md) | 发现、授权、控制面与远端接入怎样区分？ |
 | [任务与托管边界](practices.md) | Code、模型 API 和 Managed Agents 分别承担什么？ |
 
-先走完主链路，再进入状态、能力和故障边界。每次遇到持久记录或临时快照，都重新确认它的所有者和采用时机。
+先从 query 主线理解会话怎样接纳目标、消费工具反馈和结束，再进入压缩与能力两条专题。任务章把这些机制合成一次可验收的工作；本分册的证据范围统一见开篇版本说明。

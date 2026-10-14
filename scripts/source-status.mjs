@@ -19,6 +19,15 @@ for (const [id, repo] of Object.entries(registry.repos)) {
   if (!path || !existsSync(path)) { console.log(`${id}: source_missing; configure AGENT_SOURCE_ROOT or .source-map.json`); failed = true; continue; }
   try {
     const git = (...args) => execFileSync('git', ['-C', path, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    if (repo.update_policy === 'frozen') {
+      const frozen = Object.entries(registry.baselines).find(([, b]) => b.repo === id && b.role === 'historical' && b.sha);
+      if (!frozen) throw new Error('source_baseline_missing');
+      git('cat-file', '-e', `${frozen[1].sha}^{commit}`);
+      const affected = pages.filter(p => p.baselines.includes(frozen[0])).map(p => p.id);
+      console.log(`${id}: frozen_source_available; SHA=${frozen[1].sha}; pages=${affected.join(',')}`);
+      continue;
+    }
+    if (!baseline) throw new Error('source_current_baseline_missing');
     const head = git('rev-parse', 'HEAD');
     let upstream;
     try { upstream = git('rev-parse', `origin/${repo.branch}`); } catch { upstream = 'ref_missing'; }

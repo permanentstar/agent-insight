@@ -12,7 +12,7 @@ verified_scope: "入口按共同职责定位并连接实现专题；正文的静
 
 # Codex 分册
 
-Codex 的 Rust core 用长活 Session/Thread 承接提交，以 turn 和 step 的快照组织请求和执行。上下文、工具路由、审批环境与 rollout 记录各有 owner，不能把一个线程读成单个模型调用。
+Codex 的 Rust core 用长活 Session/Thread 承接提交，以 turn 和 step 的快照组织请求和执行。架构章沿一份任务串起线程、Turn 与 Step；上下文章继续解释资料如何固定、压缩和继承，实践章再把任务输入与这些边界对应起来。
 
 ## 在共同架构中定位
 

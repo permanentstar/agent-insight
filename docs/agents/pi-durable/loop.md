@@ -16,7 +16,18 @@ Pico5 的用户工作经过 Submission 接纳，在 Conversation 中由一串生
 
 ![同一个 Submission 由 G1 读取、G2 修改、G3 验证、G4 回答推进；工具是各生成的 child，生成之间移交 pi.live.run，最终收口同一个输入](../../assets/pico5-work-chain.svg)
 
-## 一份输入如何开始工作
+
+本章以同一 Submission 为线索走五步：接纳输入、准备请求、创建并等待工具、移交下一生成、收口输入。G1 到 G4 是教学轨迹里的生成任务 ID；一个 generation 结束时，用户输入仍可能由下一 generation 继续负责。
+
+| 步骤 | 接到什么 | 交出什么 |
+|---|---|---|
+| 1. 接纳 | 用户 input 与 requestId | Submission、UserEntry、首个 generation |
+| 2. 请求 | 当前历史和配置 | 保存 cutoff 的请求 checkpoint、assistant 响应 |
+| 3. 工具 | assistant 的动作请求 | tool child、等待关系、结果 Entry |
+| 4. 移交 | 完成的工具结果 | successor generation 和新的 run.taskId |
+| 5. 收口 | 最终回答及边界处理 | Submission 的持久结果 |
+
+## 第一步：接纳输入，建立持久身份
 
 贯穿案例仍是“读取需求和 CSV 导出代码，修复字段转义，运行已有验证并说明结果”。应用把它作为 input submission 交给 Conversation.submit。Submissions 在 Session 的事务中检查当前是否忙、是否已有排队输入，以及 requestId 是否已接纳。
 
@@ -29,9 +40,9 @@ Pico5 的用户工作经过 Submission 接纳，在 Conversation 中由一串生
 | 最终回答或相应写入完成 | done | Submission 有持久收口结果 |
 | 被取消、重置或其他未回答条件收口 | unanswered + reason | 本次接纳有终点，但没有正常回答 |
 
-状态不是模型写出的任务清单。queued 输入可以进展为 placed 再 done，也可以在放置前被撤回；具体输入模式影响它在哪个运行边界被消费。
+这些状态由输入接纳与收口程序更新。queued 输入可以进展为 placed 再 done，也可以在放置前被撤回；具体输入模式影响它在哪个运行边界被消费。
 
-## 生成 Task 的主要阶段
+## 第二步：准备请求边界，取得模型响应
 
 ![Generation 从 prepare 保存请求 cutoff 后进入 request；回答则结束；请求工具则进入 tools 等待；工具完成后当前 generation 结束并创建 successor；retry 和 poll 是请求旁路](../../assets/pico5-generation-flow.svg)
 
@@ -47,19 +58,40 @@ GenerationTask 的调度 status 与 checkpoint.phase 同时存在。下表只列
 
 cutoff 是这一请求包含的最新 Entry。prepare 完成后保存它，再从同一范围读取请求上下文。这让“模型这次依据哪段资料作判断”有明确边界。它不表示未来所有请求都使用相同历史；下一生成会准备新的范围。[checkpoint 字段与 prepare](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/generation.ts#L51)、[request 实际调用](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/generation.ts#L184)。
 
-## 按“读、改、验证、回答”展开一项任务
+request 阶段读取 checkpoint.cutoff 所限定的上下文，再依次调用 beforeRequest，最后取得模型响应并分类。下面节选实际交接，省略 pi.live 进度更新、模型不可用处理和 stream options 的组装：
+
+```ts
+const view = await runtime.context(conversationId, context, { at: cutoff });
+let messages = view.messages;
+await runtime.hooks.each("beforeRequest", async (hook) => {
+  const replaced = await hook({ messages }, runtime, context);
+  if (replaced !== undefined) messages = replaced.messages;
+});
+// 省略：按 checkpoint 的配置组装 options。
+const message = await streamResponse(runtime, model, messages, options, attempt, context);
+const request = { attempt, compacted, model: ref, cutoff, messages: view.messages };
+await classify(runtime, request, message, context);
+```
+
+classify 在下一步把响应分类为回答、工具轮次或相应旁路。[request 的实际入口](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/generation.ts#L184)。
+
+## 第三步：把动作请求变为工具工作并等待
 
 图中 G1—G4 是教学命名。实际模型可能用更多或更少轮次，也可能先补查测试。下面的重点是对象和数据怎样推进，并非假定固定步骤。
 
 **G1 获取事实。** 模型读到用户要求和当前 Prompt，返回 assistant toolCall 要求读需求与代码。事务保存 assistant Entry，创建相应 tool child Task，并把 G1 设为 waiting/phase=tools。工具执行后保存结果；G1 在工具全部收口后重新进入 tools 阶段处理结果。
 
-**G2 作出修改。** G1 的工具轮次结束，程序创建 G2，并将 `pi.live.run.taskId` 从 G1 移到 G2；G1 自己成为 terminal/completed。G2 的上下文包含读工具结果，模型据此选择修改方式。若要求继续查文件，也会形成另一个工具轮次，而不是被程序强迫直接修改。
+## 第四步：采用观察，将同一输入交给下一生成
 
-**G3 验证并可能调整。** 新生成读到修改结果，选择运行验证。工具给出失败时，下一生成可以据失败内容继续修改。它遵循同一个反馈循环；内核并没有将“测试失败”写死为某个唯一修复动作。
+**G2 作出修改。** G1 的工具轮次结束，程序创建 G2，并将 `pi.live.run.taskId` 从 G1 移到 G2；G1 自己成为 terminal/completed。G2 的上下文包含读工具结果，模型据此选择修改方式。若要求继续查文件，也会形成另一个工具轮次，后续动作由模型根据观察选择。
 
-**G4 收口输入。** 模型产生正常最终回答。answer 路径保存 assistant Entry，在最终边界处理队列，并由 endRun 收口 run.inputs 中的 Submission。若存在 onYield 的继续要求，满足相应条件时也可以把同一 run 再交给 successor，而不是立刻 done。[创建工具轮次](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/generation.ts#L540)、[工具后移交](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/generation.ts#L593)、[最终回答与继续钩子](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/generation.ts#L508)。
+**G3 验证并可能调整。** 新生成读到修改结果，选择运行验证。工具给出失败时，下一生成可以据失败内容继续修改。它遵循同一个反馈循环；失败观察进入下一请求，由模型决定修复动作。
 
-## 同一个时刻的三份数据
+## 第五步：最终回答后收口 Submission
+
+**G4 收口输入。** 模型产生正常最终回答。answer 路径保存 assistant Entry，在最终边界处理队列，并由 endRun 收口 run.inputs 中的 Submission。若存在 onYield 的继续要求，满足相应条件时也可以把同一 run 再交给 successor，此时继续由 successor 负责输入收口。[创建工具轮次](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/generation.ts#L540)、[工具后移交](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/generation.ts#L593)、[最终回答与继续钩子](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/generation.ts#L508)。
+
+## 用工具等待时刻核对前面的五步
 
 假设 G1 正在等待读工具，存储中有以下关系。代码块为字段节选的教学样例，ID 经过简化；不是可导入的完整记录：
 
@@ -89,7 +121,7 @@ cutoff 是这一请求包含的最新 Entry。prepare 完成后保存它，再�
 }
 ```
 
-generation 的 checkpoint 管理这一轮应等待谁；tool 的 checkpoint 管理具体效果的恢复；pi.live 管理会话当前归属与展示。它们可能同批改变，却不能互换。样例假设工具明确声明 replay=safe；未声明时源码默认 unsafe。
+generation 的 checkpoint 管理这一轮应等待谁；tool 的 checkpoint 管理具体效果的恢复；pi.live 管理会话当前归属与展示。它们可同批改变，各自服务于任务恢复、运行归属和展示。样例假设工具明确声明 replay=safe；未声明时源码默认 unsafe。
 
 工具完成后，T1 有结果 outcome 和结果 Entry；G1 处理该轮后终止，pi.live.run.taskId 改为 G2。S1 仍在 run.inputs 中，直到最终收口。这个中间状态解释了为什么“一个生成已经完成”不能作为用户任务完成判定。
 

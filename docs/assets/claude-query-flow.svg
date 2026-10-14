@@ -1,35 +1,52 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="805" viewBox="0 0 960 805" role="img" aria-labelledby="title desc">
-<title id="title">Claude query：历史研究中的循环</title><desc id="desc">会话将输入交 query，构建 messagesForQuery 并检查预算；模型工具调用经校验与权限后执行、回填工具结果，再请求模型；无工具时 Stop hooks 可继续或结束。</desc>
-<rect width="960" height="805" fill="#ffffff"/>
-<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
-<g font-family="system-ui, sans-serif" fill="#172554">
-<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Claude query：历史研究中的循环</text>
-<rect x="30" y="75" width="590" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="103" font-size="18" fill="#172554" font-weight="700">会话入口 → query</text>
-<text x="46" y="130" font-size="16" fill="#172554">输入 / 附件 / 命令分流</text>
-<text x="46" y="154" font-size="16" fill="#172554">messagesForQuery 与上下文预算处理</text>
-<rect x="30" y="224" width="590" height="94" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="252" font-size="18" fill="#172554" font-weight="700">模型流</text>
-<text x="46" y="279" font-size="16" fill="#172554">assistant 文本与 tool_use 内容块</text>
-<rect x="30" y="382" width="590" height="124" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="410" font-size="18" fill="#172554" font-weight="700">工具执行</text>
-<text x="46" y="437" font-size="16" fill="#172554">schema / validateInput → canUseTool → call</text>
-<text x="46" y="461" font-size="16" fill="#172554">tool_result 用 tool_use_id 对应调用</text>
-<text x="46" y="485" font-size="16" fill="#172554">结果加入下一轮消息</text>
-<rect x="695" y="382" width="235" height="124" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
-<text x="711" y="410" font-size="18" fill="#172554" font-weight="700">Stop hooks</text>
-<text x="711" y="437" font-size="16" fill="#172554">无工具时检查</text>
-<text x="711" y="461" font-size="16" fill="#172554">继续则追加信息</text>
-<text x="711" y="485" font-size="16" fill="#172554">通过则结束</text>
-<path d="M325,169 V220" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M325,318 V378" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M30,445 H13 V271 H26" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M620,271 H813 V378" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M813,382 V125 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="30" y="605" width="900" height="116" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="633" font-size="18" fill="#172554" font-weight="700">会话消费 query 产出</text>
-<text x="46" y="660" font-size="16" fill="#172554">async generator 逐次 yield 流、assistant、结果与压缩边界</text>
-<text x="46" y="684" font-size="16" fill="#172554">UI 显示、请求资料与 transcript 生命周期不同</text>
-<path d="M813,506 V601" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="30" y="772" font-size="15" fill="#172554">图展示历史材料所述控制关系，不将这些阶段声明为源码的持久状态枚举。</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="930" viewBox="0 0 1000 930" role="img" aria-labelledby="title desc">
+<title id="title">Claude query：每轮准备、反馈与收口</title>
+<desc id="desc">会话入口进入每轮请求准备，模型请求工具时执行并回到准备；无工具进入 Stop hooks，继续要求回准备，通过才结束。query 的流、消息、工具结果与压缩边界逐次产出给会话消费者。</desc>
+<rect width="1000" height="930" fill="#ffffff"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker></defs>
+<g font-family="Arial,sans-serif" fill="#172554">
+<text x="28" y="37" font-size="24" font-weight="700">Claude query：每轮准备、反馈与收口</text>
+<rect x="28" y="72" width="575" height="82" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="43" y="101" font-size="19" font-weight="700">会话入口</text>
+<text x="43" y="128" font-size="17">输入、附件与命令分流后交给 query</text>
+<rect x="28" y="218" width="575" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="43" y="247" font-size="19" font-weight="700">每轮请求准备</text>
+<text x="43" y="274" font-size="17">构造 messagesForQuery，治理结果与预算</text>
+<text x="43" y="301" font-size="17">按需要压缩，再组成当前模型输入</text>
+<rect x="28" y="394" width="575" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="43" y="423" font-size="19" font-weight="700">模型流与调用接纳</text>
+<text x="43" y="450" font-size="17">assistant 文本与 tool_use 逐步到达</text>
+<text x="43" y="477" font-size="17">工具可以在流期间逐步被接纳</text>
+<rect x="28" y="570" width="575" height="125" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="43" y="599" font-size="19" font-weight="700">工具执行与反馈</text>
+<text x="43" y="626" font-size="17">校验 → PreToolUse 与权限协调 → call</text>
+<text x="43" y="653" font-size="17">结果经处理，以 tool_use_id 关联调用</text>
+<text x="43" y="680" font-size="17">回填资料供下一轮准备</text>
+<rect x="705" y="520" width="267" height="136" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="720" y="549" font-size="19" font-weight="700">Stop hooks</text>
+<text x="720" y="576" font-size="17">无工具的结束候选</text>
+<text x="720" y="603" font-size="17">阻止收口并要求继续，</text>
+<text x="720" y="630" font-size="17">或通过后结束</text>
+<rect x="28" y="782" width="575" height="85" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="43" y="811" font-size="19" font-weight="700">当前 query 收口</text>
+<text x="43" y="838" font-size="17">会话可继续接纳后续输入</text>
+<rect x="705" y="72" width="267" height="245" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="720" y="101" font-size="19" font-weight="700">会话持续消费产出</text>
+<text x="720" y="128" font-size="17">query 是 async generator</text>
+<text x="720" y="155" font-size="17">流、assistant、工具结果</text>
+<text x="720" y="182" font-size="17">与压缩边界逐次 yield</text>
+<text x="720" y="209" font-size="17">UI、请求与 transcript</text>
+<text x="720" y="236" font-size="17">按各自用途采用</text>
+<path d="M315 155V213" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M315 329V389" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M315 505V565" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M28 633H10V273H23" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M603 449H664V561H700" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M838 520V360H981V273H608" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M838 657V824H608" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M603 283H700" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<path d="M603 421H682V314H700" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<text x="650" y="349" font-size="16">追加继续资料，回到准备</text>
+<text x="620" y="540" font-size="16">无工具</text>
+<text x="843" y="731" font-size="16">通过</text>
+<text x="28" y="900" font-size="16" fill="#334155">图按正常控制关系展开；这些阶段不是持久状态枚举。API 错误与预算恢复支路省略。</text>
 </g></svg>

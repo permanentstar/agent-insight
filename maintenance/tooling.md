@@ -42,3 +42,5 @@ owner 的审稿批注统一保存在仓库根目录 `.review/`，整个目录由
 `scripts/review-contract.mjs` 定义共享协议，`review-store.mjs` 负责目录登记与批注数据，`review-server.mjs` 负责本地 HTTP 适配，Vue 组件负责选文和显示。单进程内写入串行化，先写临时文件再原子替换 `annotations.json`；已有文件损坏时具名报错并保留原文件。服务器检查 Host、Origin 和浏览器请求来源，并对读写使用每次启动生成的 token。输入页面必须来自书籍目录，客户端不能指定保存路径；不提供跨域访问。
 
 验证命令为 `npm run test:review`。用临时数据验证中文批注重启后读取、并发保存、编辑与处理状态、过期章节与无效输入拒绝、损坏文件保留，以及跨来源／无 token 请求拒绝。网页选文、刷新恢复和浅深主题另在浏览器检查，不把存储测试当作 UI 成功。审稿文件与本地构建均须用 `git check-ignore` 核对，且不得成为 Git tracked 文件。
+
+源码状态检查用 `npm run sources -- --root <source-root>`。普通研究仓库检查登记的current提交与checkout/cached origin，显式 `update_policy: frozen` 的Claude源码只检查原始提交可读；冻结检查不会fetch或要求HEAD退回旧提交。`npm run test:contracts` 同时覆盖书籍结构与两类源码检查的正反例。

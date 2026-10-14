@@ -16,7 +16,18 @@ Codex 开源 core 把活跃线程、一次用户轮次、一次模型请求和�
 
 ![Codex 接入层经 ThreadManager 创建活跃 Thread 与 Session，任务经 turn/step 进入模型和工具，rollout 与 ContextManager 分担持久与请求投影](../../assets/codex.svg)
 
-## 层次与概念词典
+
+沿 CSV 修复任务，本章按五个交接点展开：建立线程和操作接口，接纳用户操作并安装任务，捕获一次 Step 请求视图，路由并执行工具，采用反馈后继续或收口。历史写入贯穿执行，后文单独解释其确认位置。
+
+| 步骤 | 当前范围 | 输出 |
+|---|---|---|
+| 1. 构造线程 | ThreadManager 与 Session | 长活线程及 SessionIo |
+| 2. 接纳操作 | Op 分派与 SessionTask | TurnContext、当前任务和取消控制 |
+| 3. 请求采样 | 同一 Turn 中的一次 Step | 模型响应，携带动作请求 |
+| 4. 工具调用 | ToolRouter 与 runtime | 实际结果及反馈资料 |
+| 5. 继续或收口 | run_turn、Stop hooks | 下一 Step 或当前用户工作结束 |
+
+## 先区分长期线程、用户轮次和请求快照
 
 | 概念 | 层次与职责 | 创建者 / 生命周期 | 状态边界 |
 |---|---|---|---|
@@ -30,9 +41,9 @@ Codex 开源 core 把活跃线程、一次用户轮次、一次模型请求和�
 | ContextManager | 活跃历史及模型输入投影 | Session 持有 | 可以截断或替换；不是原始 rollout 原封不动发送 |
 | RolloutRecorder | 后台历史写入器 | 启动时按新建/恢复参数构造 | AddItems 队列与 flush ack 分开 |
 
-依据：[Thread 门面](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/codex_thread.rs#L208)、[manager](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/thread_manager.rs#L251)、[Session 构造](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/mod.rs#L520)。ThreadId、运行 SessionId、rollout 与 Git branch 不能互相替代；线程 fork 的历史关系须读实际 lineage 元数据。
+依据：[Thread 门面](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/codex_thread.rs#L208)、[manager](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/thread_manager.rs#L251)、[Session 构造](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/mod.rs#L520)。ThreadId 寻址对话线程，运行身份和 rollout 描述本次执行及记录；fork 的历史关系由 lineage 元数据表达。
 
-## 构造、复用与一次轮次
+## 第一步与第二步：构造线程，接纳并分派操作
 
 ThreadManager 的 spawn_thread 调 Session::spawn，注入配置、认证、模型、environment、thread store、扩展与初始历史，再包装为 CodexThread。SessionIo 把 Submission 送入队列。submission_loop 分派 Op：普通输入、Interrupt、shutdown、审批回复等并非同一个模型 prompt。活线程可保持多轮；冷启动要依据 InitialHistory 和持久资料重建。
 
@@ -48,7 +59,7 @@ ThreadManager 的 spawn_thread 调 Session::spawn，注入配置、认证、模�
 
 依据：[spawn_thread](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/thread_manager.rs#L2022)、[操作分派](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/handlers.rs#L439)、[任务安装](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tasks/mod.rs#L272)、[run_turn](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L164)、[provider 请求](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L2565)。等待界面的结束不自动等于 task 中止；控制必须进入 Op/取消路径。
 
-## 用一项修复任务理解 Turn 与 Step
+## 用完整任务定位后面三步
 
 ![Codex 的一个用户 Turn 包含多次 Step；每次捕获请求快照、采样并回填工具结果，待处理输入和 Stop hooks 可以继续推进，当前任务结束后线程仍可存活](../../assets/codex-turn-flow.svg)
 
@@ -64,9 +75,9 @@ ThreadManager 的 spawn_thread 调 Session::spawn，注入配置、认证、模�
 | Step 3：利用验证结果 | 模型请求验证，依据输出修订或回答 | 结果回填；需要后续工作则再次采样 |
 | Turn 收口 | 模型给出说明，队列与 hooks 无续跑要求 | 当前任务结束，Session 可承接下一用户 Turn |
 
-因此，Thread 是长期交互身份，Turn 是一次用户工作边界，Step 是其中一次采样的配置视图。StepContext 不是新会话；工具调用也不必一对一地建立新 Turn。这些区别解释了为什么用户在运行中补充一句要求，可以在允许的后续请求边界进入当前工作，却不应改变已经发出的请求。
+因此，Thread 是长期交互身份，Turn 是一次用户工作边界，Step 是其中一次采样的配置视图。同一用户 Turn 可以跨多个 Step 和工具调用。这些区别解释了为什么用户在运行中补充一句要求，可以在允许的后续请求边界进入当前工作，却不应改变已经发出的请求。
 
-## 请求快照为什么需要单独一层
+## 第三步：捕获 Step，组织当次模型请求
 
 下面保留 run_turn 的控制骨架，省略预算、重试、hook 细节，是教学伪代码而非可编译 Rust：
 
@@ -88,15 +99,73 @@ loop {
 
 自然语言负责承载“为什么修改、资料说明什么”；工具调用的名字、参数、调用关系及结果由协议对象组织。程序不需要预先枚举全部修复意图，但必须识别调用并选择 handler。文件内容中的建议也不会因为被读取就成为执行授权；实际控制还要走工具的审批和 runtime。
 
+下面将请求投影对照真实代码。run_turn 已在相应边界捕获 step_context，构造输入后将同一对象交给采样；省略时间提醒、技能检查和运行追踪：
+
+```rust
+let sampling_request_input: Vec<ResponseItem> = async {
+    sess.clone_history()
+        .await
+        .for_prompt(&step_context.settings.model_info.input_modalities)
+}.await;
+run_sampling_request(
+    Arc::clone(&sess),
+    Arc::clone(&step_context),
+    Arc::clone(&turn_context.extension_data),
+    Arc::clone(&turn_diff_tracker),
+    &mut client_session,
+    sampling_request_input,
+    cancellation_token.child_token(),
+).await
+```
+
+采样返回的工具请求继续使用这份 StepContext。下一 Step 再捕获更新的选择，因此请求公布的工具与当次执行参数处于同一视图。[真实请求交接](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L522)。
+
+## 第四步：路由调用，再经过审批与执行环境
+
+ToolRouter 区分 model-visible specs、code mode 的嵌套工具身份和 registry；工具出现在 schema 不代表已经获准执行。需要这类效果编排的具体 handler 构造 ToolOrchestrator，解析审批需求，取得审批决定，选择 sandbox attempt，再调用 ToolRuntime.run；是否能再次尝试受有效权限及失败类型限制。不同工具的网络、文件、动态工具边界并不都归同一个 shell sandbox。
+
+以 `apply_patch` 为例，实际链路是 ToolRouter 分派到 registry 的 handler，handler 准备 ApplyPatchRequest，再显式连接编排器与 ApplyPatchRuntime。下面节选 handler 中这次交接，省略 request 的字段构造和完成事件包装：
+
+```rust
+let mut orchestrator = ToolOrchestrator::new();
+let mut runtime = ApplyPatchRuntime::new();
+let result = orchestrator
+    .run(&mut runtime, &request, &tool_ctx)
+    .await
+    .map(|result| result.output);
+```
+
+编排器处理有效审批与执行尝试，然后经 ToolRuntime 的 `run` 进入具体效果。`unified_exec` 在 process manager 中连接自己的 runtime；`update_plan` 则直接由 PlanHandler 发事件。因此编排器是相应效果工具的共同机制，registry 并未强制所有 handler 都经过它。[查看 apply_patch 的构造与结果回传](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/handlers/apply_patch.rs#L546)、[查看 runtime 调用边界](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/orchestrator.rs#L108)。
+
+## 第五步：将观察交回循环，决定继续或结束
+
+工具结果回填活跃历史后，run_turn 检查模型是否需要反馈请求以及当前待处理输入。需要继续时进入下一 Step，再取当前历史投影；没有这些工作后再运行 Stop hooks 的结束判断。模型的最终文本是本次响应，线程仍由 Session 保留，供后续用户 Turn 使用。[继续与 Stop hooks](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L548)。
+
+后面的 Plan 与输入介入案例都作用于这条主线：规划约定改变模型当前目标，输入队列改变新要求在哪次 Step 被采用。
+
 ## Plan 协作模式与进度清单
 
-Codex 有内置的 Default/Plan 协作模式。模式内容进入上下文，Plan 说明要求先探索和形成可讨论的方案。它改变当前协作目标，但本章的模型反馈循环仍然成立，不能据此推断已经换成一个独立 Planner 驱动 Executor 的图。
+Codex 有内置的 Default/Plan 协作模式。模式内容进入上下文，Plan 说明要求先探索和形成可讨论的方案。它改变当前协作目标，但本章的模型反馈循环仍然成立，模式约定通过同一反馈循环实现。
 
-`update_plan` 则是另一件事：模型提交结构化清单，handler 解析后发出 PlanUpdate 事件。源码在 Plan 模式明确拒绝这个 TODO/checklist 工具。这个直接分支说明产品规划约定与执行中的进度清单不能混称；也说明应逐个检查工具规则，不能只从 Plan 文本推定所有修改效果都被底层 sandbox 拦住。[模式内容构造](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/context/world_state/collaboration_mode.rs#L25)、[清单 handler](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/handlers/plan.rs#L65)。
+`update_plan` 则是另一件事：模型提交结构化清单，handler 解析后发出 PlanUpdate 事件。源码在 Plan 模式明确拒绝这个 TODO/checklist 工具。这个分支分别体现协作模式与清单工具的规则；实际修改仍沿各工具的审批和执行路径判断。[模式内容构造](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/context/world_state/collaboration_mode.rs#L25)、[清单 handler](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/handlers/plan.rs#L65)。
+
+PlanHandler 的实际分派段可以直接节选，省略 ToolPayload 解析。这里先检查模式，再形成 PlanUpdate 事件：
+
+```rust
+if turn.mode() == ModeKind::Plan {
+    return Err(FunctionCallError::RespondToModel(
+        "update_plan is a TODO/checklist tool and is not allowed in Plan mode".to_string(),
+    ));
+}
+let args = parse_update_plan_arguments(&arguments)?;
+session.send_event(turn.as_ref(), EventMsg::PlanUpdate(args)).await;
+```
+
+协作模式的文字约定由请求组织消费，清单工具由这个 handler 消费，两项配置在各自入口生效。[Plan 清单处理器](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/handlers/plan.rs#L65)。
 
 学习自检：用户的一次修复要求为什么能对应多个 Step？工具和模型配置在何时固定？Plan 模式、update_plan 和 ToolOrchestrator 分别控制什么？
 
-## 用一条输入介入轨迹检验 Turn 与请求快照
+## 贯穿第三步与第五步：运行中补充要求
 
 设一项 CSV 修复正在进行。第一次 Step 已公布工具和发送输入，模型请求读取；用户随后补充“保留公开接口”。下面的编号仅用于教学，不是新增持久 Step ID：
 
@@ -118,15 +187,13 @@ Codex 有内置的 Default/Plan 协作模式。模式内容进入上下文，Pla
 参考解答：不能必然推定。先确认补充何时接纳、哪次请求使用了它，以及具体工具路径的有效政策。后续消息采用并不等于已经发出的调用被改写。这里解释正常介入时序，不将所有取消或重试模式都假定为同一契约。
 
 
-## 历史、压缩与持久确认
+## 贯穿执行的记录路径：历史更新与持久确认
 
 `record_prepared_conversation_items` 先给历史项补元数据，更新内存 history，再转为 RolloutItem 交持久路径。RolloutRecorder.record_canonical_items 返回表示 AddItems 已进入后台队列；persist/flush 通过 oneshot ack 等待 writer 确认。这两类 await 对应不同的持久边界；断电耐久性还取决于 writer 与存储后端。
 
 压缩通过活动历史替换及持久 compaction 资料影响后续请求；上下文指令、用户消息和工具输出不会按所有 JSONL 行直接拼接。原始日志顺序也不能单独证明逻辑覆盖范围或 conversation branch。依据：[历史写入](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/mod.rs#L3596)、[历史替换](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/mod.rs#L4116)、[writer 接口](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/rollout/src/recorder.rs#L1048)。
 
-## 工具、审批与 sandbox
-
-ToolRouter 区分 model-visible specs、code mode 的嵌套工具身份和 registry；工具出现在 schema 不代表已经获准执行。执行工具的 ToolOrchestrator 解析审批需求，取得审批决定，选择 sandbox attempt，再调用 ToolRuntime.run；是否能再次尝试受有效权限及失败类型限制。不同工具的网络、文件、动态工具边界并不都归同一个 shell sandbox。
+## 补充：取消、恢复与记录边界
 
 | 边界场景 | 当前静态证据 | 不应扩大成的保证 |
 |---|---|---|

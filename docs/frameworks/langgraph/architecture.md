@@ -16,6 +16,9 @@ LangGraph 负责把图定义变成可执行的状态计算。StateGraph 是构�
 
 ![LangGraph 构图后建立每次调用的 PregelLoop，tick 选择任务，runner 执行，after_tick 合并 writes 并形成 checkpoint](../../assets/langgraph.svg)
 
+
+阅读顺序与运行顺序相同：先编译定义并建立本次 Loop，再选择这一超步的任务，随后执行并合并写入，最后保存恢复资料并决定是否进入下一超步。模型或工具是节点内部的工作；本章聚焦这些工作如何共享状态和被调度。
+
 ## 概念与层次
 
 | 概念 | 所属层与含义 | 创建者 / 生命周期 | 状态边界 |
@@ -32,7 +35,7 @@ LangGraph 负责把图定义变成可执行的状态计算。StateGraph 是构�
 
 依据：[compile](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/graph/state.py#L1177)、[Loop](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/_loop.py#L163)、[checkpoint schema](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/checkpoint/langgraph/checkpoint/base/__init__.py#L95)。
 
-## 一次调用与提交
+## 第一步：从图定义建立本次运行
 
 | 当前位置 | 调用链 | 读写 / 返回 |
 |---|---|---|
@@ -46,7 +49,29 @@ LangGraph 负责把图定义变成可执行的状态计算。StateGraph 是构�
 
 依据：[异步执行主线](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3426)、[超步与 sync 等待](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3504)、[任务选择](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/_loop.py#L623)。同一超步内节点读稳定通道值；一个节点完成不表示同行节点立刻读到它的更新。
 
-## 超步：先用一个并行读取例子理解
+异步执行主线可以从 `Pregel.astream` 的循环直接读出。下面保留真实方法及顺序，省略流事件的逐项产出与 finally 中的等待者清理。
+
+```python
+while loop.tick():
+    for task in await loop.amatch_cached_writes():
+        loop.output_writes(task.id, task.writes, cached=True)
+    async for _ in runner.atick(
+        [t for t in loop.tasks.values() if not t.writes],
+        timeout=self.step_timeout,
+        get_waiter=get_waiter,
+        schedule_task=loop.aaccept_push,
+    ):
+        # 省略：按 stream_mode 向宿主产出观察事件。
+        pass
+    loop.after_tick()
+    await aemit_graph_lifecycle_events(loop)
+    if durability_ == "sync":
+        await cast(asyncio.Future, loop._put_checkpoint_fut)
+```
+
+`tick` 准备可执行任务，已有缓存写入先被采用，runner 只执行仍需输出的任务。`after_tick` 在任务批次结束后应用写入；sync 模式等持久 future 完成，再进入下一轮。由此可以把下文的并行读、路由和 checkpoint 都放回同一执行位置。[查看完整 astream 超步循环](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3504)。
+
+## 第二步：在稳定状态上选择和执行任务
 
 ![超步 N 的两个节点都读状态 S_N，分别产出需求与代码观察；到 after_tick 才合并为 S_N+1，下一超步的决策节点读取两份结果](../../assets/langgraph-superstep.svg)
 
@@ -75,7 +100,7 @@ class WorkState(TypedDict):
 
 这个“超步”是执行框架概念，既不是一次用户输入，也不必等于一次模型请求。一个模型循环可以跨多个超步，多个非模型节点也可以处于同一超步。[任务选择 tick](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/_loop.py#L623)。
 
-## 状态图怎样表达动态模型选择
+## 第三步：合并结果并选择后续节点
 
 StateGraph 注册节点与边；compile 后运行才开始计算。节点可以是程序、工具或模型，也可以调用一个子图。应用定义条件边，根据节点产出的状态选择下一节点；Command 可以结合状态更新与控制。这些机制提供路由能力，业务语义仍来自应用。
 
@@ -91,7 +116,7 @@ StateGraph 注册节点与边；compile 后运行才开始计算。节点可以�
 S_N = {"request": "修复 CSV 转义", "observations": [], "decision": ""}
 A = {"observations": ["项目要求特殊字段加引号"]}
 B = {"observations": ["当前代码直接拼接字段"]}
-# After merging the two writes, show A/B in this teaching order:
+# 合并后按 A、B 的教学顺序展示，实际规则由 reducer 决定。
 S_next = {
     "request": "修复 CSV 转义",
     "observations": A["observations"] + B["observations"],
@@ -125,7 +150,7 @@ LangChain 的 create_agent 为标准工具循环生成另一份具体路由：�
 参考解答：不能。还要知道 decision 节点怎样使用观察、产生什么字段，以及条件边怎样映射。合并结果提供决定的输入，不会仅因为“数据已经非空”就自动选择一个业务动作。
 
 
-## checkpoint 为什么需要值与版本
+## 第四步：保存恢复资料，再推进下一超步
 
 checkpoint 不只是保存一个 messages 数组。channel_values 让运行重建数据，channel_versions 与 versions_seen 帮助判断哪些节点已经消费哪些更新，pending writes 保存已经产生的节点输出。图对象保存定义，checkpoint 保存恢复资料，PregelLoop 在一次调用中将二者结合。
 

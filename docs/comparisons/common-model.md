@@ -3,7 +3,7 @@ id: "comparison-reference"
 title: "共同架构：从模型调用到完整工作闭环"
 subject: "comparison"
 status: "index"
-baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-frozen-documents"]
+baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331"]
 sources: []
 depends_on: ["pi-loop", "durable-loop", "deerflow-migrated", "codex-plan", "hermes-migrated", "langchain-migrated", "langgraph-migrated", "deepseek-plan", "claude-migrated"]
 evidence: ["source", "official", "static-inference", "proposal"]
@@ -18,7 +18,10 @@ Agent 的架构可以先理解为一个分工明确的工作闭环：**模型依
 
 ![共同运行主线是接纳目标、装配请求、模型决定、执行动作、保存观察与更新状态、判断继续或收口；存储、策略、扩展和观测贯穿相应职责](../assets/common-agent-reference.svg)
 
-## 1. 从一次模型调用开始：它少了什么
+
+本章先把一次模型调用补成动作反馈循环，再解释为什么会话、资料、执行政策和恢复会成为独立职责。阅读时先沿 CSV 任务走完一次闭环；职责地图用来把这个闭环放回真实框架，最后才讨论架构表示与互补。
+
+## 从一次模型调用开始：它少了什么
 
 如果只把任务发给模型，模型可以解释 CSV 规则，甚至写出修改建议。但这次调用没有自动读取工作区，也没有替调用者改文件、运行验证。模型输出“请执行测试”与测试已经发生，是两种不同事实。
 
@@ -37,7 +40,7 @@ Agent 的架构可以先理解为一个分工明确的工作闭环：**模型依
 
 [Anthropic 的最小参考实现](https://github.com/anthropics/claude-quickstarts/blob/9ec32b91df50b0d4906cae64b13c6298055ff40d/agents/agent.py)把请求、调用提取、工具执行、结果加入历史放在一个循环里。这有助于理解最小分工；生产工作还需要在相应位置补充身份、控制、状态及执行政策。
 
-## 2. 手工走一遍反馈循环
+## 手工走一遍反馈循环
 
 先假定应用定义三个教学工具：read_source、apply_patch、run_checks。它们不是九个对象共有的实际工具名。执行器能找到这些工具，模型请求时能看见对应定义；用户目标已经作为消息保存。
 
@@ -99,7 +102,7 @@ while True:
     messages.append(response)
     calls = response.tool_calls
     if not calls:
-        return response.answer  # simplest normal exit
+        return response.answer  # 本教学循环的正常结束；生产收口条件另讲。
     for call in calls:
         checked = validate_call(call, tool_definitions)
         result = execute_registered_handler(checked)
@@ -110,7 +113,7 @@ while True:
 
 [Hugging Face 的动作与观察课程](https://github.com/huggingface/agents-course/blob/3c469e773ec04e5f338b727ff20e3a6ea823ff81/units/en/unit1/agent-steps-and-structure.mdx)适合建立这个直觉。实际系统可能不公开模型的中间推理文字；可观察的工具请求、结果与程序状态，已经足以分析主线。
 
-## 3. 为什么最小循环会长成 harness
+## 为什么最小循环会长成 harness
 
 当需求增加，最小函数中原本挤在一起的职责需要明确边界。“增加机制”应当说明解决哪个实际问题，而不是把框架名称拼到循环外面。
 
@@ -128,7 +131,7 @@ harness 在本书中指这些运行配套机制：它组织模型怎样获得输
 
 每项职责也不必单独占一个模块。小系统可以将几个职责放在同一个函数；长期服务会更明确地分开所有权与生命周期。理解职责以后，才能判断增加抽象是否有必要，或者已有模块是否已经承担了它。
 
-## 4. 建立一张能跨框架使用的职责地图
+## 建立一张能跨框架使用的职责地图
 
 ![产品宿主拥有入口和交互生命周期，运行控制组织请求与继续，模型及工具适配落实调用；历史、工作记录和模型投影提供不同数据，策略与观察分别作用于实际边界](../assets/common-agent-layers.svg)
 
@@ -164,13 +167,13 @@ Pi 的历史树、DeepSeek 的事件与 surface、LangGraph 的 channels/checkpo
 
 例如 middleware 可能改变这一次模型请求，也可能返回状态 update。两者的影响范围不同；理解主线中的请求边界与状态边界之后，再看 hook 顺序才有意义。后面各专题会给出数据前后对照。
 
-## 5. 同一种工作模式，为什么会有不同架构
+## 同一种工作模式，为什么会有不同架构
 
 反馈机制的相似，不意味着各系统只是在给相同数组换名字。最影响工程选择的差异，是程序怎样表示控制位置，以及哪些资料能在中断后重建。
 
 | 控制表示 | 一次读取结束后怎样继续 | 带来的理解重点 | 本书代表 |
 |---|---|---|---|
-| 进程内控制流 | 函数收到结果，回到下一请求边界 | 活跃调用栈、取消、队列与会话重建分开 | AgentSession、Codex core、Hermes 原生；Claude 历史 query |
+| 进程内控制流 | 函数收到结果，回到下一请求边界 | 活跃调用栈、取消、队列与会话重建分开 | AgentSession、Codex core、Hermes 原生；Claude 冻结 query |
 | 状态图与调度 | 节点返回 update，合并状态，再按边和任务调度 | state、reducer、超步、节点重跑与 checkpoint | LangChain 构图，LangGraph 执行，DeerFlow 装配产品策略 |
 | 持久任务阶段 | 任务保存 checkpoint，等待子工作，按提交状态重新认领 | Task 身份、status/phase、事务及外部效果分开 | Pico5 |
 
@@ -180,7 +183,7 @@ Pi 的历史树、DeepSeek 的事件与 surface、LangGraph 的 channels/checkpo
 
 “架构长期可能接近”在这里是一种研究假设。更稳定的学习成果是：知道哪些职责需要被承担，以及职责之间应交接什么。未来项目换了类名或框架，读者仍能沿同一组问题理解它。
 
-## 6. 互补要看缺哪一项职责
+## 互补要看缺哪一项职责
 
 最直接的真实组合是 LangChain 与 LangGraph：前者提供模型、消息、工具与标准 Agent 构图，后者推进图状态与任务。DeerFlow 再在上层装配产品 Prompt、middleware、工具、会话运行和投递。它们处于相互协作的层次，不能把三者当作互斥的“完整 Agent 框架”排名。[LangChain 构图](../frameworks/langchain/architecture.md)、[LangGraph 调度](../frameworks/langgraph/architecture.md)、[DeerFlow 装配](../agents/deerflow/architecture.md)。
 
@@ -198,7 +201,7 @@ Pi 的历史树、DeepSeek 的事件与 surface、LangGraph 的 channels/checkpo
 
 不足也应放到具体需求里判断。一个最小示例没有持久执行，可能只是为了教学；一个生产产品有很多包装层，也可能是因为宿主和效果边界真实存在。源码没找到某项能力与能力明确不受支持，需要分别说明。
 
-## 7. 按共同模型阅读各对象
+## 按共同模型阅读各对象
 
 后续阅读采用两个方向：横向专题先说明一种共用机制与设计选择；对象分册再解释谁在真实代码中承担它。每进入新对象，不必重新学习一整套孤立词汇。
 
@@ -214,7 +217,7 @@ Pi 的历史树、DeepSeek 的事件与 surface、LangGraph 的 channels/checkpo
 
 读完全部分册，应能够给一套新实现画职责关系，而不是依赖它恰好叫 Agent、Session 或 Task。若同名概念再次出现，先确定层次、owner、输入输出和生命周期，再判断它与已学概念的关系。
 
-## 8. 演算练习与参考解答
+## 演算练习与参考解答
 
 **练习一。** 一次模型响应请求 read_source 和 run_checks 两个工具。执行器只保存了读取结果，然后请求模型。还缺什么？
 

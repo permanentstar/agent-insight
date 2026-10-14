@@ -21,4 +21,4 @@ Lane 围绕处理道与持久 Operation 编排输入，内存 Drive 负责推进
 | [架构路线](evolution.md) | 公开 API 与产品默认入口怎样区分，持久路线如何改变？ |
 | [Chord 与 Radius](components.md) | 组件组合、状态复制与远端传输怎样连接运行层？ |
 
-先走完主链路，再进入状态、能力和故障边界。每次遇到持久记录或临时快照，都重新确认它的所有者和采用时机。
+先从层次章区分持久 Operation 和在线 Drive，再在运行章追一次分派与反馈；Chord/Radius 章把视线移到服务发布和远端采用。最后用架构路线说明这些机制与 AgentSession、Pico5 的关系。

@@ -1,21 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="490" viewBox="0 0 960 490" role="img">
-<title>模型执行与观察树：两条链在调用处相交</title>
-<rect width="960" height="490" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="625" viewBox="0 0 1000 625" role="img" aria-labelledby="title desc">
+<title id="title">模型执行与观察：事件随调用进入旁路</title>
+<desc id="desc">执行线从调用配置进入模型准备、Partner SDK 和结果返回；各阶段的开始、过程及结束错误事件连到回调观察旁路，由 Tracer 按父子身份记录。</desc>
+<rect width="1000" height="625" fill="#ffffff"/>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker></defs>
-<text x="32" y="40" font-family="sans-serif" font-size="24" font-weight="700" fill="#172554">模型执行与观察树：两条链在调用处相交</text>
-<rect x="32" y="65" width="896" height="110" rx="12" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
-<text x="54" y="94" font-family="sans-serif" font-size="21" font-weight="700" fill="#172554">根调用上下文</text>
-<text x="54" y="124" font-family="sans-serif" font-size="19" fill="#172554">RunnableConfig：callbacks / tags / metadata</text>
-<text x="54" y="154" font-family="sans-serif" font-size="17" fill="#334155">子调用派生 callback manager，传递 parent_run_id</text>
-<path d="M480 177V195" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="32" y="197" width="896" height="110" rx="12" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
-<text x="54" y="226" font-family="sans-serif" font-size="21" font-weight="700" fill="#172554">观察树</text>
-<text x="54" y="256" font-family="sans-serif" font-size="19" fill="#172554">Tracer：run_map / order_map → trace_id / dotted_order</text>
-<text x="54" y="286" font-family="sans-serif" font-size="17" fill="#334155">end 或 error 记录结果；缺失父项可成为新根</text>
-<path d="M480 309V327" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="32" y="329" width="896" height="110" rx="12" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
-<text x="54" y="358" font-family="sans-serif" font-size="21" font-weight="700" fill="#172554">模型执行</text>
-<text x="54" y="388" font-family="sans-serif" font-size="19" fill="#172554">BaseChatModel → Partner → SDK → ChatResult / Chunk</text>
-<text x="54" y="418" font-family="sans-serif" font-size="17" fill="#334155">trace 是观察数据；checkpoint 和业务 effect 另有 owner</text>
-<text x="32" y="478" font-family="sans-serif" font-size="16" fill="#334155">回调传递父子关系，Partner 落实调用；trace 不代替业务效果确认。</text>
-</svg>
+<g font-family="Arial,sans-serif" fill="#172554">
+<text x="28" y="38" font-size="24" font-weight="700">模型执行与观察：事件随调用进入旁路</text>
+<rect x="28" y="68" width="575" height="92" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<rect x="698" y="68" width="274" height="92" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="44" y="99" font-size="20" font-weight="700">调用根：RunnableConfig</text>
+<text x="44" y="128" font-size="18">输入与 callbacks / tags / metadata</text>
+<text x="713" y="101" font-size="17">子调用继承配置</text>
+<text x="713" y="130" font-size="17">传递 parent_run_id</text>
+<path d="M604 114H692" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M315 161V188" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="28" y="194" width="575" height="92" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<rect x="698" y="194" width="274" height="92" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="44" y="225" font-size="20" font-weight="700">模型开始</text>
+<text x="44" y="254" font-size="18">BaseChatModel：归一消息，准备调用</text>
+<text x="713" y="227" font-size="17">on_chat_model_start</text>
+<text x="713" y="256" font-size="17">Tracer 建立父子关系</text>
+<path d="M604 240H692" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M315 287V314" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="28" y="320" width="575" height="92" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<rect x="698" y="320" width="274" height="92" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="44" y="351" font-size="20" font-weight="700">实际执行</text>
+<text x="44" y="380" font-size="18">Partner → SDK → 响应或流式 chunk</text>
+<text x="713" y="353" font-size="17">过程事件与 token 观察</text>
+<text x="713" y="382" font-size="17">按启用的 callback 处理</text>
+<path d="M604 366H692" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M315 413V440" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="28" y="446" width="575" height="92" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<rect x="698" y="446" width="274" height="92" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="44" y="477" font-size="20" font-weight="700">结果返回或错误</text>
+<text x="44" y="506" font-size="18">ChatResult / AIMessage 返回调用方</text>
+<text x="713" y="479" font-size="17">on_llm_end / error</text>
+<text x="713" y="508" font-size="17">完成这次观察记录</text>
+<path d="M604 492H692" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="29" y="601" font-size="17" fill="#334155">执行产生结果；回调记录调用。观察树不代替 checkpoint 或业务效果确认。</text>
+</g></svg>

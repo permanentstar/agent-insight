@@ -16,6 +16,9 @@ Chord 负责应用组合和 Service 状态语义，Radius relay 负责可选远�
 
 ![FacetHost 声明依赖后激活 Service，Provider 发布 snapshot/update；Consumer 用连续序列复制，Radius 只在 transport 层复用连接](../../assets/chord-radius.svg)
 
+
+从运行层往外看，可以走完四次交接：Facet 声明服务依赖，Host 激活实现，Provider 发布状态，Consumer 接收 snapshot 后连续应用 update。Radius 位于运输支路，只负责把这类协议资料送到远端；它不参与模型或 Operation 的决策。下面先解释服务组合，再用同一份状态演算复制，最后讲断线后怎样重建接入。
+
 | 概念 | 层次 / owner | 创建与生命周期 |
 |---|---|---|
 | Facet / Host | 进程内装载与组合 | setup 同步声明依赖/提供；onActivate 异步初始化，Host 逆序释放 |
@@ -26,7 +29,7 @@ Chord 负责应用组合和 Service 状态语义，Radius relay 负责可选远�
 | ReplicatedState | 提交/发布视图 | Provider 可写状态，Consumer 不可变 revision；不是数据库复制 |
 | Radius logical connection | relay transport | 一条 host WebSocket 承载多 client ID，应用协议保持 opaque |
 
-## Facet 组合与远程 Service
+## 第一步：声明依赖，再激活服务
 
 setup 内实际调用 use/observe/provide/provideMany，Host 据此记录依赖，不反射已擦除的 TypeScript interface。声明结束后检查缺失/重复 provider、模式冲突与依赖环；provider 先激活、consumer 后激活，own 的资源与 Host 关闭逆序释放。热替换也要先验证新的声明和依赖，再切换实现，不是任意替换全局对象。
 
@@ -34,7 +37,7 @@ setup 内实际调用 use/observe/provide/provideMany，Host 据此记录依赖�
 
 证据：[当前 Host 依赖/激活](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/chord/src/facets/host.ts#L340)、[历史 Service 契约](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/types.ts)。
 
-## Snapshot + Update 的四份状态
+## 第二步：从工作状态发布，再由 Consumer 采用
 
 | 持有者 | 值 | 何时改变 |
 |---|---|---|
@@ -49,7 +52,36 @@ publish 无实际差异不推送；有差异则 sequence 加一。订阅先拿�
 
 [历史 Provider/Replica 序列](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/state.ts#L6)、[订阅与传输](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/provider.ts)、[当前 Delta tracker](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/chord/src/delta/tracker.ts)。Pico5 [DocumentState](../../agents/pi-durable/documents.md) 直接从已提交 Document 建观察源；旧 Harness event→transcript bridge 是产品投影，事件原文不是 Chord delta。
 
-## Radius：连接恢复到哪里
+### 用一次状态变化看发布与采用
+
+假设 Provider 的工作 state 保存 `{status: "running", text: "正在读取"}`，Consumer 已通过 snapshot 取得相同发布值与 sequence=0。业务把 text 改成“读取完成”后，工作 proxy 已变，published value 和 Consumer 仍保留旧值；调用 publish 才将差异推进为 sequence=1。
+
+```ts
+// MutableReplicatedStateImpl.publish 源码节选：通知循环省略。
+const ops = this.#tracker.flush();
+if (ops.length === 0) return;
+this.#sequence += 1;
+this.#publishedValue = applyImmutable(this.#publishedValue as unknown as JsonValue, ops) as unknown as T;
+// 完整实现随后把 ops、sequence 及更新后的值通知订阅者。
+```
+
+Consumer 对 update 先确认 sequence 连续，再应用同一批 ops：
+
+```ts
+// ReplicatedStateReplica.update 节选，调用前还要求已有 snapshot。
+if (sequence !== this.#sequence + 1) {
+  this.clear();
+  throw new Error("Replicated state update sequence has a gap");
+}
+const value = applyImmutable(this.#value, ops);
+this.#sequence = sequence;
+this.#value = value;
+this.#deliverAll(context, { kind: "update", sequence });
+```
+
+于是界面采用“读取完成”。若收到 sequence=2 而缺了1，Consumer 清空就绪状态并等待重新 hydrate；业务工作是否完成仍从 Worker 的运行事实查询。四份状态表因此解释了两个边界：工作修改到发布，以及发布到远端采用。[查看发布与 replica 的完整实现](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/state.ts#L41)。
+
+## 运输支路：Radius 连接与重新订阅
 
 Host start 建立 WebSocket，认证/注册 relay host，收到 logical client 后构造字节 transport 交 Server.accept；client 先连接 gateway，再走 Pi hello、list/attach 和 Chord。逻辑连接 ID 复用不共享 Client 的业务上下文。有序写与背压防止字节乱序/无限缓冲，不能由此证明所有 tool result 会跨断线到达。
 

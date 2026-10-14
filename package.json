@@ -12,7 +12,7 @@
     "test:review": "node --test scripts/review.test.mjs",
     "check": "node scripts/check-book.mjs",
     "sources": "node scripts/source-status.mjs",
-    "test:contracts": "node --test scripts/check-book.test.mjs"
+    "test:contracts": "node --test scripts/check-book.test.mjs scripts/source-status.test.mjs"
   },
   "devDependencies": {
     "vite": "5.4.21",

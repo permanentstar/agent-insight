@@ -35,6 +35,12 @@
       "url": "https://github.com/deepseek-ai/deepseek-harness",
       "branch": "master",
       "local_dir": "deepseek-harness"
+    },
+    "claude": {
+      "url": "https://github.com/permanentstar/claude-code-source-leak",
+      "branch": "main",
+      "local_dir": "claude-code-source-leak",
+      "update_policy": "frozen"
     }
   },
   "baselines": {
@@ -117,7 +123,15 @@
       "sha": null,
       "commit_time": null,
       "observed_at": "2026-10-09",
-      "note": "三份旧分析文档冻结；源码 snapshot 的精确版本、来源和哈希尚未登记，禁止推定为官方当前实现。"
+      "note": "三份历史研究原稿冻结，用于平台实践与原始结论核对；源码机制改用 claude-source-20260331，原稿本身未标明源码 SHA。"
+    },
+    "claude-source-20260331": {
+      "repo": "claude",
+      "role": "historical",
+      "sha": "9f51e71641c1472293ebe4a7968b44455c00f0ba",
+      "commit_time": "2026-03-31T10:03:22Z",
+      "observed_at": "2026-10-14",
+      "note": "owner 指定源码仓库的原始源码提交；README 标注 source map 来自2026-03-31。后续四月/五月构建与stub提交不作为实现证据。冻结研究，不自动更新、不运行。"
     }
   }
 }

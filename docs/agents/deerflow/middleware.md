@@ -12,11 +12,21 @@ verified_scope: "已静态核验装配分组、动态上下文、system 合并�
 
 # DeerFlow：中间件装配、Prompt 与执行门禁
 
-DeerFlow 的 middleware 属于产品装配层。先把“工厂生成一个列表”和“框架在不同阶段调用列表成员”分开，才能解释实际顺序。列表顺序不等于所有 hook 从头到尾执行一次；一个成员也可能同时参与多个阶段。
+middleware 是插在已有执行阶段里的产品策略代码。工厂先按配置生成实例列表，图运行时再调用各成员实现的 hook：例如请求前组织上下文，工具执行前检查政策，结果回来后决定继续。一个成员可以参与多个阶段。
 
 ![DeerFlow 先组合运行基础中间件、产品中间件和扩展，再由图执行阶段调用；原生 prompt、动态消息和最终请求分别归属](../../assets/deerflow-middleware.svg)
 
-## 当前位置与概念
+
+本章先说明列表如何装配，再沿一次任务的时间线定位各 hook，随后用 Prompt 合并和 Skill 工具检查展开两个调用位置。完整候选名单和 hook 索引放在末尾，供按需查阅。
+
+| 阅读阶段 | 输入 | 输出与消费者 |
+|---|---|---|
+| 1. 装配实例 | 配置、能力与扩展贡献 | 最终 middleware 列表，交 create_agent |
+| 2. 运行阶段调用 | state、ModelRequest、ToolCallRequest | 对应 hook 的更新、请求或结果 |
+| 3. 模型请求位置 | 基础 Prompt 与动态消息 | 合并后的请求，交 model handler |
+| 4. 工具调用位置 | 工具身份、参数和当前政策 | 放行 handler，或具名阻断结果 |
+
+## 先定位工厂、实例和调用资料
 
 | 概念 | 当前层次 / 上下层 | 保存什么、影响什么 |
 |---|---|---|
@@ -30,7 +40,7 @@ DeerFlow 的 middleware 属于产品装配层。先把“工厂生成一个列�
 
 middleware 实例由图工厂构造。Gateway 当前按 run 构图，Client 按配置 key 复用图，所以实例成员的作用域取决于入口。跨 thread 复用时，不能把 `self` 的普通字段当成 thread 私有数据；以 Runtime.context 或 state 取当前身份的代码需要单独追踪。参见[架构章](architecture.md)。
 
-## 装配列表：先基础，再产品，最后扩展
+## 第一步：按配置装配实例列表
 
 | 装配组 | 源码中的代表成员 | 条件与阅读边界 |
 |---|---|---|
@@ -41,11 +51,19 @@ middleware 实例由图工厂构造。Gateway 当前按 run 构图，Client 按�
 | lead 终态组 | TerminalResponse、ModelLengthFinishReason；可选 SafetyFinishReason；Clarification | 这是 compose 前的列表尾部，不能跳过扩展插入规则 |
 | 最终组合 | compose_with_extensions | 使用 LEAD scope 与 build context 合并贡献，再交 create_agent |
 
-证据：[基础工厂](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/tool_error_handling_middleware.py#L344)、[lead 追加及最后组合](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/agent.py#L565)。本章不把候选列表画成“所有配置共有的固定链”。要复现某个配置的精确顺序，须固定 AppConfig、装配参数及扩展贡献后观察最终列表。
+证据：[基础工厂](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/tool_error_handling_middleware.py#L344)、[lead 追加及最后组合](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/agent.py#L565)。启用条件会改变实际列表。要复现某个配置的精确顺序，须固定 AppConfig、装配参数及扩展贡献后观察最终列表。
 
 框架如何组合 before/after/wrap hooks，见 [LangChain 构图](../../frameworks/langchain/architecture.md)。应用中某个中间件是否被调用，还要同时满足装配条件、hook 实现和对应阶段有输入这三个条件。
 
-## Prompt：模板、动态上下文、请求合并
+## 第二步：在任务时间线中找到每个 hook
+
+![DeerFlow 输入初始化调用 before_agent；每次模型请求进入 before_model 与 model wrapper，响应返回后调用 after_model；工具请求进入 tool wrapper 并形成反馈，后续再回模型；图结束后调用 after_agent](../../assets/deerflow-hook-timeline.svg)
+
+同一成员只在自己实现的入口参与处理。before_agent 准备本次图输入，before_model 在每次模型节点前处理 state，wrap_model_call 在实际请求边界处理 ModelRequest，after_model 消费响应。wrap_tool_call 包住具体工具 handler；after_agent 收尾。wrapper 的嵌套关系由最终列表和框架组合规则决定，本图按阶段定位。
+
+模型请求 override 的结果只在这次调用中传递；hook 返回 state 更新则交给图的 channel/reducer 采用。接下来分别展开这两个数据交接，先看模型请求，再看工具执行。
+
+## 第三步：在模型调用前组织 Prompt
 
 | 阶段 | producer → consumer | 生命周期与副作用 |
 |---|---|---|
@@ -54,11 +72,20 @@ middleware 实例由图工厂构造。Gateway 当前按 run 构图，Client 按�
 | 最终请求整理 | SystemMessageCoalescingMiddleware → handler(request.override(...)) | 合并 system 部分，输出一个前置 system；普通消息单独传递 |
 | provider 请求 | 框架 model 调用 → provider | 以此次请求快照为准，不只看初始模板 |
 
-[DynamicContext 的执行代码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/dynamic_context_middleware.py#L519)构造 SystemMessage，和装配文件中“首条 HumanMessage”的注释存在差异。本页采用执行实现；[合并器](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/system_message_coalescing_middleware.py#L64)返回 `request.override(system_message=merged, messages=non_system)`。基础 prompt 的 owner 仍是产品模板，不因一个 middleware 注入消息就将它解释成整套 System 的 owner。
+[DynamicContext 的执行代码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/dynamic_context_middleware.py#L519)构造 SystemMessage，和装配文件中“首条 HumanMessage”的注释存在差异。本页采用执行实现；[合并器](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/system_message_coalescing_middleware.py#L64)返回 `request.override(system_message=merged, messages=non_system)`。基础 prompt 的 owner 仍是产品模板，middleware 按自身职责加入或整理请求材料。
 
 这里的“静态”描述基础模板复用目标；最终请求仍含日期、记忆、项目与工具等动态部分。动态内容的位置和变化频率会影响稳定前缀；缓存收益需要按实际请求单独测量。
 
-## Skill 工具政策：可见性与效果点分别控制
+合并器的末尾交接可以直接节选。前面已从 request.system_message 与消息列表收集 system 部分，形成 merged：
+
+```python
+non_system = [m for m in request.messages if not isinstance(m, SystemMessage)]
+return request.override(system_message=merged, messages=non_system)
+```
+
+wrapper 把新请求交给 handler，原 ThreadState.messages 继续保存各自记录。因此下一消费者拿到一个前置 system 和普通对话，持久状态仍保留消息来源。[请求合并的输出](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/system_message_coalescing_middleware.py#L117)。
+
+## 第四步：工具调用到达时检查当前政策
 
 以 SkillToolPolicyMiddleware 为例，模型侧 `_filter_model_request` 过滤工具 schema 并返回 override；工具侧 wrap_tool_call / awrap_tool_call 再检查当前 policy，得到 blocked ToolMessage 时直接返回，**不会调用实际 handler**。异步路径可复用同一 model step 缓存的决策，缓存未命中时再解析授权。
 
@@ -71,15 +98,33 @@ middleware 实例由图工厂构造。Gateway 当前按 run 构图，Client 按�
 
 依据：[模型过滤](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/skill_tool_policy_middleware.py#L334)、[实际阻断](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/skill_tool_policy_middleware.py#L484)。这个 policy 同时控制模型可见集合与实际 handler。完整执行隔离还取决于其他授权与环境控制，不能由 schema 隐藏单独推出。
 
+工具检查的同步入口很短，可直接节选。当前 policy 给出允许集合，blocked 分支在 handler 之前返回：
+
+```python
+policy = self._active_policy(request)
+if not policy[1]:
+    return handler(request)
+allowed = self._allowed_names(request, policy=policy)
+blocked = self._blocked_tool_message(request, allowed=allowed)
+if blocked is not None:
+    return blocked
+return self._filter_tool_search_result(request, handler(request), allowed=allowed)
+```
+
+最后一行先执行允许的 handler，再过滤发现结果。模型可见定义和实际调用因此各自经过相应入口；异步版使用同样的阻断位置。[工具 wrapper 的执行实现](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/skill_tool_policy_middleware.py#L484)。
+
 ## 策略组合的设计取舍
 
 中间件将产品策略从模型工具节点抽出，便于不同宿主组合；代价是同一 state、request、Runtime.context 被多个阶段读取时，所有权与顺序必须明确。分析任何新增中间件，固定记录：构造者、实例复用范围、参与 hook、读写字段、提前返回与真实效果点。
 
 上下文读写见 [Prompt 与压缩](context-prompt.md)，能力与环境见 [工具和子 Agent](capabilities.md)，运行所有权见 [运行管理](runtime.md)。这些职责可以由中间件组合，但不会因此共享同一个持久状态或资源生命周期。
 
+<details>
+<summary>参考：装配候选槽位与 hook 索引</summary>
+
 ## 当前候选槽位的完整顺序
 
-下表是 compose 前的候选顺序，括号说明条件；配置关闭时对应项不存在。它不是任意配置的最终实例名单。同步/异步 hook 的覆盖范围还要按下节签名检查。
+下表是 compose 前的候选顺序，括号说明条件；配置关闭时对应项不存在。最终实例名单由具体启用条件和扩展贡献确定。同步/异步 hook 的覆盖范围还要按下节签名检查。
 
 | 位置组 | 有序成员 | 构造入口 |
 |---|---|---|
@@ -142,3 +187,5 @@ middleware 实例由图工厂构造。Gateway 当前按 run 构图，Client 按�
 需要区分“默认启用四维”：配置默认是否开、依赖能力是否满足、本次构造是否选择、hook 是否有实际输入。标题/记忆/图片/子 Agent 等 conditional 逻辑不能由是否在列表中推出发生效果。实例生命周期按 Gateway run 与 Client graph cache 分开，state/Runtime.context 的 user/thread/run 才是当前身份；共享 `self` 缓存与 recorder 要核验 key 及清理边界。
 
 新增 middleware 的检查问题固定为：参与哪些 hook，读写哪个 owner 的字段，排序依赖是什么，短路后是否还执行 handler，恢复后是否会重复副作用。日志/审计/trace 属观察，除非在真实效果点阻断，否则不称权限边界。
+
+</details>

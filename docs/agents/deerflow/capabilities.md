@@ -12,9 +12,18 @@ verified_scope: "核验 subagent create_agent/checkpointer=False、task 委派�
 
 # DeerFlow：能力发现、Sandbox 与子 Agent
 
-DeerFlow 的 Tools、Skills、MCP、ACP 和 Subagents 扩展不同边界：动作、知识/策略、外部工具目录、外部 Agent 接入和执行拓扑。不能用一个“插件”概念把权限、发现与生命周期拉平。
+DeerFlow 的 Tools、Skills、MCP、ACP 和 Subagents 扩展不同边界：动作、知识/策略、外部工具目录、外部 Agent 接入和执行拓扑。这些能力在下面分别定位到资料发现、动作调用、子任务和执行环境。
 
 ![产品装配生成工具与技能目录，模型提出 task，task_tool 构造子 executor 与独立图，结果经 Command 回到父；父子可共享 Sandbox 但持有不同 lease](../../assets/deerflow-capabilities.svg)
+
+
+沿“让子 Agent 读取用例并返回建议”的任务看三步：产品先准备可发现能力，模型发出 task 请求，子 executor 运行后把结果交回父图。Sandbox 提供期间的文件环境，其 lease 在各次运行中分别管理。
+
+| 步骤 | 输入 | 输出与消费者 |
+|---|---|---|
+| 1. 发现与激活 | 配置、授权结果、Skill/MCP 目录 | 模型可见定义与运行资源 |
+| 2. 子任务执行 | 父状态快照、task 参数与当前环境 | 独立子图的观察和结果 |
+| 3. 返回与释放 | 子图完成结果及停止原因 | 父 ToolMessage/Command、环境 lease 释放 |
 
 | 概念 | owner / 构造 | 消费者与作用域 |
 |---|---|---|
@@ -27,23 +36,45 @@ DeerFlow 的 Tools、Skills、MCP、ACP 和 Subagents 扩展不同边界：动�
 | SubagentExecutor | task_tool 构造 | 构图、运行、进度、timeout、completion 回收 |
 | Sandbox provider / lease | 环境层 | 工具使用 thread 环境，运行各自持有 lease |
 
-## 发现 → 激活 → 执行
+## 第一步：准备模型可发现、可调用的能力
 
 能力目录先按产品配置、agent 范围和授权结果装配，模型看到 direct schema 或 deferred 发现入口。tool_search 促进 schema 进入后续请求；Skill discovery 展示知识而非凭此授予写权限。lazy/eager/deferred 必须说明目标是连接、schema 还是环境，不能互相替代。
 
-SkillActivation 为显式 Skill 输入解析正文与需求，SkillToolPolicy 过滤模型侧和效果点，Sandbox projection 约束真实文件可见范围。这三项不同：schema 隐藏不收回真实文件访问，Skill 目录过滤不自动隔离磁盘。实际阻断见 [middleware](middleware.md)。
+SkillActivation 为显式 Skill 输入解析正文与需求，SkillToolPolicy 过滤模型侧和效果点，Sandbox projection 约束真实文件可见范围。它们分别控制请求可见性、实际调用和文件范围。实际阻断见 [middleware](middleware.md)。
 
-## 子任务的真实执行链
+## 第二步：从 task 请求构造子 executor
 
 `task_tool` 收集父 context snapshot、thread incarnation、配置、extensions、recorder 和执行容量 → SubagentExecutor.execute_async → `_aexecute_admitted` 构建初始 state/tools → `_create_agent` → create_agent(model, tools, middleware, state_schema=ThreadState, **checkpointer=False**) → 运行并回收 → task_tool 以 ToolMessage/Command 更新父 messages 和 delegation 资料。
 
-子图的 system prompt 已放入 initial state，工厂 system_prompt=None 避免重复；编译后工具注册表包含 middleware tools 及同名 precedence。子执行默认没有 lead checkpointer，因此“每个子 Agent 都自动持久恢复”不成立。它可共享父 Sandbox 和文件，但上下文、停止原因和执行身份独立。
+子图的 system prompt 已放入 initial state，工厂 system_prompt=None 避免重复；编译后工具注册表包含 middleware tools 及同名 precedence。子执行默认没有 lead checkpointer，该默认子图使用 checkpointer=False。它可共享父 Sandbox 和文件，但上下文、停止原因和执行身份独立。
 
 [task_tool 构造与 async dispatch](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/tools/builtins/task_tool.py#L939)、[子图构造](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/subagents/executor.py#L1153)、[实际子运行](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/subagents/executor.py#L1605)。
 
+子图的实际装配入口如下。SystemMessage 已由 _build_initial_state 放入输入，bound_tools 来自这份子任务的允许集合：
+
+```python
+bound_tools = list(tools if tools is not None else self.tools)
+agent = create_agent(
+    model=model,
+    tools=bound_tools,
+    middleware=middlewares,
+    system_prompt=None,
+    state_schema=ThreadState,
+    checkpointer=False,
+)
+```
+
+executor 随后调用这份图，事件与结果再返回 task_tool；父图依据返回的观察继续自己的模型循环。[子图创建语句](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/subagents/executor.py#L1153)。
+
+## 第三步：把子任务结果交回父图，释放本次资源
+
+task_tool 把完成结果转换为 ToolMessage，必要时通过 Command 更新父 messages 和 delegation 资料。于是“已查到哪些用例、建议怎样修复”成为父模型下一请求的观察。executor 同时结束这次子运行，收回其运行容量和资源；父任务仍可继续推进。
+
+下面将这个资源收尾放大，说明父子共享文件时环境由谁管理。
+
 ## Sandbox、审计与文件并发
 
-SandboxMiddleware 默认 lazy 首次工具调用 acquire，eager 才在 before_agent acquire。并发 lead/subagent 持有独立进程内 lease，最后 release 可把远端环境 park 回 warm pool；provider shutdown 才是终态清理。不能把 after_agent 解读为每次销毁容器。
+SandboxMiddleware 默认 lazy 首次工具调用 acquire，eager 才在 before_agent acquire。并发 lead/subagent 持有独立进程内 lease，最后 release 可把远端环境 park 回 warm pool；provider shutdown 才是终态清理。远端环境可继续留在 warm pool，终态清理由 provider shutdown 管理。
 
 lead 拥有物理 Skill projection，subagent 的 discovery/activation 范围不允许重建共享 projection，否则会改变其他运行的文件视图。provider 不支持要求的 agent Skill filesystem isolation 时拒绝，不悄悄降级为目录过滤。
 

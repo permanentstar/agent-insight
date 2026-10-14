@@ -3,11 +3,11 @@ id: "comparison-ownership"
 title: "比较：所有权与生命周期"
 subject: "comparison"
 status: "index"
-baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-frozen-documents"]
+baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331"]
 sources: []
 depends_on: ["pi-architecture", "durable-architecture", "deerflow-migrated", "claude-migrated", "codex-plan", "hermes-migrated", "langchain-migrated", "langgraph-migrated", "deepseek-plan", "deerflow-runtime", "hermes-capabilities", "codex-context", "deepseek-capabilities"]
 evidence: ["source", "historical-document", "static-inference"]
-verified_scope: "九对象的代表性构造与状态归属静态比较；Claude 仅历史转述；不证明并发与释放的全部运行性质."
+verified_scope: "九对象的代表性构造与状态归属静态比较；Claude 按冻结源码与历史实践区分；不证明并发与释放的全部运行性质."
 ---
 
 # 比较：所有权与生命周期
@@ -15,6 +15,9 @@ verified_scope: "九对象的代表性构造与状态归属静态比较；Claude
 长期会话身份、进程活对象和一次执行需要分别管理。多数应用把会话历史和运行句柄分开；Pico5 与 LangGraph 又显式保存工作恢复资料，但其可恢复单元不同。比较问题是：第二次输入或进程重启后，哪些对象复用，哪些状态重建？
 
 ![产品组合根构造运行实例，长期身份与本次工作 owner 分开，执行后核销或回收；ID 不证明当前写入资格](../assets/comparison-ownership.svg)
+
+
+先按构造、接纳工作、固定请求和收口的顺序找 owner，再比较它们的复用范围。最后改变一个条件——第二次输入或进程重启——检验哪些资料仍有效。所有权不是对象关系图里的箭头名称，而是创建、修改、提交和释放的具体责任。
 
 ## 先走一次构造、运行与结束
 
@@ -52,12 +55,29 @@ CSV 修复任务到达之前，宿主通常已经加载部分配置或服务。�
 参考解答：会话身份、有效历史、共享连接和能力配置可以按宿主契约保留；本轮计数、即时状态、取消控制和请求快照需要在相应边界创建或重置。具体字段以实现为准，不能凭实例被缓存就推定所有成员都适合跨轮共享。
 
 
+## 将同一时间轴映射到实际对象
+
+LangChain 工厂产生可复用 compiled graph，而 LangGraph 每次调用另建 Loop。Pico5 的 Registry 长期保存工作定义，Task record 保存持久工作，TaskRuntime 只对应当前 invocation。Codex 又把长期 Session、当前 Turn 和一次 Step 快照分开。这些拆分都在防止长期资源与短期控制混用，保存内容却各不相同。
+
+下面用应用装配代码表达构图与运行的交接，组件是教学占位，代码不是工厂源码节选：
+
+```python
+# prepared_chat_model、read_source 等由应用构造并注入。
+agent = create_agent(model=prepared_chat_model, tools=[read_source])
+first = agent.invoke({"messages": [HumanMessage(content="查看导出实现")]})
+second = agent.invoke({"messages": [HumanMessage(content="解释字段转义")]})
+```
+
+两个调用复用 graph 对象，但是否延续同一持久 thread 还取决于 checkpointer 和调用 config；以上未配置持久会话。这让“复用计算定义”与“延续交互历史”成为可分别检验的关系。[工厂的 compile 输出](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L892)、[每次图调用的运行资料](../frameworks/langgraph/architecture.md)。
+
+下表把创建者、权威状态、生命周期与执行点保持在固定列中，供横向查阅；阅读重点是每一行怎样回答前面的时间轴。
+
 | 对象 | 权威状态与所有者 | 构造与生命周期 | 实际机制与执行点 | 提供的能力 | 机制边界 | 深入阅读 |
 |---|---|---|---|---|---|---|
 | AgentSession | AgentSession 编排，Agent 活运行，SessionManager 历史 | CLI/SDK 创建或注入；runtime 可替换 session | prompt → Agent / agent-loop | 会话、执行、历史责任分开 | 历史保存不能证明活工作可恢复 | [Pi](../agents/pi/architecture.md) |
 | Pico5，实验 | Session 的 Task record；Registry 提供执行定义 | Harness.open 绑定 Storage/Models/Registry；运行句柄可重建 | scheduler 按 checkpoint 推进 | 持久工作有明确恢复记录 | 实验接口与定义兼容、外部效果另有约束 | [Pico5](../agents/pi-durable/architecture.md) |
 | DeerFlow，应用 | RunManager 的 run；图 state 的 thread | Gateway 每 run 构图；Client 配置 key 相同复用 | worker/Client → compiled graph | run、thread、graph instance 分开 | 跨 worker 竞争与扩展实例成员各有作用域 | [DeerFlow](../agents/deerflow/architecture.md) |
-| Claude | 会话层与 query 活运行 | REPL/SDK 入口分别持有状态 | query generator、工具 executor | 会话宿主与运行循环分工 | 工具效果重放与显式队友接单缺少证据 | [Claude](../agents/claude/architecture.md) |
+| Claude | 会话层与 query 活运行 | REPL/SDK 入口分别持有状态 | query generator、工具 executor | 会话宿主与运行循环分工 | 任意工具效果重放与跨崩溃接单确认未证 | [Claude](../agents/claude/architecture.md) |
 | Codex，开源 core | Session 的 history/active_turn；RolloutRecorder 历史 | manager spawn/load Thread；turn 与 step 分别建快照 | submission_loop → SessionTask → run_turn | 长活线程与当次采样配置分开 | 不同 SessionTask 的工作恢复语义不能一概而论 | [Codex](../agents/codex/architecture.md) |
 | Hermes，原生路径 | AIAgent 活实例；宿主历史；SessionDB 消息 | CLI 构造；Gateway 条件缓存；turn 局部状态单独建 | run_conversation → native phases | 实例、会话身份、iteration 有不同生命周期 | ACP turn 的所有权不代替平台投递确认 | [Hermes](../agents/hermes/architecture.md) |
 | LangChain，构图框架 | 应用提供运行输入；框架定义 AgentState/schema | create_agent 一次构图，可多次调用 | model/tools/hook 节点与路由 | 统一调用协议和编排构造 | 不替应用拥有全部会话、鉴权、部署 | [LangChain](../frameworks/langchain/architecture.md) |

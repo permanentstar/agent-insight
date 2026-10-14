@@ -16,6 +16,15 @@ Codex 在一次模型 step 中固定环境、模型与能力快照；长期规�
 
 ![Session 的 step 快照组装规则与 MCP 能力，模型与工具经过执行边界；压缩替换上下文，子线程由 AgentControl 管准入和归属](../../assets/codex-context.svg)
 
+
+本章承接执行章的第三步，将请求资料分成三个交接：加载规则和能力、在 Step 固定当次视图、长历史压缩后安装替换上下文。子线程则沿另一条执行生命周期使用继承资料，放在主请求流程之后。
+
+| 阶段 | 输入 | 输出与消费者 |
+|---|---|---|
+| 1. 加载 | 工作环境、项目规则、Skill 与插件选择 | 带来源的指令和能力配置 |
+| 2. 固定 Step | 当前历史与运行选择 | 模型和工具共用的 StepContext |
+| 3. 压缩并采用 | 历史范围与摘要结果 | 新 history、WorldState baseline、持久压缩资料 |
+
 | 概念 | 所属层 / 构造与消费 | 生命周期 |
 |---|---|---|
 | LoadedAgentsMd | 规则加载：active project、turn environments | 根到 cwd 的目录链读取；按总字节预算累计，保存来源 |
@@ -25,15 +34,15 @@ Codex 在一次模型 step 中固定环境、模型与能力快照；长期规�
 | AgentControl / registry | 子线程运行控制 | 父身份、容量、配置继承、驻留/恢复和投递 |
 | SessionSource / fork history | 线程来历 | 对话分支，与 Git branch/worktree 无必然一对一关系 |
 
-## 规则发现与能力快照
+## 第一步与第二步：加载资料，固定当次能力
 
-load_project_instructions 先保存用户提供规则；active project untrusted 时不加载项目规则。对 turn environments 分别使用该环境文件系统和 sandbox context，按剩余 project_doc_max_bytes 读取。agents_md_paths 根据 project root markers 找最近根，将根到 cwd 目录链按顺序搜索，每目录按候选文件优先级选一个文件；不是任意递归扫描所有子目录。
+load_project_instructions 先保存用户提供规则；active project untrusted 时不加载项目规则。对 turn environments 分别使用该环境文件系统和 sandbox context，按剩余 project_doc_max_bytes 读取。agents_md_paths 根据 project root markers 找最近根，将根到 cwd 目录链按顺序搜索，每目录按候选文件优先级选一个文件；每个目录依候选文件优先级选取一份。
 
 规则加载基于当前真实环境路径，不能把本机绝对 cwd 写成跨环境约束。规则文本约束模型；真正的文件读写授权仍由 environment/permission profile/tool runtime 执行。[加载与 trust/budget](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/agents_md.rs#L58)、[目录链选择](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/agents_md.rs#L192)。
 
-Skills 的 explicit/implicit invocation 分开记录；McpManager 的 runtime_config_for_step 与 selected_plugins_for_step 依据当前配置、环境 authority、连接器与 plugin overlay 计算能力。目录缓存、模型工具 schema 和执行授权分别核验，避免把“发现到了”当“可调用并获批”。[Skill load 与 invocation](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/skills.rs#L29)、[MCP step 配置](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/mcp.rs#L160)、[工具效果点](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/orchestrator.rs#L127)。
+Skills 的 explicit/implicit invocation 分开记录；McpManager 的 runtime_config_for_step 与 selected_plugins_for_step 依据当前配置、环境 authority、连接器与 plugin overlay 计算能力。目录缓存、模型工具 schema 和执行授权分别核验，分别确认能力配置、请求声明与执行准入。[Skill load 与 invocation](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/skills.rs#L29)、[MCP step 配置](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/mcp.rs#L160)、[工具效果点](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/orchestrator.rs#L127)。
 
-## local / remote 压缩的共同提交面
+## 第三步：将压缩结果安装为后续请求历史
 
 local compact 使用摘要模型结果，保留按策略选取的用户内容并构建 summary history；remote v2 接收服务压缩结果，再按 retained message/image/feature 策略组装。两者都调用 build_compaction_replacement_history 重建初始 context 与 WorldState baseline，然后 Session.replace_compacted_history，记录 compaction metadata 并重算 token usage。
 
@@ -46,10 +55,43 @@ local compact 使用摘要模型结果，保留按策略选取的用户内容并
 
 证据：[context 重建](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/compact.rs#L80)、[local 安装替换历史](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/compact.rs#L386)、[remote v2 安装](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/compact_remote_v2.rs#L315)。local/remote、feature gate 和模型选择的具体分支需固定配置；没有跑远端服务，不评价其摘要质量或压缩性能。
 
-## 子线程准入与驻留
+本地压缩的摘要和保留内容已形成 new_history 后，还要合入当前请求的初始上下文和 WorldState。下面节选共同安装面，省略 CompactedHistoryMetadata 的各字段和后续用量计算：
 
-spawn_agent_internal 先 runtime.admit_start，再解析父 thread/source 与 multi-agent version，检查容量，V2 特定 session source 走 residency slot，随后 registry.reserve_spawn_slot 并继承 environments/config。身份与容量先保留，线程启动后再发布，不是先 spawn 一个进程再补 owner。
+```rust
+let (new_history, world_state_baseline) = build_compaction_replacement_history(
+    sess.as_ref(),
+    &replacement_step_context,
+    &world_state,
+    new_history,
+).await;
+sess.replace_compacted_history(
+    new_history,
+    replacement_step_context.to_turn_context_item(),
+    world_state_baseline,
+    /* 省略：本次压缩的 CompactedHistoryMetadata */ metadata,
+).await;
+```
+
+metadata 是这里代指真实构造对象的教学名字。关键交接是 replacement_step_context 和新历史一起进入 Session，下一请求从已替换的活动 history 取消息；rollout 另记录压缩事实。[本地安装路径](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/compact.rs#L386)。
+
+## 子线程专题：先接纳身份与容量，再继承资料
+
+spawn_agent_internal 先 runtime.admit_start，再解析父 thread/source 与 multi-agent version，检查容量，V2 特定 session source 走 residency slot，随后 registry.reserve_spawn_slot 并继承 environments/config。身份与容量先保留，线程启动后再发布，父身份与容量在启动前确定。
 
 fork 复制经过选择的 rollout/context，resume 从线程事实重建 LiveAgent；它们不是恢复旧函数栈。V1/V2 与 source 分支不能合并成“全部子 Agent 均一套常驻实现”。资源驻留、线程可发现与工作完成分别记录；收到了工具结果或最终文本也不代证目标任务验收通过。
 
 [spawn 准入](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/agent/control/spawn.rs#L672)、[resume 控制](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/agent/control/resume.rs)。Shell、MCP、远程环境等工具仍须沿各自执行管线追查权限。exec policy 的命令匹配/heuristic 不等同完整语义安全证明，见 [exec policy](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/exec_policy.rs#L316)。
+
+子线程的准入顺序在 spawn_agent_internal 开头可见。下面节选身份接纳与父身份解析，后续容量、版本及驻留分支按原文表述展开：
+
+```rust
+let membership = self.runtime.admit_start()?;
+let state = self.runtime.upgrade()?;
+let parent_thread_id = session_source.as_ref()
+    .and_then(SessionSource::parent_thread_id)
+    .or(options.parent_thread_id);
+// 省略：解析 multi_agent_version，检查执行容量，
+// 按实际 source 决定 residency，再预留 spawn slot。
+```
+
+这些输入决定子线程继承谁的配置、占用哪个运行额度。启动完成才发布其活对象，结果再由父线程消费。[子线程的接纳入口](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/agent/control/spawn.rs#L672)。

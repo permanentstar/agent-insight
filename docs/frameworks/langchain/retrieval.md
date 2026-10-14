@@ -18,7 +18,7 @@ RAG 解决的是**模型如何获得当前任务需要的外部资料**。它将
 
 ![同一检索器返回 Document 并格式化为有来源的片段；固定链由程序先检索再生成，Agentic 由模型请求工具、结果回填再决策，答案都需要对应资料事实](../../assets/retrieval-control-and-evidence.svg)
 
-## 1. 从问题开始，别先选择向量库
+## 第一步：确定需要哪些资料
 
 用户要求修复导出程序，但项目可能有自己的规范：字段包含哪些字符时需要引号、怎样处理内部引号、换行是否保留。模型的通用知识未必等于这个项目的约定。应用因此需要读取并选择相关资料，把它们交给当前请求。
 
@@ -26,7 +26,7 @@ RAG 解决的是**模型如何获得当前任务需要的外部资料**。它将
 
 先回答两项问题：资料从哪里来，以及谁决定何时获取。前者决定检索器及数据准备，后者决定固定流程或动态工具调用。两项决定可以独立变化。
 
-## 2. 一份资料怎样成为 Document
+## 第二步：保存正文与来源
 
 假设我们读取到项目的三条规则。下面是教学数据，不是某个公开 CSV 标准的全文；metadata 字段由应用定义，Document 不替应用指定命名。
 
@@ -56,7 +56,7 @@ page_content 是模型可能需要阅读的正文；metadata 与 id 帮助应用
 
 TextSplitter 负责这种数据准备。它不负责选择这一次模型还应保留哪些聊天消息，也不自动建立权限边界。项目可以按章节、自然段或自己的结构分块；具体策略应根据资料和检索任务验证，不能把某个固定 chunk 数值当成所有 Agent 的标准。
 
-## 3. 建索引与查询是两个生命周期
+## 第三步：准备索引，并在任务中查询
 
 ![知识准备阶段加载、分块、嵌入并写入索引；查询阶段选择 Document，固定链或工具调用再组织生成资料](../../assets/retrieval.svg)
 
@@ -79,7 +79,21 @@ Retriever 的共用契约是“查询进来，list[Document] 出去”。它可�
 
 VectorStore.as_retriever 创建 VectorStoreRetriever；其搜索方式可以是 similarity、带阈值的相似度或 MMR 等。BaseRetriever.invoke 管理调用配置与 retriever 回调，再进入具体 `_get_relevant_documents`。返回值仍是资料列表，不是已经组织好的模型消息。[Retriever 执行点](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/retrievers.py#L179)、[VectorStoreRetriever 的搜索分派](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/vectorstores/base.py#L1046)。
 
-## 4. Document 到上下文：补上真正的资料交接
+检索接口还承担观察边界。以下节选 `BaseRetriever.invoke` 的 handler 与返回路径，省略配置准备和错误分支：
+
+```python
+kwargs_ = kwargs if self._expects_other_args else {}
+if self._new_arg_supported:
+    result = self._get_relevant_documents(input, run_manager=run_manager, **kwargs_)
+else:
+    result = self._get_relevant_documents(input, **kwargs_)
+run_manager.on_retriever_end(result)
+return result
+```
+
+具体检索器输出 Document；回调报告这次检索；下一层格式化代码接收 result。三个角色各有输出，检索器无需先知道最终模型请求的文本模板。[查看检索分派与成功、错误回调](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/core/langchain_core/retrievers.py#L179)。
+
+## 第四步：将 Document 组织为请求上下文
 
 设查询为“CSV 的逗号、引号和换行怎样转义”，Retriever 返回上述三份 Document。直接调用 str(docs) 虽然能得到字符串，却把关键的生成契约藏在对象输出格式里。应用应明确决定怎样展示正文、来源和引用标识。
 
@@ -118,7 +132,7 @@ def format_documents(docs):
 
 角色、标签和来源让资料更容易解释，但它们不会自动提供安全隔离。程序的执行政策仍须放在工具或效果路径；模型的引用是否正确，还需要结合正文判断。
 
-## 5. 路线一：固定两阶段 RAG
+## 路线一：由程序安排检索与生成
 
 固定路线由程序安排查询与生成。它不要求模型先决定“该不该搜索”，适合这一阶段确定需要依据项目规范的场景。
 
@@ -140,12 +154,12 @@ answer = model.invoke(request)
 
 如果用户只问规则，这条路线已足以回答。如果目标还包含修改和运行验证，RAG 只完成了**资料获取**这一段；后续要把规则与代码观察交给工作执行器，继续动作与验证。不能将“生成了带引用的建议”当作文件已经修复。
 
-## 6. 路线二：把相同检索器作为 Agent 的工具
+## 路线二：由模型请求检索工具
 
 动态路线复用 Retriever，但在外面提供一个模型可调用的工具。工具接受查询，调用 retriever，然后把格式化资料返回。比如应用工具名为 search_rules；模型可见的输入只有 query，而检索器、来源存储与权限范围由宿主绑定。
 
 ```python
-# Application-defined handler skeleton, not a built-in LangChain tool.
+# 教学应用定义的工具 handler；retriever 由宿主绑定。
 def search_rules(query):
     docs = retriever.invoke(query)
     context, references = format_documents(docs)
@@ -178,7 +192,7 @@ def search_rules(query):
 
 如果这次任务只问规则，动态路线可能需要“先生成工具调用、执行检索、再生成回答”两次模型请求。固定路线可省掉决定搜索的模型请求；若问题需要不断揭示新条件，动态路线又能依据观察改变查询。这里解释的是控制步骤，不是对延迟或准确率的实测排名。
 
-## 7. 两条路线怎样映射回共同架构
+## 将两条路线放回共同架构
 
 固定 RAG 把资料获取放在程序或节点的确定步骤，Agentic 把同一能力暴露成工具，让模型参与时机和查询选择。两者都需要将检索内容组织成模型可以解释的资料，再把生成结果与证据联系起来。
 
@@ -194,7 +208,7 @@ def search_rules(query):
 
 DeerFlow 的网页搜索、项目文件读取和技能知识可以提供任务资料，但它们各有来源和请求装配方式。不能因都返回自然语言，就把网页索引、向量库、工具发现和 Skill 加载视为同一个组件。[DeerFlow 能力层](../../agents/deerflow/capabilities.md)。
 
-## 8. 分开检查资料、回答和动作
+## 检查资料、回答和实际动作
 
 最小验证不是只观察“Agent 有回复”。在本案例中，至少要分别解释三段事实：
 
@@ -206,7 +220,7 @@ DeerFlow 的网页搜索、项目文件读取和技能知识可以提供任务�
 
 引用标识能帮助检查，但不能自行证明答案真实。检索质量、生成利用质量和工具效果分别需要证据；接口可以记录资料和执行轨迹，最终判断仍依赖明确的任务要求。
 
-## 9. 演算与参考解答
+## 演算与参考解答
 
 **问题一。** Retriever 返回 rule-1/2/3，为什么 model 不能直接把 Document 对象当作最终答案？
 

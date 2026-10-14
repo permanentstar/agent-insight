@@ -3,7 +3,7 @@ id: "comparison-modes"
 title: "比较：执行模式与模型决策"
 subject: "comparison"
 status: "index"
-baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-frozen-documents"]
+baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331"]
 sources: ["comparison-legacy", "claude-march"]
 depends_on: ["pi-loop", "durable-loop", "deerflow-migrated", "deerflow-middleware", "claude-migrated", "codex-plan", "hermes-migrated", "langchain-migrated", "langgraph-migrated", "deepseek-plan"]
 evidence: ["source", "official", "historical-document", "static-inference", "proposal"]
@@ -15,6 +15,9 @@ verified_scope: "各对象所述主链路与代表模式入口静态比较；模
 研究 Agent 的执行模式，先看**谁决定下一步、计划用什么形式保存、程序怎样推进**。同样写着“Plan”的功能，可能只是提示要求，也可能保存清单，还可能拥有独立的规划与执行流程。对象名称不能代替调用链。
 
 ![反馈循环每轮依据观察选择动作；Plan & Execute 用显式计划驱动执行并重规划；固定编排按程序顺序处理，三者可以按层组合](../assets/execution-modes.svg)
+
+
+比较按四层递进：先复盘同一任务的不同走法，再确定“计划”被谁消费，随后完整演算 Planner、Executor 与结果回传，最后对照各对象的实际支持。这个顺序让产品模式、协作拓扑和持久机制都能找到位置，而不依赖功能名称作判断。
 
 ## 从同一项任务开始
 
@@ -42,7 +45,7 @@ ReAct 指推理与行动交错，并用环境观察影响后续判断的方式�
 
 这里也包含“非结构化”的两个方面：语义内容不需要先归入有限的 intent 标签；动作选择也可以随观察变化。程序仍需结构化字段承载角色、call ID、参数、计划状态和结果。灵活的语义与明确的执行契约可以同时存在。
 
-## 计划文本、Todo 和调度计划是三件事
+## 先确定计划的消费者
 
 假设模型写出“先读代码，再改，再测”，这段文字能帮助思考和沟通，但程序可能完全没有解析它。若调用 Todo 工具，程序保存了 pending/in_progress/completed 清单，读者能看到进度；下一步仍可能由同一个模型循环自由选择。只有当代码读取步骤并明确派发、等待和更新计划，才能讨论计划作为编排输入。
 
@@ -151,7 +154,7 @@ return explain_result(goal, plan.results)
 
 [Microsoft 的规划课程](https://github.com/microsoft/ai-agents-for-beginners/blob/4c9a2759522679611635efbddcde3f8dfc3e40ee/07-planning-design/README.md)用结构化子任务展示交接；本书进一步把执行结果和重规划条件接进同一案例。实际对象怎样支持仍见下表。
 
-## 不要将协作与调度混成规划策略
+## 将协作拓扑放回计划的执行位置
 
 可以让一个 Executor 自己完成计划项，也可以将它委派给子 Agent；可以串行推进，也可以在依赖允许时并行。它们分别改变执行载体与调度方式，不必改变 plan 的语义。
 
@@ -177,7 +180,7 @@ return explain_result(goal, plan.results)
 | Pi AgentSession | 模型—工具反馈循环 | Plan Mode 示例扩展：工具选择、规划文本提取、进度跟踪 | 主循环内置；Plan 为扩展示例 | 主模型消息；扩展保存计划清单 | loop、工具 hooks、steer/followUp、finishTurn | [循环与模式](../agents/pi/loop.md) |
 | Pico5 | generation→tool child→下一 generation 的反馈循环 | 自定义 Task、Document、hooks 可组织显式规划 | 主链路内置；独立规划是应用组装方向 | Entry 语义内容；应用可定义计划 Doc | Task 状态机、checkpoint、提交与接纳边界 | [生成状态机](../agents/pi-durable/loop.md) |
 | DeerFlow | Lead 的模型／工具图循环 | is_plan_mode 增加 Todo 与有限次数的续跑提醒；task 可委派 | 主循环内置；Todo 可配置启用 | Lead 消息与 Todo 状态；不是固定的独立 Planner 图 | middleware、Todo 续跑控制、工具策略和图执行 | [模式装配源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/agent.py#L358)、[中间件](../agents/deerflow/middleware.md) |
-| Claude Code | 主 query 的模型／工具循环 | 历史研究包含 Plan、Todo、Task 等工具；独立 P&E 链路未由本书证据确认 | 主线历史转述；具体 Plan 细节证据不足 | query 消息与相应任务／工具资料 | executor、权限与循环条件 | [历史 query 分析](../agents/claude/architecture.md) |
+| Claude Code | 主 query 的模型／工具循环 | 历史研究包含 Plan、Todo、Task 等工具；独立 P&E 链路未由本书证据确认 | 主线固定源码；具体 Plan 模式仍按实际分支 | query 消息与相应任务／工具资料 | executor、权限与循环条件 | [历史 query 分析](../agents/claude/architecture.md) |
 | Codex core | 一份 Turn 内多次模型 Step 与工具反馈 | Plan collaboration mode；另有 update_plan 清单工具 | 主循环和协作模式内置 | 模式说明进入上下文；清单产生 PlanUpdate 事件 | turn/step、ToolRouter、具体 handler 与执行控制 | [模式上下文](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/context/world_state/collaboration_mode.rs#L25)、[Plan handler](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/handlers/plan.rs#L65) |
 | Hermes 原生 | conversation_loop 多次 API iteration 和工具反馈 | scripted prelude 可在模型前执行；delegate 可嵌套另一循环；未证实原生独立 P&E 为主线 | 原生循环内置；脚本前奏和委派按入口组合 | 消息、Prompt 与宿主资料 | 分阶段循环、preflight、工具轮次、预算与 interrupt | [原生循环](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1547)、[分层](../agents/hermes/architecture.md) |
 | LangChain | create_agent 组装模型与 tools 循环 | middleware、模型调用和工具可参与 Planner/Executor 组装 | 默认构图内置；P&E 属于应用组合 | AgentState/messages；应用自行定义计划接口 | model/tools 节点、hooks 与路由 | [create_agent 构图](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1723)、[架构](../frameworks/langchain/architecture.md) |
@@ -185,6 +188,20 @@ return explain_result(goal, plan.results)
 | DeepSeek Harness | ReactLoopAgent 的 turn/step 反馈循环 | 插件 pre-step、工具 conclude、profile 与子 Agent 组合 | 驱动器内置；其他编排由插件组合 | Session 事件及 surface 派生消息 | inbox、pre-step、工具执行和 step/turn 收口 | [驱动器](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/agent.ts#L298)、[执行章](../agents/deepseek/architecture.md) |
 
 DeerFlow 的 is_plan_mode 默认为关闭；开启时加入带 write_todos 的中间件。它给同一 Lead 循环提供进度管理，并在清单未完成时按条件提醒和续跑；仍不能从开关名称推断为 Planner→Executor 架构。Codex 的 Plan mode 则是协作模式，默认说明要求先探索和形成方案；源码明确拒绝在这个模式调用 update_plan，因为后者是 TODO/checklist。两者各有用途。[DeerFlow 模式选择](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/agent.py#L650)、[Codex 模式说明](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/collaboration-mode-templates/templates/plan.md)。
+
+### 用一个真实入口检验模式名称
+
+Codex 的 `update_plan` handler 直接给出一个反例：产品 Plan 协作模式与 TODO 清单工具在程序中分别处理。下面节选模式检查，省略 payload 解析和后续 PlanUpdate 事件发送。
+
+```rust
+if turn.mode() == ModeKind::Plan {
+    return Err(FunctionCallError::RespondToModel(
+        "update_plan is a TODO/checklist tool and is not allowed in Plan mode".to_string(),
+    ));
+}
+```
+
+因此研究模式支持时，要同时找上下文构造、计划数据以及消费该数据的执行器。只看到一个 Plan 开关，无法推出存在 Planner→Executor→Replanner。DeerFlow 的 Todo 则在相同 Lead 反馈图内管理清单与续跑条件，两者都可帮助规划，实际接口不同。[查看 Codex 模式检查与清单事件](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/handlers/plan.rs#L65)。
 
 ## 不同模式怎样组合
 
