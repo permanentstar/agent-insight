@@ -89,7 +89,7 @@
         "path": "agents/pi/loop.md"
       },
       {
-        "title": "AgentSession：历史树与模型上下文",
+        "title": "AgentSession：会话记录、上下文压缩与请求构建",
         "path": "agents/pi/context.md"
       },
       {
@@ -97,7 +97,7 @@
         "path": "agents/pi/extensions.md"
       },
       {
-        "title": "AgentSession：MCP、codemode、资源冲突与终端宿主",
+        "title": "AgentSession：MCP、codemode 与终端交互",
         "path": "agents/pi/platform.md"
       }
     ]

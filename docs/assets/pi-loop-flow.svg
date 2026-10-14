@@ -1,49 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="915" viewBox="0 0 960 915" role="img" aria-labelledby="title desc">
-<title id="title">AgentSession：输入、轮次与续跑边界</title><desc id="desc">产品输入准备进入请求，工具结果和 steering 驱动内层循环，自然结束后检查 followUp；finishTurn end 和错误可以提前结束。</desc>
-<rect width="960" height="915" fill="#ffffff"/>
-<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
-<g font-family="system-ui, sans-serif" fill="#172554">
-<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">AgentSession：输入、轮次与续跑边界</text>
-<rect x="30" y="65" width="590" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="93" font-size="18" fill="#172554" font-weight="700">产品输入 · AgentSession.prompt</text>
-<text x="46" y="120" font-size="16" fill="#172554">命令 / input hook / skill / template</text>
-<text x="46" y="144" font-size="16" fill="#172554">模型、认证、压缩、before_agent_start</text>
-<rect x="30" y="218" width="590" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="246" font-size="18" fill="#172554" font-weight="700">请求准备</text>
-<text x="46" y="273" font-size="16" fill="#172554">prepareNextTurn / prepareRequest → 消息转换</text>
-<rect x="30" y="356" width="590" height="92" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="384" font-size="18" fill="#172554" font-weight="700">模型响应 · streamAssistantResponse</text>
-<text x="46" y="411" font-size="16" fill="#172554">自然语言内容 + 可选的结构化 toolCall</text>
-<rect x="30" y="508" width="590" height="112" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="536" font-size="18" fill="#172554" font-weight="700">工具批次（有调用时）</text>
-<text x="46" y="563" font-size="16" fill="#172554">prepare / hook → execute → result</text>
-<text x="46" y="587" font-size="16" fill="#172554">串行或并行；结果加入消息上下文</text>
-<rect x="30" y="678" width="590" height="88" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="706" font-size="18" fill="#172554" font-weight="700">轮次收口</text>
-<text x="46" y="733" font-size="16" fill="#172554">finishTurn / steering / 自然结束检查</text>
-<rect x="690" y="218" width="240" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="706" y="246" font-size="18" fill="#172554" font-weight="700">下一轮材料</text>
-<text x="706" y="273" font-size="16" fill="#172554">工具结果 / steering</text>
-<path d="M325,169 V214" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M325,308 V352" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M325,448 V504" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="340" y="483" font-size="15" fill="#172554">有工具调用</text>
-<path d="M325,620 V674" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M620,400 H650 V722 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="661" y="481" font-size="15" fill="#172554">无工具</text>
-<path d="M620,709 H810 V312" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="707" y="650" font-size="15" fill="#172554">继续</text>
-<path d="M690,262 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<rect x="690" y="678" width="240" height="88" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="706" y="706" font-size="18" fill="#172554" font-weight="700">自然结束后</text>
-<text x="706" y="733" font-size="16" fill="#172554">有 followUp 则外层续跑</text>
-<path d="M620,744 H686" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M930,722 H945 V192 H650 V262 H624" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="660" y="184" font-size="15" fill="#172554">followUp 回到请求准备</text>
-<rect x="30" y="813" width="590" height="72" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
-<text x="46" y="841" font-size="18" fill="#172554" font-weight="700">agent_end</text>
-<text x="46" y="868" font-size="16" fill="#172554">内核停止；等待监听者后释放 activeRun</text>
-<path d="M325,766 V809" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="355" y="797" font-size="15" fill="#172554">结束</text>
-<text x="30" y="903" font-size="15" fill="#172554">这是内核阶段图；产品层还需检查后处理与 agent_settled 收口，见下图。</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="883" viewBox="0 0 1000 883" role="img" aria-labelledby="title desc">
+<title id="title">一次输入：运行、记录与产品收口</title><desc id="desc">空闲普通输入由产品准备，内核请求模型并执行工具，在轮次边界判断继续；完整消息事件贯穿这些步骤写入历史。内核结束后产品还可继续，最终发布 agent_settled。</desc>
+<rect width="1000" height="883" fill="#ffffff"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker></defs>
+<g font-family="Arial, sans-serif">
+<text x="30" y="36" font-size="23" font-weight="700" fill="#172554">一次输入：运行、记录与产品收口</text>
+<rect x="45" y="65" width="580" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="61" y="93" font-size="18" fill="#172554" font-weight="700">1. 产品处理空闲普通输入</text>
+<text x="61" y="119" font-size="16" fill="#172554">输入处理 → skill/template 展开</text>
+<text x="61" y="143" font-size="16" fill="#172554">模型、认证、压缩检查 → before_agent_start</text>
+<polyline points="335,169 335,217" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="45" y="221" width="580" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="61" y="249" font-size="18" fill="#172554" font-weight="700">2. 准备请求并取得模型响应</text>
+<text x="61" y="275" font-size="16" fill="#172554">轮次准备 → 接纳消息与工具声明</text>
+<text x="61" y="299" font-size="16" fill="#172554">prepareRequest → 转换 → 模型响应</text>
+<polyline points="335,325 335,373" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="45" y="377" width="580" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="61" y="405" font-size="18" fill="#172554" font-weight="700">3. 有工具调用时执行</text>
+<text x="61" y="431" font-size="16" fill="#172554">参数检查 → tool_call → execute</text>
+<text x="61" y="455" font-size="16" fill="#172554">tool_result → 返回观察</text>
+<polyline points="335,481 335,529" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="45" y="533" width="580" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="61" y="561" font-size="18" fill="#172554" font-weight="700">5. 轮次结束后判断继续</text>
+<text x="61" y="587" font-size="16" fill="#172554">finishTurn 内先处理扩展 turn_end</text>
+<text x="61" y="611" font-size="16" fill="#172554">工具/steering/followUp/继续要求 → 新请求</text>
+<polyline points="335,637 335,685" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="45" y="689" width="580" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="61" y="717" font-size="18" fill="#172554" font-weight="700">产品后处理与最终收口</text>
+<text x="61" y="743" font-size="16" fill="#172554">agent_end → 监听者完成 → activeRun 释放</text>
+<text x="61" y="767" font-size="16" fill="#172554">后处理 / agent_before_settle → continue 或 settled</text>
+<rect x="700" y="221" width="270" height="128" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="716" y="249" font-size="18" fill="#172554" font-weight="700">4. 完整消息接回历史</text>
+<text x="716" y="275" font-size="16" fill="#172554">贯穿输入、响应与工具结果</text>
+<text x="716" y="299" font-size="16" fill="#172554">message_end → AgentSession</text>
+<text x="716" y="323" font-size="16" fill="#172554">→ SessionManager.appendMessage</text>
+<polyline points="625,269 695,269" fill="none" stroke="#334155" stroke-width="2.4" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<polyline points="625,425 664,425 664,325 695,325" fill="none" stroke="#334155" stroke-width="2.4" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<rect x="700" y="455" width="270" height="104" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="716" y="483" font-size="18" fill="#172554" font-weight="700">运行中的追加输入</text>
+<text x="716" y="509" font-size="16" fill="#172554">steering 在轮次边界消费</text>
+<text x="716" y="533" font-size="16" fill="#172554">followUp 在自然停止后消费</text>
+<polyline points="700,507 630,507" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<polyline points="45,586 20,586 20,269 40,269" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="26" y="467" font-size="16" fill="#334155">续跑</text>
+<polyline points="625,741 660,741 660,210 335,210 335,216" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="682" y="710" font-size="16" fill="#334155">Agent.continue</text>
+<polyline points="625,293 677,293 677,574 630,574" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="680" y="596" font-size="16" fill="#334155">无工具调用</text>
+<text x="45" y="844" font-size="16" fill="#334155">正常收口终点：agent_settled；输入被接管或入队时在产品输入阶段返回。</text>
 </g></svg>

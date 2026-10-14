@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="662" viewBox="0 0 1000 662" role="img" aria-labelledby="title desc">
+<title id="title">Reload：沿用会话，更换资源与扩展绑定</title><desc id="desc">旧 runner shutdown 并失效，现有设置和资源对象重新加载，新 runner 采用定义并绑定原会话，随后发布生命周期事件。</desc>
+<rect width="1000" height="662" fill="#ffffff"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker></defs>
+<g font-family="Arial, sans-serif">
+<text x="30" y="36" font-size="23" font-weight="700" fill="#172554">Reload：沿用会话，更换资源与扩展绑定</text>
+<rect x="30" y="65" width="610" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="93" font-size="18" fill="#172554" font-weight="700">1. 结束旧扩展绑定</text>
+<text x="46" y="119" font-size="16" fill="#172554">session_shutdown(reason=reload)</text>
+<text x="46" y="143" font-size="16" fill="#172554">oldRunner.invalidate；保存 flags 和工具选择</text>
+<polyline points="335,169 335,200" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="204" width="610" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="232" font-size="18" fill="#172554" font-weight="700">2. 重读配置与资源</text>
+<text x="46" y="258" font-size="16" fill="#172554">SettingsManager.reload → ResourceLoader.reload</text>
+<text x="46" y="282" font-size="16" fill="#172554">重置 provider 注册状态，更新资源定义</text>
+<polyline points="335,308 335,339" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="343" width="610" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="371" font-size="18" fill="#172554" font-weight="700">3. 创建并绑定新 runner</text>
+<text x="46" y="397" font-size="16" fill="#172554">_buildRuntime → bindCore / 宿主绑定</text>
+<text x="46" y="421" font-size="16" fill="#172554">恢复 flags；活动工具和 pending 名称进入新 registry</text>
+<polyline points="335,447 335,478" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="482" width="610" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="510" font-size="18" fill="#172554" font-weight="700">4. 通知新生命周期</text>
+<text x="46" y="536" font-size="16" fill="#172554">有宿主绑定时发布 session_start(reason=reload)</text>
+<text x="46" y="560" font-size="16" fill="#172554">后续 Agent hook 读取当前新 runner</text>
+<rect x="695" y="65" width="275" height="152" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="711" y="93" font-size="18" fill="#172554" font-weight="700">沿用的会话对象</text>
+<text x="711" y="119" font-size="16" fill="#172554">AgentSession</text>
+<text x="711" y="143" font-size="16" fill="#172554">Agent 及其现有回调</text>
+<text x="711" y="167" font-size="16" fill="#172554">SessionManager 与会话记录</text>
+<text x="711" y="191" font-size="16" fill="#172554">历史文件保持原内容</text>
+<rect x="695" y="282" width="275" height="128" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="711" y="310" font-size="18" fill="#172554" font-weight="700">重读的服务对象</text>
+<text x="711" y="336" font-size="16" fill="#172554">SettingsManager / ResourceLoader</text>
+<text x="711" y="360" font-size="16" fill="#172554">现有实例重新读取资料</text>
+<text x="711" y="384" font-size="16" fill="#172554">扩展定义交给新 runner</text>
+<polyline points="830,217 830,265 970,265 970,448 645,448" fill="none" stroke="#334155" stroke-width="2.4" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<text x="700" y="439" font-size="16" fill="#334155">新绑定接回原会话</text>
+<text x="30" y="641" font-size="16" fill="#334155">旧 ctx 与操作能力失效；工具异步注册到位后继续接入活动集合。</text>
+</g></svg>

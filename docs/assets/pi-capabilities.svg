@@ -1,46 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
-<title id="title">Pi AgentSession：资源到真实调用</title>
-<desc id="desc">默认生产路线是 AgentSession；MCP retry 受 transport 与只读条件约束。
-模板、主题、工具与扩展冲突处理不同；不要推广一种“同名最后覆盖”规则。</desc>
-<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#334155"/></marker></defs>
-<rect width="1000" height="660" fill="#ffffff"/>
-<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">Pi AgentSession：资源到真实调用</text>
-<polyline points="460,135 540,135" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
-<text x="500.0" y="122" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">装配</text>
-<polyline points="750,190 750,220.0 250,220.0 250,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
-<text x="500" y="213.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">能力</text>
-<polyline points="750,190 750,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
-<text x="758" y="220.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">事件</text>
-<polyline points="250,360 250,420" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
-<text x="258" y="390.0" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">调用</text>
-<polyline points="460,475 540,475" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
-<text x="500.0" y="462" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">脚本模式</text>
-<polyline points="750,530 750,566 250,566 250,534" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
-<text x="500" y="555" fill="#334155" font-family="Arial, sans-serif" font-size="16" text-anchor="middle">ctx.executeTool：嵌套回接共享管线</text>
-<rect x="40" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
-<text x="58" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">ResourceLoader</text>
-<text x="58" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">加载工具、扩展、主题和模板</text>
-<text x="58" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">各资源类型有各自冲突规则</text>
-<rect x="540" y="80" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
-<text x="558" y="109" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">AgentSession / ExtensionRunner</text>
-<text x="558" y="136" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">注册与激活，绑定运行上下文</text>
-<text x="558" y="163" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">reload 重建绑定</text>
-<rect x="40" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
-<text x="58" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">MCP 连接与 schema</text>
-<text x="58" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">direct / deferred / codemode</text>
-<text x="58" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">连接状态与调用能力分开</text>
-<rect x="540" y="250" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
-<text x="558" y="279" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">TUI / 产品呈现</text>
-<text x="558" y="306" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">按会话绑定组件、输入、认证</text>
-<text x="558" y="333" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">不拥有 SessionManager 历史</text>
-<rect x="40" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
-<text x="58" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">实际执行管线</text>
-<text x="58" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">beforeTool → execute → afterTool</text>
-<text x="58" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">嵌套 MCP 同样消费 ctx.executeTool</text>
-<rect x="540" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
-<text x="558" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">codemode QuickJS</text>
-<text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">只注入明确可调用工具</text>
-<text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">JS 运行限制不回滚工具副作用</text>
-<text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">默认生产路线是 AgentSession；MCP retry 受 transport 与只读条件约束。</text>
-<text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">模板、主题、工具与扩展冲突处理不同；不要推广一种“同名最后覆盖”规则。</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="802" viewBox="0 0 1100 802" role="img" aria-labelledby="title desc">
+<title id="title">外部工具和脚本如何接入同一执行流程</title><desc id="desc">模型直接工具调用和 codemode 脚本的嵌套调用汇入共享工具管线，MCP execute 发起外部协议调用。产品事件交给终端呈现。</desc>
+<rect width="1100" height="802" fill="#ffffff"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker></defs>
+<g font-family="Arial, sans-serif">
+<text x="30" y="36" font-size="23" font-weight="700" fill="#172554">外部工具和脚本如何接入同一执行流程</text>
+<rect x="30" y="65" width="475" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="93" font-size="18" fill="#172554" font-weight="700">模型直接请求工具</text>
+<text x="46" y="119" font-size="16" fill="#172554">assistant toolCall</text>
+<text x="46" y="143" font-size="16" fill="#172554">名称、参数和调用 ID</text>
+<rect x="575" y="65" width="495" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="591" y="93" font-size="18" fill="#172554" font-weight="700">模型请求 codemode</text>
+<text x="591" y="119" font-size="16" fill="#172554">raw JavaScript → QuickJS sandbox</text>
+<text x="591" y="143" font-size="16" fill="#172554">脚本 tools.xxx → ctx.executeTool</text>
+<polyline points="267,169 267,206 550,206 550,246" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<polyline points="822,169 822,206 550,206" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="285" y="250" width="530" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="301" y="278" font-size="18" fill="#172554" font-weight="700">共享工具调用管线</text>
+<text x="301" y="304" font-size="16" fill="#172554">查找工具 → 校验参数 → tool_call</text>
+<text x="301" y="328" font-size="16" fill="#172554">prepared 才 execute；随后 tool_result</text>
+<rect x="30" y="439" width="475" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="467" font-size="18" fill="#172554" font-weight="700">本地工具 execute</text>
+<text x="46" y="493" font-size="16" fill="#172554">例如 read / edit / bash</text>
+<text x="46" y="517" font-size="16" fill="#172554">返回内容及可选结构化结果</text>
+<rect x="575" y="439" width="495" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="591" y="467" font-size="18" fill="#172554" font-weight="700">MCP 工具 execute</text>
+<text x="591" y="493" font-size="16" fill="#172554">McpServerConnection → McpClient</text>
+<text x="591" y="517" font-size="16" fill="#172554">stdio / HTTP → 服务端 → 返回结果</text>
+<polyline points="415,354 415,395 267,395 267,435" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<polyline points="690,354 690,395 822,395 822,435" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="285" y="628" width="530" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="301" y="656" font-size="18" fill="#172554" font-weight="700">调用结果回到原调用方</text>
+<text x="301" y="682" font-size="16" fill="#172554">直接调用：toolResult 进入后续模型请求</text>
+<text x="301" y="706" font-size="16" fill="#172554">脚本调用：toScriptValue 返回脚本，再输出给模型</text>
+<polyline points="267,543 267,590 430,590 430,624" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<polyline points="822,543 822,590 670,590 670,624" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="865" y="263" width="205" height="91" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="881" y="291" font-size="18" fill="#172554" font-weight="700">终端 UI</text>
+<text x="881" y="317" font-size="16" fill="#172554">订阅产品事件</text>
+<text x="881" y="341" font-size="16" fill="#172554">显示过程与结果</text>
+<polyline points="815,305 860,305" fill="none" stroke="#334155" stroke-width="2.4" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+<text x="30" y="775" font-size="16" fill="#334155">调用前工具已进入当前 registry；MCP 定义由连接后发现并注册。</text>
+</g></svg>

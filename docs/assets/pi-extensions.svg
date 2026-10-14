@@ -22,13 +22,13 @@
 <text x="761" y="288" font-size="15">reload → 新 runner</text>
 <rect x="745" y="465" width="227" height="107" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
 <text x="761" y="495" font-size="18" font-weight="700">状态边界</text>
-<text x="761" y="522" font-size="15">注册 ≠ 激活 ≠ 授权</text>
-<text x="761" y="548" font-size="15">旧 ctx 失效</text>
+<text x="761" y="522" font-size="15">定义 → 活动工具</text>
+<text x="761" y="548" font-size="15">reload 后使用新 ctx</text>
 <path d="M328,156 V200" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <path d="M328,286 V330" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <path d="M328,416 V460" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <path d="M628,245 H740" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="660" y="235" font-size="14">替换</text>
 <text x="28" y="625" font-size="15">Agent hook 在调用时读取当前 runner；旧捕获上下文不随 reload 延续。</text>
-<text x="28" y="650" font-size="15">进程内 hook 不自动获得 Pico5 的持久 intent 与重放契约。</text>
+<text x="28" y="650" font-size="15">处理器在输入、请求和工具边界读取当前绑定；具体位置见本章时间线。</text>
 </g></svg>

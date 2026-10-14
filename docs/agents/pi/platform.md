@@ -1,6 +1,6 @@
 ---
 id: "pi-platform"
-title: "AgentSession：MCP、codemode、资源冲突与终端宿主"
+title: "AgentSession：MCP、codemode 与终端交互"
 subject: "pi-session"
 status: "verified-source"
 baselines: ["pi-20261009"]
@@ -10,53 +10,34 @@ evidence: ["source"]
 verified_scope: "核验资源冲突诊断、MCP 重连与 codemode 嵌套执行；TUI/认证按当前入口整理，未执行终端或登录流程。"
 ---
 
-# AgentSession：MCP、codemode、资源冲突与终端宿主
+# AgentSession：MCP、codemode 与终端交互
 
-Pi 默认产品仍以 AgentSession 为运行边界；MCP、codemode、资源和终端是它的能力与宿主层。它们不因名字带“runtime”就成为另一个持久执行引擎。
+前一章把工具定义和扩展处理器接到了 AgentSession。本章沿一次具体调用继续：工具如果由外部服务提供，Pi 怎样连接和调用它？模型如果要组合多个动作，Pi 又怎样运行它写出的脚本？
 
-![资源加载进入 ExtensionRunner 与工具注册；MCP 连接提供工具；codemode 脚本经上下文 executeTool 进入同一工具管线；终端只观察和控制](../../assets/pi-capabilities.svg)
+**MCP** 是外部工具接入协议：服务端描述可用工具，客户端取得定义并发起调用。**codemode** 是 Pi 的脚本执行工具：模型提交 JavaScript，脚本通过宿主提供的 tools 调用其他工具，还可以筛选和组合结果。这两种能力复用已有的工具执行流程。终端负责接收用户输入、展示过程和结果。
 
-| 概念 | 所属层 / owner | 创建和消费 | 生命周期 |
-|---|---|---|---|
-| ResourceLoader | 发现与诊断 | SDK/CLI 注入，AgentSession 消费 | reload 重新扫描；冲突规则按资源类型 |
-| MCP connection | 外部能力连接 | 内置 MCP extension 构造 server connections | 会话开始后台连接，调用可重连；关闭停止连接 |
-| codemode | 工具组合 | extension tool 创建受限 JS sandbox | 一次脚本执行；嵌套工具仍经 AgentSession |
-| ModelRuntime / provider auth | 模型和凭证 | 组合根配置，模型请求消费 | OAuth refresh 与模型选择不同职责 |
-| TUI Component / screen | 显示宿主 | interactive mode 订阅事件并绑定 UI | 不拥有会话存储或工具副作用 |
+![模型可以直接请求工具，也可以请求 codemode 运行脚本；直接调用和脚本的 ctx.executeTool 都进入共享工具管线；MCP 工具在 execute 阶段通过连接和协议客户端访问服务端，事件同时交给终端显示](../../assets/pi-capabilities.svg)
 
-## 资源冲突不是统一拒绝
+| 阅读顺序 | 本章要解释的交接 |
+|---|---|
+| 1. 准备 MCP 工具 | 连接服务，取得定义，决定模型怎样发现工具 |
+| 2. 执行 MCP 调用 | 模型 toolCall 经现有管线到外部服务，结果回到对话 |
+| 3. 用 codemode 组合调用 | 脚本经嵌套入口复用工具管线，结果再交回脚本 |
+| 4. 终端呈现 | 产品事件交给 UI，后续用户输入返回 AgentSession |
 
-PromptTemplate 和 Theme 按名字保留先出现项并产生 collision diagnostics。扩展 tools/flags 冲突记入 errors，但保留 extensions，最终 precedence 由加载/注册顺序处理。命令、Skill、资源路径和可替换内置扩展有各自规则，因此重名的处理需要按资源类型判断，并非整个插件一律加载失败。诊断必须让维护者看见来源与采用项。
+资源重名发生在加载阶段，放在主调用流程之后单独说明。
 
-`reload` 会重建 runner 与运行绑定，旧引用失效；保存 active tool 名并不让旧插件对象继续拥有 UI/会话。注册、激活、模型可见和执行门禁的区别见 [扩展章](extensions.md)。证据：[扩展冲突诊断](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L795)、[Prompt/Theme 去重](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L1160)。
+## 第一步：连接 MCP 服务并让模型发现工具
 
-只看两段短路径就能理解这种区别。下面按 `dedupePrompts` 的源码节选名字采用规则，省略 collision 对象的来源字段：
+MCP 扩展在 session_start 读取配置，对启用的服务发起后台连接。连接取得的工具定义进入当前会话。模型怎样发现这些工具，取决于配置的曝光方式；这里的“曝光”就是工具说明何时进入模型的可见资料。
 
-```ts
-const seen = new Map<string, PromptTemplate>();
-const diagnostics: ResourceDiagnostic[] = [];
-for (const prompt of prompts) {
-  const existing = seen.get(prompt.name);
-  if (existing) {
-    // 省略：记录 collision 诊断，
-    // 标出已采用项和被忽略项的来源路径。
-    // 不覆写 seen，因而保留先出现的同名 prompt。
-  } else {
-    seen.set(prompt.name, prompt);
-  }
-}
-return { prompts: Array.from(seen.values()), diagnostics };
-```
+| 方式 | 模型怎样发现工具 |
+|---|---|
+| direct | 请求直接带工具名称、说明和参数 schema |
+| deferred | 模型先用 tool_search 查询，匹配工具再披露 |
+| codemode | 脚本通过搜索与说明接口发现工具，然后调用 |
 
-而 `addExtensionConflictDiagnostics` 只是调用 `detectExtensionConflicts`，逐项 `extensionsResult.errors.push({ path: conflict.path, error: conflict.message })`；没有从 `extensionsResult.extensions` 删除整个扩展。前者选用一个定义，后者记录冲突，两种控制动作不能混成“发现重名后一律拒绝”。[Prompt 采用规则](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L1160)。
-
-## MCP：连接、曝光、调用
-
-当前配置支持 direct、deferred、codemode 工具曝光。direct 给模型 schema；deferred 经 tool_search 披露；codemode 由脚本搜索并调用。曝光影响模型怎么发现工具，不能当作执行授权。SDK 不自动加载 CLI 内置 extensions，MCP/codemode/tool-search 要显式加入 ResourceLoader。
-
-会话开始后台连接 enabled server，首次 prompt 等待相关准备。工具调用经 MCP tool → McpServerConnection.callTool → withClient → McpClient，再由 stdio / Streamable HTTP 等 transport 完成协议。OAuth 的 server 业务授权与模型 OAuth、TLS 链路加密不同。
-
-这条路径可以分成“会话准备”和“真正调用”两层。下面是 MCP extension 生命周期处理器的流程骨架，省略配置合并、状态通知和连接错误处理：
+before_agent_start 会等待 direct 工具所需的服务器准备好，再组织 MCP 的 System Prompt 资料。deferred/codemode 则在相应发现或调用入口等待连接。下面是生命周期处理器的流程骨架，省略配置合并、状态通知和连接错误处理：
 
 ```ts
 pi.on("session_start", (_event, ctx) => {
@@ -79,9 +60,15 @@ pi.on("before_agent_start", async (event, ctx) => {
 });
 ```
 
-session_start 发起后台准备，before_agent_start 等待 direct 工具需要的 server；deferred/codemode 的发现和调用入口再等待相应连接。因此“后台连接”不等于第一次任意模型请求都等所有服务器。[连接起点](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/index.ts#L1111)、[请求前的等待](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/index.ts#L1175)。
+这一顺序让会话开始就能准备外部能力，同时按本次所需工具等待。注册工具后，实际调用仍经过上一章的参数检查和 tool_call hook。[连接起点](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/index.ts#L1111)、[请求前等待](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/index.ts#L1175)、[曝光配置](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/docs/mcp.md#L189)。
 
-工具定义注册时提供 `getClient`，在 execute 时再取得当前连接。下面节选 `createMcpToolDefinition` 的 execute，省略进度回调：
+CLI 内置资源会提供这套扩展；直接使用 SDK 时，调用者需要显式将 MCP、codemode 或 tool-search 加入 ResourceLoader。[SDK 资源加载要求](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/docs/mcp.md#L270)。
+
+## 第二步：从工具 execute 调到 MCP 服务
+
+假设模型已经选到一项 MCP 工具并提交参数。Agent loop 找到定义、完成校验和前置 hook 后，调用它的 execute。MCP 工具在这一刻取得当前连接，再发起协议调用。
+
+下面节选 createMcpToolDefinition 的 execute，省略进度回调：
 
 ```ts
 async execute(_toolCallId, params, signal, onUpdate) {
@@ -97,7 +84,7 @@ async execute(_toolCallId, params, signal, onUpdate) {
 }
 ```
 
-这里名为 client 的对象实现 `McpToolCaller`，在这条产品装配路径中是 `McpServerConnection`。它的下一层委托只有一行：
+options.getClient 提供的是产品连接对象 McpServerConnection。它将 callTool 委托给连接管理，再取得内层协议客户端 McpClient：
 
 ```ts
 callTool(name: string, args: Record<string, unknown>, options: McpRequestOptions): Promise<CallToolResult> {
@@ -105,21 +92,38 @@ callTool(name: string, args: Record<string, unknown>, options: McpRequestOptions
 }
 ```
 
-内层 client 才是实际协议客户端 `McpClient`。`withClient` 管连接取得和重连，协议 client 将调用交给 transport。这样可以在工具执行时采用替换后的连接，而不是永远使用工具注册时捕获的旧连接。[执行时连接查找](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/index.ts#L425)、[工具 execute](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/tools.ts#L281)、[连接委托](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/runtime.ts#L265)。
+withClient 取得可用连接，McpClient 将请求交给 stdio 或 Streamable HTTP 等 transport，服务端返回的结果经 convertMcpResult 变为 Pi 工具结果。这样，工具定义在调用时使用当前连接，连接更换后也能继续接入原工具流程。[调用时查找连接](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/index.ts#L425)、[工具 execute](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/tools.ts#L281)、[连接委托](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/runtime.ts#L265)。
 
-withClient 对标记 readOnly 的 transient HTTP 错误允许一次重试；tool effect 不因此盲目重试。MCP session expired 分支因服务端不再认识该会话而用新会话重试一次，和“结果未知仍重放”不同。needs-auth 会更新状态并要求登录，不能把断线都归为没有权限。
+返回后，原来的 tool_result hook 可以调整反馈，工具结果再进入下一次模型请求。模型据观察选择下一步，MCP 负责这次外部调用。
 
-这两种重试条件来自 [withClient 的只读与会话失效判断](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/runtime.ts#L297)，不是 callTool 无条件重放的承诺。`createMcpAuthProvider` 则负责 MCP 服务的 token 获取、刷新与 401 challenge，和模型 provider 的认证是不同接入边界；其[认证回调的构造与分工](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/oauth.ts#L313)只用于核对这项职责，不表示本章要展开完整 OAuth 协议。配置层的[工具曝光方式](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/docs/mcp.md#L189)与[SDK 显式加载内置扩展的要求](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/docs/mcp.md#L270)分别解释前文的两类配置选择。
+### 连接失效与登录发生在这一层
 
-## codemode：脚本的权限来自可调用工具
+调用过程中，withClient 按错误类型处理连接。它对标记 readOnly 的 transient HTTP 错误重试一次；普通工具调用的这类错误会返回调用方。遇到 MCP session expired 时，程序换用新会话重试一次。需要认证时，连接状态更新为 needs-auth 并要求登录。[连接管理条件](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/runtime.ts#L297)。
 
-![模型脚本运行在 QuickJS，脚本 tools 调用进入 sandboxTools 包装，经 ctx.executeTool 和 NestedToolCallRunner 接到共享 runToolCall，再经过参数校验、前后 hook 和真实工具；结果按 outputSchema 与 structuredContent 转为脚本值，父调用身份随嵌套调用传递](../../assets/pi-codemode-nested.svg)
+需要 OAuth 的 MCP 服务由 createMcpAuthProvider 提供 token 获取、刷新和 401 challenge 回调。登录准备好后，连接使用新凭证重新接入服务。[MCP 认证回调](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/mcp/oauth.ts#L313)。
 
-模型给 raw JavaScript，执行工具在 QuickJS sandbox 运行异步脚本；没有 Node、文件系统或直接网络 API。宿主提供 tools / store / model globals。脚本通过 ctx.executeTool 调嵌套工具，携带父调用身份并产生结果；MCP 的 tool_call/tool_result hooks 仍作用于嵌套调用。脚本环境限制并不撤销底层工具已获准的文件或网络权限。
+## 第三步：用 codemode 脚本组合多项工具
 
-工具含 outputSchema 且有 structuredContent 时返回结构化值，否则文本/错误按 outcome 转换。脚本失败前已经运行的工具效果不会回滚；store 的会话分支数据与 JS 局部变量也不是同一持久性。证据：[脚本到 executeTool](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/codemode/execute.ts#L416)、[codemode 运行说明](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/docs/codemode.md)。
+前两步一次 toolCall 对应一项工具。处理任务时，模型还可能希望并行读取几份文件、过滤长结果，再把有用部分带回后续决策。codemode 让模型把这段组织逻辑写成 JavaScript，由工具宿主运行；脚本输出进入模型上下文。[codemode 使用说明](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/docs/codemode.md)。
 
-调用链先从脚本宿主看：`executeCodemode` 把会话允许的工具包装为 sandboxTools。下面保留真实调用入口，省略调用记录、计时和脚本返回值转换细节：
+例如 CSV 任务可以在一次脚本里读代码和用例。下面是教学脚本，假定当前会话允许调用 read；裁剪范围只用于展示结果筛选：
+
+```js
+const [code, tests] = await Promise.all([
+  tools.read({ path: "src/export.ts" }),
+  tools.read({ path: "test/export.test.ts" }),
+]);
+// 只将本次要讨论的片段交回模型；脚本内部仍可处理完整工具结果。
+text({ code: code.slice(0, 1200), tests: tests.slice(0, 1200) });
+```
+
+脚本运行在 QuickJS sandbox，宿主提供 tools、store/load 和 models 等接口。JavaScript 环境没有 Node、文件系统或直接网络 API；访问文件和外部服务要经会话提供的工具。能访问哪些资料、产生哪些操作，因而由可调用工具及其执行检查决定。
+
+![模型脚本进入 QuickJS，tools 调用由 sandboxTools 包装为 ctx.executeTool，经 NestedToolCallRunner 进入共享 runToolCall；校验和前后 hook 在这条管线中执行，结果通过 toScriptValue 返回脚本，脚本输出再交给模型](../../assets/pi-codemode-nested.svg)
+
+### 3.1 把脚本调用接回已有工具管线
+
+executeCodemode 将当前允许调用的工具包装成 sandboxTools。下面保留这一交接，省略调用记录、计时和返回值转换的细节：
 
 ```ts
 const callable = ctx ? getCodemodeCallableTools(ctx.tools) : [];
@@ -139,7 +143,7 @@ const sandboxTools: CodemodeTool[] = callable.map((tool) => ({
 // 再运行模型给出的脚本。
 ```
 
-再跨到产品层：`ctx.executeTool` 进入 `AgentSession._executeNestedToolCall`。其 NestedToolCallRunner 在分派单次调用时执行下面的共享管线，省略寻找 assistantMessage 和事件记录的步骤：
+脚本的 tools 调用进入 ctx.executeTool，再到 AgentSession._executeNestedToolCall。NestedToolCallRunner 将调用身份和参数交给共享 runToolCall，代表路径如下，省略 assistantMessage 查找和事件记录：
 
 ```ts
 return runToolCall(toolCall, {
@@ -153,9 +157,11 @@ return runToolCall(toolCall, {
 });
 ```
 
-这就是“嵌套调用仍经过同一工具管线”的代码依据：共享 `runToolCall` 会准备和校验参数、执行 before/after hooks，并调用真实工具。sandbox 的 JS 局部变量不拥有文件权限，权限和效果来自这些工具。[sandbox 包装](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/codemode/execute.ts#L441)、[嵌套调用接回管线](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L748)、[共享调用实现](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/agent/src/agent-loop.ts#L811)。
+因此前置检查、真实 execute 和结果处理仍在原工具管线中。嵌套调用携带父调用身份，扩展可以判断它属于哪次脚本调用。准备阶段若已经形成 immediate 结果，就按执行章的路径直接返回；正常准备完成的调用再执行工具。[sandbox 包装](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/codemode/execute.ts#L441)、[脚本调用入口](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/codemode/execute.ts#L416)、[嵌套调用绑定](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L748)、[共享调用实现](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/agent/src/agent-loop.ts#L811)。
 
-图右侧的“回到脚本”也有数据契约。`toScriptValue` 的实现可以直接节选如下：
+### 3.2 将工具结果返回脚本
+
+工具完成后，toScriptValue 决定 await tools.xxx 得到什么值。实现很短，可以直接节选：
 
 ```ts
 function toScriptValue(tool: AgentTool<any>, outcome: AgentToolCallOutcome): unknown {
@@ -167,9 +173,11 @@ function toScriptValue(tool: AgentTool<any>, outcome: AgentToolCallOutcome): unk
 }
 ```
 
-有 outputSchema 和 structuredContent 时返回结构化值；否则提取文本，再按 isError 决定是否抛错。这里的分支顺序也说明结构化返回与普通文本错误并不是一种结果形态。[工具结果变为脚本值的函数](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/codemode/execute.ts#L404)对应图中的返回箭头。
+工具有 outputSchema 且返回 structuredContent 时，脚本取得结构化值；否则提取文本，普通错误在此抛出。前面的 read 例子取得文本，因此可以用字符串操作筛选内容。[结果转换函数](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/codemode/execute.ts#L404)。
 
-脚本 store 的采用晚于嵌套工具效果。下面节选成功后提交差异的代码，省略脚本输出合并：
+### 3.3 脚本结束后保存小量会话数据
+
+除局部变量外，脚本还可以通过 store/load 保存 ID、游标或摘要，供后续 codemode 调用使用。成功脚本会将 store 差异写成会话 custom Entry，同一分支后续可读取这些值。采用条件如下，省略输出合并：
 
 ```ts
 if (result.ok) {
@@ -181,13 +189,23 @@ if (result.ok) {
 }
 ```
 
-只有成功的脚本才在这里追加 store 差异；失败脚本没有提交这份差异，但此前已经完成的文件或 MCP 工具调用仍产生了真实效果。图末尾把这两个生命周期分开，就是为了避免把 store 提交当成全部工具的事务回滚。[成功后采用 storeWrites](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/codemode/execute.ts#L503)可核对采用条件。
+result.ok 才提交 storeWrites；失败时这份差异不提交。已经完成的文件修改或 MCP 调用继续保留其实际结果，脚本错误后可通过新工具调用检查和处理。工具操作发生在 3.1，store 保存发生在脚本成功结束后，两者处于不同时间点。[成功后保存 storeWrites](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/extensions/codemode/execute.ts#L503)。
 
-## 终端、认证与平台
+## 第四步：把过程交给终端，并接收后续输入
 
-TUI 使用 Component/Container、布局、输入与 renderer 分层，main-screen 与 alt-screen 是显示策略；不能据 UI 支持分支/恢复推断两种 screen 有不同 Agent 存储。主屏关注终端滚动历史，备用屏关注受控视口；它们都消费产品事件。组件名称来自 [pi-tui 的公共导出接口](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/tui/src/index.ts)，这个链接用于确认类型来源，实际 screen 选择在下面。
+工具和模型执行会产生产品事件。InteractiveMode 订阅 AgentSession，收到事件后交给 handleEvent 更新 UI。下面是订阅方法，省略渲染分支：
 
-`createInteractiveTui` 按 tuiMode 构造不同 renderer，节选如下，省略全屏搜索、复制和滚动的回调配置：
+```ts
+private subscribeToAgent(): void {
+  this.unsubscribe = this.session.subscribe(async (event) => {
+    await this.handleEvent(event);
+  });
+}
+```
+
+TUI 以 Component、Container、布局、输入和 renderer 分工组织显示。用户通过终端继续提交输入时，仍回到执行章讲过的 AgentSession.prompt 路径。[终端订阅入口](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/modes/interactive/interactive-mode.ts#L3400)、[组件公共接口](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/tui/src/index.ts)。
+
+显示可以采用 main-screen 或 alt-screen。前者保留终端滚动历史，后者使用受控视口。createInteractiveTui 按 tuiMode 选择 renderer，省略搜索、复制和滚动配置：
 
 ```ts
 const terminal = options.terminal ?? new ProcessTerminal();
@@ -199,18 +217,28 @@ if (options.tuiMode === "fullscreen") {
 return new TuiMainScreen(terminal, options.showHardwareCursor, options.logDirectory);
 ```
 
-这里改变的是终端显示对象，没有更换 AgentSession 或 SessionManager。[createInteractiveTui 选择主屏与备用屏](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/modes/interactive/tui-renderer.ts#L22)对应这个条件分支；它不需要另一套会话持久化解释。
+两种显示对象都订阅现有产品会话。会话记录继续由 SessionManager 保存。[终端显示策略选择](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/modes/interactive/tui-renderer.ts#L22)。
 
-宿主与运行的连接可以直接看 `InteractiveMode.subscribeToAgent`；这是源码方法，未展开 handleEvent 的渲染分支：
+## 加载阶段的补充：资源重名怎样处理
+
+前面的工具调用依赖已加载定义。若用户和项目提供了同名资源，ResourceLoader 要决定采用项并记录来源。规则随资源类型变化：PromptTemplate 和 Theme 保留先出现项并产生 collision diagnostics；扩展 tools/flags 冲突写入 errors，扩展定义继续保留，最终采用次序由加载和注册处理。命令、skill、路径及可替换内置扩展还有各自规则。
+
+dedupePrompts 的正常路径如下，省略诊断中的来源字段：
 
 ```ts
-private subscribeToAgent(): void {
-  this.unsubscribe = this.session.subscribe(async (event) => {
-    await this.handleEvent(event);
-  });
+const seen = new Map<string, PromptTemplate>();
+const diagnostics: ResourceDiagnostic[] = [];
+for (const prompt of prompts) {
+  const existing = seen.get(prompt.name);
+  if (existing) {
+    // 省略：记录 collision 诊断，
+    // 标出已采用项和被忽略项的来源路径。
+    // 不覆写 seen，因而保留先出现的同名 prompt。
+  } else {
+    seen.set(prompt.name, prompt);
+  }
 }
+return { prompts: Array.from(seen.values()), diagnostics };
 ```
 
-这里的 session 是产品 AgentSession，UI 取得事件再更新显示；它没有创建第二个 agent-loop，也没有把终端屏幕内容当成会话历史。[终端订阅入口](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/modes/interactive/interactive-mode.ts#L3400)。
-
-模型 provider 决定 API 请求协议与响应事件，auth 模块决定 API key/OAuth 获取/刷新；ModelRuntime 组合二者。新增 provider 要同时检查发现、凭证、stream、usage、tool result 与错误路径，不能只加模型名称。模型名称进入目录，只完成发现；请求协议、认证、响应解析和工具结果接回循环后，才形成完整调用链。
+seen 保存先出现的 prompt，后续重名项只记录诊断。addExtensionConflictDiagnostics 则将 detectExtensionConflicts 的结果追加到 extensionsResult.errors，保留 extensionsResult.extensions。遇到重名时，应根据资源类型查实际采用项及来源。[扩展冲突诊断](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L795)、[Prompt/Theme 去重](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L1160)。

@@ -12,25 +12,25 @@ verified_scope: "已静态核验资源加载、注册/激活、prompt 输入 hoo
 
 # AgentSession：资源、扩展与运行绑定
 
-AgentSession 中的资源层提供定义，ExtensionRunner 提供事件处理，Agent 的 hook 才把它们接到实际模型/工具循环。沿着这三层读，可以避免把“加载了扩展”直接等同于“扩展已参与本次执行”。本章只讨论当前默认会话架构，旧 Lane overlay 不作为本页证据。
+上一章解释了模型每次请求会拿到哪些消息。本章继续看程序怎样加入新的能力：例如加载一份 CSV 技能说明、注册一个专用验证工具，或在工具执行前检查调用。Pi 用 ResourceLoader 读取资源，用 ExtensionRunner 保存和分发扩展处理器，再由 AgentSession 把它们接到现有输入与执行流程。
 
-![Pi ResourceLoader 加载定义，AgentSession 创建并绑定 ExtensionRunner，prompt 和工具边界在运行时读取当前绑定；reload 使旧上下文失效](../../assets/pi-extensions.svg)
+扩展是一段在加载时运行的代码，可以注册工具、命令和事件处理器；skill 是任务知识，prompt template 是输入文本模板。它们从同一资源层进入，却分别在不同阶段发挥作用。下面先沿加载、绑定、激活、调用走一遍，再说明修改资源后怎样 reload。
 
-## 概念与所有权
+![ResourceLoader 加载资源和扩展定义；AgentSession 创建 ExtensionRunner 并绑定当前会话能力，选择工具后，输入、模型请求和工具调用分别在对应位置进入扩展处理；reload 重新加载定义并更换 runner](../../assets/pi-extensions.svg)
 
-| 名词 | 所属层 / 白话含义 | owner 与生命周期 |
+| 步骤 | 当前位置 | 输出怎样被后续使用 |
 |---|---|---|
-| ResourceLoader | 发现与加载资源的门面 | SDK 可注入；默认实现管理资源来源及诊断 |
-| extension | 注册工具、命令和事件处理的代码 | 加载时运行工厂，注册到 extension 定义集合 |
-| skill / prompt template | 任务知识 / 输入文本模板 | 资源集合提供内容，prompt 阶段展开 |
-| ExtensionRunner | 事件分发与当前会话操作门面 | AgentSession 创建并 bindCore；reload 可替换 |
-| registered tool | 已进入工具定义集合 | 不必然属于当前模型可见集合 |
-| active loadout | 当前选用的工具集合 | AgentSession 更新工具与相应 system prompt |
-| extension context | 指向当前会话操作能力的句柄 | session 替换/reload 后旧句柄失效 |
+| 1. 加载与注册 | ResourceLoader、extension factory | 工具、命令、handler 定义；skill 和模板内容 |
+| 2. 绑定当前会话 | AgentSession._buildRuntime、bindCore | runner 能读取当前状态、调用当前会话操作 |
+| 3. 选择本次工具 | _setActiveTools | 活动工具集合与对应 Prompt |
+| 4. 在流程中调用 | 输入、请求、工具及收口边界 | 处理器结果交回原流程，决定后续动作 |
+| 5. 修改资源后 reload | 当前 AgentSession | 更新资源与 runner，继续沿用会话和历史 |
 
-入口 `createAgentSession` 采用注入的 ResourceLoader 或默认实现，构造位置已在[架构章](architecture.md#启动时为什么先读历史-再创建执行对象)展开。本章从资源加载后的结果继续：`AgentSession._buildRuntime` 创建 ExtensionRunner，设置当前引用、绑定会话动作并刷新工具 registry。这里的 `_buildRuntime` 是扩展装配方法，和管理整份活动会话的 AgentSessionRuntime 不同。
+入口 createAgentSession 采用注入的 ResourceLoader，或创建默认实现；前面的[构造章](architecture.md)已经解释对象从哪里来。这里从加载结果进入扩展内部。AgentSession._buildRuntime 是本章的扩展装配方法，产品宿主持有的 AgentSessionRuntime 则负责整份会话的切换。
 
-DefaultResourceLoader 不把所有资料混成一个字符串，而是保存不同资源集合。下面按 reload 的源码整理，省略路径发现、信任筛选和诊断的展开：
+## 第一步：加载资料并登记扩展定义
+
+ResourceLoader 先发现启用的资源路径，运行扩展工厂，并保存 skill、模板等内容。DefaultResourceLoader 的 reload 分类采用加载结果，下面省略路径发现、信任筛选和诊断的展开：
 
 ```ts
 const extensionsResult = await this.loadFinalExtensionSet(extensionPaths, preTrustExtensions);
@@ -46,26 +46,9 @@ this.lastPromptPaths = promptPaths;
 this.updatePromptsFromPaths(promptPaths, metadataByPath);
 ```
 
-扩展结果中的定义和 runtime 交给 ExtensionRunner；skill 和 prompt 内容则由输入展开阶段消费。资源已加载、定义已注册和本次执行已发生，是三个不同结论。上面的分类保存来自 [ResourceLoader 采用扩展、skill 与 prompt 加载结果](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L585)，接下来跟随扩展定义进入运行绑定。
+扩展定义交给下一步的 ExtensionRunner；skill 和模板在 prompt 输入阶段展开。这些集合保留各自来源，便于诊断重名和判断一份资料从哪里进入请求。[分类采用加载结果](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L585)。
 
-## 注册、激活、请求、效果点
-
-| 当前位置 | 入口 → 下层 | 状态及提前结束 |
-|---|---|---|
-| 资源发现 | DefaultResourceLoader → loadExtensionsCached | 根据来源/启用状态加载，合并 inline factories 与诊断 |
-| 定义注册 | extension factory → registerTool | 校验对象参数 schema；保存定义和 sourceInfo；刷新 registry |
-| 激活选择 | setActiveToolsByName → _applyToolLoadout | 更新选用集合及 system prompt；不等同执行授权证明 |
-| 输入处理 | prompt → extension command / input hook | command 已处理则返回；input hook 可消耗输入 |
-| 文本展开 | skill command / prompt template | 处理后的文本形成用户输入；运行中可排到 steer/followUp |
-| 请求准备 | before_agent_start、request/context hooks | 允许改变本次请求；主 loop 在后续执行 |
-| 工具调用 | Agent.beforeToolCall → 当前 runner.emitToolCall | block 提前返回；异常由调用边界阻止效果继续 |
-| 工具完成 | Agent.afterToolCall → 当前 runner.emitToolResult | 可改内容、details、isError 等结果字段 |
-
-表中注册、激活和工具 hook 的对应代码在下面逐段展开；prompt 的命令与输入处理已在[一次输入的产品分派](loop.md#第一步-产品输入先变成可执行的请求材料)展开，prepare/execute/finalize 则在[工具效果路径](loop.md#第二步-一个-turn-怎样从消息走到效果)展开。这样每个链接都承接一个明确的边界，而不是把方法名并排列成另一张目录。
-
-### 定义怎样成为当前运行绑定
-
-先看注册层。下面节选 loader 提供给扩展的 `registerTool` 方法，省略 schema 无效时的错误文案；保存的是定义与来源，还没有执行工具：
+扩展工厂调用 registerTool 时，loader 校验参数 schema，然后保存定义和 sourceInfo，并通知刷新工具 registry。下面节选实际注册方法，省略无效 schema 的错误文案：
 
 ```ts
 registerTool(tool: ToolDefinition): void {
@@ -80,7 +63,11 @@ registerTool(tool: ToolDefinition): void {
 }
 ```
 
-再进入产品层。`AgentSession._buildRuntime` 采用 ResourceLoader 的加载结果，创建 runner 并连接当前会话。下面节选它的装配段，省略默认工具名选择：
+例如专用 CSV 验证工具在这里进入可用定义集合。它要先被当前会话选中，模型才能在相应请求中发现它；模型发出调用后才会执行。[注册执行点](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/loader.ts#L289)。
+
+## 第二步：让定义能操作当前会话
+
+定义已加载，处理器还需要知道当前模型是什么、怎样发消息、怎样写扩展状态。AgentSession 创建 ExtensionRunner，设置当前引用，再将这些操作绑定回自己。下面节选 _buildRuntime 的装配段，省略默认工具名选择：
 
 ```ts
 this._extensionRunner = new ExtensionRunner(
@@ -100,9 +87,9 @@ this._refreshToolRegistry({
 });
 ```
 
-这里的 current 引用和 core/UI 绑定让定义能操作当前产品会话。激活又是另一段：`_setActiveTools` 调用 `_applyToolLoadout`，清除对应 pending 名称，再按实际工具名 `_rebuildSystemPrompt`。因此注册改变可用定义，激活改变当前选择及声明；两者都没有触发 execute。[注册执行点](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/loader.ts#L289)、[运行装配](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3637)、[激活实现](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1527)。
+runner 与当前 cwd、SessionManager、模型服务关联，随后通过 _bindExtensionCore 取得会话动作和状态读取。_applyExtensionBindings 接入宿主提供的 UI 等能力，_refreshToolRegistry 汇总工具定义。[运行装配](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3637)。
 
-`bindCore` 又如何把扩展 API 接回产品？下面从它的两个参数对象中选取代表回调，省略其他会话操作和通知字段：
+bindCore 的两个参数分别提供动作和状态读取。以下节选能说明扩展怎样回到原会话，省略其他消息、模型、会话操作和通知：
 
 ```ts
 runner.bindCore({
@@ -131,9 +118,11 @@ runner.bindCore({
 });
 ```
 
-前一个对象提供动作，后一个对象提供当前状态读取；runner 创建的扩展上下文因此能使用当前会话能力。它们通过闭包回到产品所有者，既没有把 SessionManager 复制给扩展，也没有让扩展拥有另一个 Agent。[AgentSession 将扩展能力绑定到产品动作与状态](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3386)对应这个绑定点。
+处理器用 ctx 读取当前状态，用扩展 API 发消息、保存 custom Entry 或更改活动工具；这些操作通过回调进入 AgentSession 和 SessionManager。ctx 是指向当前绑定的句柄，reload 时旧绑定会失效。第五步会说明这一生命周期。[会话动作与状态绑定](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3386)。
 
-激活的真实方法只有三步，可以直接看源码：
+## 第三步：选出本次模型可用的工具
+
+工具 registry 提供可用定义，active loadout 表示当前选中的工具集合。AgentSession._setActiveTools 采用集合，清除已经注册的 pending 名称，并同步 System Prompt：
 
 ```ts
 private _setActiveTools(toolNames: string[]): void {
@@ -143,15 +132,33 @@ private _setActiveTools(toolNames: string[]): void {
 }
 ```
 
-先采用实际 loadout，再移除已经注册的 pending 名称，最后同步 Prompt。这是注册定义走向当前请求材料的交接；模型可见声明仍会在请求边界与可执行集合对齐。[采用当前工具集合与重建 Prompt](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1527)可核对这三步。
+CSV 验证工具被激活后，其真实实现进入 Agent 的工具集合。下一次请求准备再将工具声明与这个集合对齐，模型由名称、说明和参数 schema 发现它。[采用工具集合与重建 Prompt](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1527)，请求中的声明变化见[执行章](loop.md)。
 
-## Hook 分发与失败
+## 第四步：把 hook 放回输入与执行流程
 
-![Agent 的 beforeToolCall 在实际调用时读取当前 ExtensionRunner，逐个 await tool_call handler；block 结果直接返回并阻止 execute，未拦截才执行工具；之后 tool_result handler 累计修改结果，某个结果 handler 报错会记录错误并继续后续 handler](../../assets/pi-extension-hooks.svg)
+hook 是程序在某个位置调用扩展处理器的入口。位置决定扩展能改什么：输入阶段可以处理用户文本，请求阶段可以组织消息，工具执行前可以拦截调用，执行后可以调整反馈。先看它们在同一条时间线上的插入点。
 
-`emitToolCall` 按处理器快照逐个 await，遇到 block 直接返回；处理器异常会向调用边界传播。`emitToolResult` 把每次修改累计到 currentEvent，某个 handler 报错时记录 extension error 并继续处理其余结果 hook。两种错误策略不同，不能把“hook 失败”统一写成忽略或中止。
+![普通输入先经过 input，再展开技能和模板，before_agent_start 准备运行资料；每次请求在转换前经过 context 和 context_with_system；模型工具调用在参数校验后经过 tool_call，执行后经过 tool_result；轮次结束与产品收口边界再检查是否继续](../../assets/pi-extension-timeline.svg)
 
-产品安装的 hook 不捕获某一个旧 runner。下面按源码整理绑定与调用段，省略 parentToolCallId 展开和异常文案：
+| 主流程位置 | 处理器入口 | 返回结果怎样影响该步骤 |
+|---|---|---|
+| 普通输入接纳后、skill/template 展开前 | input | transform 的文本交给后续 handler；handled 结束这份输入的处理 |
+| 空闲输入启动运行前 | before_agent_start | 累积扩展消息和 System Prompt 选项，供本次运行采用 |
+| 每次模型请求的消息转换前 | context、context_with_system | 按顺序调整请求消息；前者处理对话并恢复 system 资料，后者处理完整 transcript |
+| 工具参数校验后、execute 前 | tool_call | block 形成拦截结果，正常通过才执行工具 |
+| 已执行工具的结果处理阶段 | tool_result | 逐个采用内容、details、isError 等结果修改 |
+| 响应和工具结果完成，finishTurn 决策时 | turn_end | 提交边界编辑，将继续要求交给内核；随后发布内核 turn_end 通知 |
+| 内核结束，产品准备收口时 | agent_before_settle | 提交边界编辑，决定产品是否通过 Agent.continue 开始新运行 |
+
+这些入口都按扩展及 handler 的顺序分发，结果采用规则由事件契约决定。input 的 transform 会传给下一处理器，handled 会提前结束；tool_call 在 block 处返回；tool_result 累计修改结果。学习时先定位插入位置，再看该入口是否接管、变换或只通知。[输入分发](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1520)、[启动前资料](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1420)、[请求消息变换](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1294)。两个收口入口的具体交接见[执行章第五步](loop.md#第五步-根据反馈决定继续或收口)。
+
+### 工具调用前后的两个插入点
+
+沿 CSV 验证工具继续：模型已经发出 toolCall，程序已经找到真实工具并校验参数。此时 Agent.beforeToolCall 进入 AgentSession，读取当前 runner 并发布 tool_call；通过后才调用 execute。工具完成后，afterToolCall 再进入 tool_result，结果随后组成模型看到的 toolResult。
+
+![Agent 工具回调在调用时读取当前 ExtensionRunner；tool_call 处理器按顺序运行，block 阻止 execute；通过后执行工具，tool_result 处理器累计修改结果，错误记录后继续后续结果处理器](../../assets/pi-extension-hooks.svg)
+
+下面保留安装和调用的交接点，省略父调用身份字段及异常文案。AgentSession 构造时为 Agent 安装回调，每次调用再读取当前 runner：
 
 ```ts
 // 构造时 _installAgentToolHooks() 只安装回调，不触发工具调用。
@@ -170,9 +177,12 @@ return await runner.emitToolCall({
 });
 ```
 
-`this._extensionRunner` 在调用时读取，这就是 reload 更换 runner 后仍沿同一 Agent hook 生效的原因。[动态读取当前 runner](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L652)。
+这份动态引用让同一 Agent 在 reload 后使用新 runner。具体参数校验、immediate 结果和 execute 的顺序见[执行章的工具阶段](loop.md)。[调用时取得当前 runner](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L652)。
 
-再下到 runner 的事件分发层，`emitToolCall` 的普通处理循环很短，可以直接节选。它依次 await，block 是明确的提前返回：
+<details>
+<summary>阅读分发器：顺序、提前返回与结果采用</summary>
+
+emitToolCall 的遍历可以直接节选：
 
 ```ts
 const ctx = this.createContext();
@@ -189,23 +199,29 @@ for (const { handlers } of snapshotEventHandlers(this.extensions, "tool_call")) 
 return result;
 ```
 
-结果 hook 的控制不同：`currentEvent` 接收每个 handler 返回的修改，后一个 handler 读到前一个处理后的结果；每次 handler 调用包在 try/catch 中，catch 调 `emitError` 记录错误后继续后续 handler。这个累计对象才决定最后返回哪些结果字段。[前置事件分发](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1242)、[结果事件分发](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1183)。
+tool_call 处理器异常会传播到调用边界，由工具准备阶段形成错误结果。emitToolResult 则把修改累计到 currentEvent，后一个处理器读到前一个处理后的结果；单个结果处理器异常时记录 extension error，再处理后续 handler。[调用前分发](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1242)、[结果分发](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1183)。
 
-修改结果 content 而没有同步提供 structuredContent 时，runner 删除原 structuredContent，避免文本与结构内容互相矛盾。依据：[调用 hook](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1242)、[结果 hook](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/extensions/runner.ts#L1183)。这些都发生在进程内，未由此获得 Pico5 的 intent/replay 语义。
+结果处理器修改 content 却没有同步提供 structuredContent 时，runner 删除旧 structuredContent，使返回的文本和结构化内容保持一致。
 
-## Reload 是运行绑定更换
+</details>
 
-| 动作 | 保存或失效对象 | 对调用方的影响 |
-|---|---|---|
-| shutdown event(reason=reload) | 通知旧 runner | 扩展可处理收口事件 |
-| oldRunner.invalidate | 旧 context 与操作能力失效 | 不应在 reload 后继续用捕获的旧 ctx/pi |
-| settings / resource reload | 重新加载当前资源与配置 | 旧缓存及定义不直接视为当前 |
-| _buildRuntime | 新 runner、绑定、工具集合 | Agent hook 在调用时读当前 runner，无须凭旧闭包判断 |
-| session_start(reason=reload) | 有绑定时发新生命周期事件 | 后续扩展资源在新绑定中加载 |
+## 第五步：reload 更新资源，沿用当前会话
 
-证据：[reload](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3660)。当前源码保留 active tool 名称并处理尚未注册的 pending 名称，还允许新加入默认配置的工具进入集合；不把 reload 描述成“全部状态清空重启”。
+修改扩展或资源后，reload 会重新加载配置和定义，创建新的 ExtensionRunner，再绑定回当前 AgentSession。Agent、SessionManager 和已有对话继续沿用；旧 runner 的 ctx 与操作能力失效，后续调用取得新绑定。这是 reload 的整体作用。
 
-将表中的动作对照 reload 的源码节选。省略 defaultTools 差异计算及末尾 session_start 事件；保留旧句柄失效、资源重载和新 runner 装配顺序：
+![reload 沿用 AgentSession、Agent 和 SessionManager，旧 runner 收到 shutdown 后失效；配置和资源重新加载，新 runner 绑定到原会话，恢复 flags 和工具选择，再通知 session_start](../../assets/pi-extension-reload.svg)
+
+| 对象或资料 | reload 如何处理 |
+|---|---|
+| AgentSession、Agent、SessionManager | 沿用现有实例与会话记录 |
+| SettingsManager、ResourceLoader | 现有对象重新加载配置和资源 |
+| ExtensionRunner、扩展定义与操作绑定 | 旧 runner 失效，新 runner 采用重载结果并绑定当前会话 |
+| flags、active tool 名称 | 保存选择并用于新装配；尚未注册的工具名保留为 pending |
+| 默认工具配置 | 将设置中新加入的默认工具纳入当前集合；已移除的仍可保持激活 |
+| provider 注册状态 | resetApiProviders 后随资源重新建立 |
+| 宿主生命周期 | 旧 runner 收到 session_shutdown；有宿主绑定时，新 runner 收到 session_start |
+
+因此读 reload 源码时可以围绕“旧绑定失效、资料重读、新绑定接入”三个动作定位。下面保留这段顺序，省略默认工具差异计算和末尾生命周期通知：
 
 ```ts
 const oldRunner = this._extensionRunner;
@@ -229,8 +245,6 @@ this._buildRuntime({
 // session_start(reason: "reload")。
 ```
 
-持久历史的 SessionManager 没有在这里被替换。替换的是资源定义及扩展运行绑定；旧 ctx 失效、新工具逐步注册和原历史继续保留可以同时成立。[重载顺序](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3661)。
+_buildRuntime 将先前 flags 写入新的扩展 runtime，并重建工具 registry。需要异步注册的工具先以 pending 名称保留，注册到位后再接入活动集合。有宿主绑定时，末尾发布 session_start(reason=reload)，并继续从扩展发现资源。此前在会话中关闭的工具保持关闭，除非新设置把它新增为默认项。[reload 完整顺序](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3660)、[重载后的装配](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3661)。
 
-## 独有内容与边界
-
-扩展可以把 UI 行为、命令和模型工具接在同一会话中，适合交互产品；它们的定义、可见集合与上下文句柄分别维护。TUI、资源冲突、MCP 与 provider 的运行边界见 [平台专题](platform.md)。
+下一章沿这套机制看两个具体能力：MCP 扩展接入外部工具，codemode 让模型用脚本组合工具调用。它们都从定义注册进入当前会话，再在刚才标出的执行位置产生调用与反馈。

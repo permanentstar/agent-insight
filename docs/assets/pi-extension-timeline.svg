@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="823" viewBox="0 0 1100 823" role="img" aria-labelledby="title desc">
+<title id="title">扩展处理器：插在主流程的哪里</title><desc id="desc">输入、运行准备、每次请求、工具前后和收口分别调用对应处理器。每种事件按自己的返回契约采用结果。</desc>
+<rect width="1100" height="823" fill="#ffffff"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker></defs>
+<g font-family="Arial, sans-serif">
+<text x="30" y="36" font-size="23" font-weight="700" fill="#172554">扩展处理器：插在主流程的哪里</text>
+<rect x="30" y="65" width="475" height="97" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="93" font-size="18" fill="#172554" font-weight="700">1. 普通输入接纳</text>
+<text x="46" y="119" font-size="16" fill="#172554">命令已先检查；后面再展开 skill/template</text>
+<rect x="575" y="65" width="495" height="97" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="591" y="93" font-size="18" fill="#172554" font-weight="700">input</text>
+<text x="591" y="119" font-size="16" fill="#172554">transform 交给下一个处理器</text>
+<text x="591" y="143" font-size="16" fill="#172554">handled 结束本次输入处理</text>
+<polyline points="505,115 570,115" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<polyline points="267,162 267,181" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="185" width="475" height="97" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="213" font-size="18" fill="#172554" font-weight="700">2. 空闲输入准备启动</text>
+<text x="46" y="239" font-size="16" fill="#172554">模型、认证与压缩检查完成</text>
+<rect x="575" y="185" width="495" height="97" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="591" y="213" font-size="18" fill="#172554" font-weight="700">before_agent_start</text>
+<text x="591" y="239" font-size="16" fill="#172554">累积扩展消息和 Prompt 选项</text>
+<text x="591" y="263" font-size="16" fill="#172554">本次运行采用这些准备资料</text>
+<polyline points="505,235 570,235" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<polyline points="267,282 267,301" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="305" width="475" height="97" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="333" font-size="18" fill="#172554" font-weight="700">3. 每次模型请求</text>
+<text x="46" y="359" font-size="16" fill="#172554">投影采用后，convertToLlm 之前</text>
+<rect x="575" y="305" width="495" height="97" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="591" y="333" font-size="18" fill="#172554" font-weight="700">context → context_with_system</text>
+<text x="591" y="359" font-size="16" fill="#172554">先处理对话并恢复 system 资料</text>
+<text x="591" y="383" font-size="16" fill="#172554">再处理完整 transcript</text>
+<polyline points="505,355 570,355" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<polyline points="267,402 267,421" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="425" width="475" height="97" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="453" font-size="18" fill="#172554" font-weight="700">4. 准备工具调用</text>
+<text x="46" y="479" font-size="16" fill="#172554">已找到工具并校验参数，execute 之前</text>
+<rect x="575" y="425" width="495" height="97" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="591" y="453" font-size="18" fill="#172554" font-weight="700">tool_call</text>
+<text x="591" y="479" font-size="16" fill="#172554">按顺序处理；block 形成拦截结果</text>
+<text x="591" y="503" font-size="16" fill="#172554">通过后执行真实工具</text>
+<polyline points="505,475 570,475" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<polyline points="267,522 267,541" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="545" width="475" height="97" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="573" font-size="18" fill="#172554" font-weight="700">5. 已执行工具返回</text>
+<text x="46" y="599" font-size="16" fill="#172554">afterToolCall；随后形成 toolResult</text>
+<rect x="575" y="545" width="495" height="97" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="591" y="573" font-size="18" fill="#172554" font-weight="700">tool_result</text>
+<text x="591" y="599" font-size="16" fill="#172554">后一个处理器读取前一个修改</text>
+<text x="591" y="623" font-size="16" fill="#172554">最终结果交回模型</text>
+<polyline points="505,595 570,595" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<polyline points="267,642 267,661" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="665" width="475" height="97" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="693" font-size="18" fill="#172554" font-weight="700">6. 轮次结束 / 产品收口</text>
+<text x="46" y="719" font-size="16" fill="#172554">分别在 turn 和产品收口边界检查</text>
+<rect x="575" y="665" width="495" height="97" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="591" y="693" font-size="18" fill="#172554" font-weight="700">turn_end / agent_before_settle</text>
+<text x="591" y="719" font-size="16" fill="#172554">处理边界上下文与继续要求</text>
+<text x="591" y="743" font-size="16" fill="#172554">回到请求阶段或结束产品运行</text>
+<polyline points="505,715 570,715" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<text x="30" y="795" font-size="16" fill="#334155">图中选择影响主线的插入点；handler 的返回值由各事件契约解释。</text>
+</g></svg>

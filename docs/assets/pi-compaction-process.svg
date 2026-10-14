@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="885" viewBox="0 0 960 885" role="img" aria-labelledby="title desc">
+<title id="title">上下文压缩：从当前分支到后续请求</title><desc id="desc">六步依次取当前分支、选择摘要材料和保留起点、生成并记录摘要、重建消息投影、更新活动消息、在下一请求边界转换模型协议。</desc>
+<rect width="960" height="885" fill="#ffffff"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker></defs>
+<g font-family="Arial, sans-serif">
+<text x="30" y="36" font-size="23" font-weight="700" fill="#172554">上下文压缩：从当前分支到后续请求</text>
+<rect x="30" y="65" width="600" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="93" font-size="18" fill="#172554" font-weight="700">1. 取当前分支 · SessionManager</text>
+<text x="46" y="119" font-size="16" fill="#172554">leaf → parentId 祖先路径</text>
+<text x="46" y="143" font-size="16" fill="#172554">本例：A/B/C/E/F/G</text>
+<polyline points="330,169 330,193" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="197" width="600" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="225" font-size="18" fill="#172554" font-weight="700">2. 准备材料 · prepareCompaction</text>
+<text x="46" y="251" font-size="16" fill="#172554">按已有投影选切点，维护调用与结果配对</text>
+<text x="46" y="275" font-size="16" fill="#172554">输出摘要输入、工作前缀、firstKept=F</text>
+<polyline points="330,301 330,325" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="329" width="600" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="357" font-size="18" fill="#172554" font-weight="700">3. 生成并记录 · AgentSession</text>
+<text x="46" y="383" font-size="16" fill="#172554">默认摘要生成器 → appendCompaction</text>
+<text x="46" y="407" font-size="16" fill="#172554">新增 S：摘要正文 + firstKeptEntryId</text>
+<polyline points="330,433 330,457" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="461" width="600" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="489" font-size="18" fill="#172554" font-weight="700">4. 重建消息 · buildSessionProjection</text>
+<text x="46" y="515" font-size="16" fill="#172554">最新摘要 + 保留段 + 后续内容，应用编辑</text>
+<text x="46" y="539" font-size="16" fill="#172554">本例：S/F/G，后来继续加入 H/I/J</text>
+<polyline points="330,565 330,589" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="593" width="600" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="621" font-size="18" fill="#172554" font-weight="700">5. 更新活动消息 · AgentSession</text>
+<text x="46" y="647" font-size="16" fill="#172554">_refreshFinalizedContext 采用投影</text>
+<text x="46" y="671" font-size="16" fill="#172554">更新 Agent.state.messages，登记来源 ID</text>
+<polyline points="330,697 330,721" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="30" y="725" width="600" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="753" font-size="18" fill="#172554" font-weight="700">6. 构造后续请求 · Agent loop</text>
+<text x="46" y="779" font-size="16" fill="#172554">prepareRequest 再取投影 → 消息转换</text>
+<text x="46" y="803" font-size="16" fill="#172554">convertToLlm → normalizeContext → provider</text>
+<rect x="680" y="65" width="250" height="128" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="696" y="93" font-size="18" fill="#172554" font-weight="700">入口</text>
+<text x="696" y="119" font-size="16" fill="#172554">手工：先停止当前执行</text>
+<text x="696" y="143" font-size="16" fill="#172554">自动：用量或溢出触发</text>
+<text x="696" y="167" font-size="16" fill="#172554">默认共享摘要生成器</text>
+<rect x="680" y="329" width="250" height="104" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="696" y="357" font-size="18" fill="#172554" font-weight="700">摘要覆盖关系</text>
+<text x="696" y="383" font-size="16" fill="#172554">S 承接较早语义</text>
+<text x="696" y="407" font-size="16" fill="#172554">F/G 保留动作与观察</text>
+<polyline points="630,381 675,381" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="680" y="725" width="250" height="104" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="696" y="753" font-size="18" fill="#172554" font-weight="700">随后继续积累记录</text>
+<text x="696" y="779" font-size="16" fill="#172554">模型响应与工具结果</text>
+<text x="696" y="803" font-size="16" fill="#172554">完成消息再追加历史</text>
+<text x="30" y="866" font-size="16" fill="#334155">步骤 1 至 5 完成压缩与活动更新；步骤 6 在后续模型请求时发生。</text>
+</g></svg>
