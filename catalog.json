@@ -66,6 +66,10 @@
       {
         "title": "比较：观测、终态与交付确认",
         "path": "comparisons/observability-delivery.md"
+      },
+      {
+        "title": "从 Agent 循环到业务系统：架构归纳与设计取舍",
+        "path": "comparisons/agent-in-business.md"
       }
     ]
   },

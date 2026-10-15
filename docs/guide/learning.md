@@ -5,7 +5,7 @@ subject: "book"
 status: "index"
 baselines: []
 sources: []
-depends_on: ["comparison-reference", "comparison-modes", "comparison-context", "comparison-state", "comparison-ownership", "comparison-execution", "comparison-control", "comparison-observability", "langchain-retrieval", "pi-context"]
+depends_on: ["comparison-reference", "comparison-modes", "comparison-context", "comparison-state", "comparison-ownership", "comparison-execution", "comparison-control", "comparison-observability", "comparison-business", "langchain-retrieval", "pi-context"]
 evidence: []
 verified_scope: "按共同职责与学习依赖组织阅读和演算；不以目录、源码链接或一次读者检验代替完整教学验收。"
 ---
@@ -30,6 +30,7 @@ verified_scope: "按共同职责与学习依赖组织阅读和演算；不以目
 | 状态与生命周期 | 指出谁拥有交互、当前工作、请求和效果；分开历史与持久控制 | [所有权](../comparisons/ownership.md)、[状态与恢复](../comparisons/state-recovery.md) |
 | 能力与协作 | 解释定义、受理、授权、执行和结果；知道父子工作怎样交接 | [执行边界](../comparisons/execution.md)、[委派](../comparisons/control-delegation.md) |
 | 观察与完成 | 用调用、结果、状态和目标验证解释一次工作 | [观测与交付](../comparisons/observability-delivery.md) |
+| 组合成业务服务 | 分开对话资料、运行进度和业务事实，选择控制方式并解释验收交接 | [架构归纳与设计取舍](../comparisons/agent-in-business.md)；演算 CSV 服务的产物与同版本验证 |
 
 每阶段增加一种解释能力，下一阶段使用已学的接口与边界。例如还没区分 State 与 request 时，直接背 middleware 的方法名，容易把临时资料误当持久消息。
 

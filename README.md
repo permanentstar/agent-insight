@@ -9,6 +9,7 @@
 | [书籍首页](docs/index.md) | 研究问题与阅读路径 |
 | [版本说明](docs/guide/baselines.md) | 集中说明固定提交、实现阶段、依赖组合与研究范围 |
 | [横向比较](docs/comparisons/index.md) | 所有权、决策、上下文、恢复、执行与观测的机制和取舍 |
+| [架构归纳与设计取舍](docs/comparisons/agent-in-business.md) | 将模型决策、运行进度和业务事实组合成完整服务，承接横向比较与对象分册 |
 | [对象地图](docs/guide/map.md) | 选择对象分册与独有专题 |
 | [调用链阅读方法](docs/guide/reading.md) | 对象层次、生命周期、执行点与状态边界 |
 

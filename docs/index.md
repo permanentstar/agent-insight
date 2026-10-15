@@ -31,6 +31,7 @@ Agent 的一次回答可能包含多次模型请求、工具调用和状态更�
 | 中断后恢复的是历史、程序进度，还是外部效果？ | [状态、持久化与恢复](comparisons/state-recovery.md) |
 | 工具定义怎样走到实际执行，权限在哪里生效？ | [工具、扩展与执行边界](comparisons/execution.md) |
 | 流事件、持久确认和业务完成分别证明什么？ | [观测、终态与交付确认](comparisons/observability-delivery.md) |
+| 开放的模型决策怎样进入有契约的业务系统？ | [从 Agent 循环到业务系统](comparisons/agent-in-business.md) |
 
 ## 沿层次深入源码
 

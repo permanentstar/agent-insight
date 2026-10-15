@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="990" viewBox="0 0 1100 990" role="img" aria-labelledby="title desc">
+  <title id="title">Agent 进入业务系统：开放决策与执行契约</title>
+  <desc id="desc">业务宿主接纳 CSV 修复工作 W1。运行控制安排模型与工具反馈，模型提出候选动作，动作入口调用业务操作，观察返回模型。运行资料保存消息与进度，业务事实保存产物版本与验证。宿主读取匹配事实完成验收。逻辑职责可以同进程实现，两个存储框不要求独立数据库。</desc>
+  <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9Z" fill="#334155"/></marker></defs>
+  <rect width="1100" height="990" fill="#ffffff"/>
+  <g font-family="system-ui, sans-serif" fill="#172554">
+    <text x="30" y="40" font-size="24" font-weight="700">Agent 进入业务系统：开放决策与执行契约</text>
+    <rect x="30" y="75" width="1040" height="115" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="106" font-size="20" font-weight="700">业务宿主：1 接纳目标 / 4 验收与交付</text>
+    <text x="50" y="137" font-size="17">保存 W1、起始版本 r0、允许的操作与完成政策；绑定可信调用身份</text>
+    <text x="50" y="166" font-size="17">收口条件：产物 A1 与规定验证均对应 r1，依据可信事实更新 W1</text>
+
+    <rect x="30" y="245" width="650" height="560" rx="10" fill="#f5f3ff" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="278" font-size="20" font-weight="700">运行控制：安排推进、等待、取消与收口</text>
+    <text x="50" y="307" font-size="17">可用进程循环、状态图或持久任务；恢复能力依机制而定</text>
+
+    <rect x="55" y="355" width="250" height="175" rx="8" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+    <text x="72" y="386" font-size="20" font-weight="700">2 模型决策</text>
+    <text x="72" y="418" font-size="17">读取需求、代码、观察</text>
+    <text x="72" y="449" font-size="17">选择查阅、修改、验证</text>
+    <text x="72" y="480" font-size="17">依反馈调整下一动作</text>
+    <text x="72" y="511" font-size="16">自然语言资料与开放求解</text>
+
+    <rect x="390" y="355" width="265" height="175" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+    <text x="407" y="386" font-size="20" font-weight="700">3 动作入口</text>
+    <text x="407" y="418" font-size="17">解析参数、取得绑定身份</text>
+    <text x="407" y="449" font-size="17">按契约受理并调用操作</text>
+    <text x="407" y="480" font-size="17">保存结果或具名拒绝</text>
+    <text x="407" y="511" font-size="16">工具是进入业务操作的接口</text>
+
+    <rect x="740" y="355" width="330" height="175" rx="8" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+    <text x="758" y="386" font-size="20" font-weight="700">业务操作 / 领域服务</text>
+    <text x="758" y="418" font-size="17">确认工作区与操作资格</text>
+    <text x="758" y="449" font-size="17">核对版本，实际修改或验证</text>
+    <text x="758" y="480" font-size="17">返回产物、版本及验证事实</text>
+    <text x="758" y="511" font-size="16">可内嵌实现，也可调用外部服务</text>
+
+    <rect x="55" y="635" width="600" height="135" rx="8" fill="#ffffff" stroke="#475569" stroke-width="2"/>
+    <text x="73" y="668" font-size="20" font-weight="700">对话资料与运行进度</text>
+    <text x="73" y="701" font-size="17">消息、调用与观察；活跃状态或持久恢复资料</text>
+    <text x="73" y="734" font-size="17">由所选运行机制保存和读取</text>
+
+    <rect x="740" y="635" width="330" height="135" rx="8" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+    <text x="758" y="668" font-size="20" font-weight="700">业务事实</text>
+    <text x="758" y="701" font-size="17">A1 / r1；验证对象及结果</text>
+    <text x="758" y="734" font-size="17">业务操作与验收的事实来源</text>
+
+    <g fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)">
+      <path d="M355 190V241"/>
+      <path d="M180 315V351"/>
+      <path d="M305 413H386"/>
+      <path d="M390 480H309"/>
+      <path d="M655 413H736"/>
+      <path d="M740 480H659"/>
+      <path d="M180 530V631"/>
+      <path d="M523 530V631"/>
+      <path d="M905 530V631"/>
+      <path d="M1070 700H1086V216H920V194"/>
+    </g>
+    <text x="315" y="395" font-size="15">候选动作</text>
+    <text x="317" y="503" font-size="15">观察反馈</text>
+    <text x="667" y="395" font-size="15">请求操作</text>
+    <text x="667" y="503" font-size="15">实际结果</text>
+    <text x="65" y="582" font-size="16">请求与观察</text>
+    <text x="449" y="582" font-size="16">工作推进</text>
+    <text x="916" y="582" font-size="16">保存事实</text>
+    <text x="747" y="237" font-size="16">验收读取匹配事实</text>
+
+    <rect x="30" y="850" width="1040" height="105" rx="8" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="881" font-size="18" font-weight="700">职责划分先于部署与存储划分</text>
+    <text x="50" y="911" font-size="17">模型正常结束、运行完成与业务验收是不同判断；模型正文不能代替产物和验证记录。</text>
+    <text x="50" y="939" font-size="16">教学设计：框可以同进程，资料可以共库存储；跨外部系统的操作需要独立说明提交与恢复契约。</text>
+  </g>
+</svg>

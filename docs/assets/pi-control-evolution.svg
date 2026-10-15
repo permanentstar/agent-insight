@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="650" viewBox="0 0 1140 650" role="img" aria-labelledby="title desc">
+  <title id="title">Pi 三套架构的工作表示</title>
+  <desc id="desc">AgentSession 由进程内 Agent 循环推进，SessionManager 保存历史并重建上下文；Lane 由 Drive 按持久 OperationState 阶段分派；Pico5 由通用调度器认领 Task，任务定义解释 checkpoint，Session 共同保存 Entry、Task 和 Document。三列比较设计表示，不表示三个默认产品版本依次替换。</desc>
+  <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9Z" fill="#334155"/></marker></defs>
+  <rect width="1140" height="650" fill="#ffffff"/>
+  <g font-family="system-ui, sans-serif" fill="#172554">
+    <text x="30" y="40" font-size="24" font-weight="700">Pi 三套架构：谁保存下一步，谁解释它</text>
+    <rect x="30" y="75" width="340" height="475" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+    <rect x="400" y="75" width="340" height="475" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+    <rect x="770" y="75" width="340" height="475" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+    <text x="48" y="109" font-size="21" font-weight="700">AgentSession</text>
+    <text x="418" y="109" font-size="21" font-weight="700">Lane Harness</text>
+    <text x="788" y="109" font-size="21" font-weight="700">Pico5 / durable</text>
+    <text x="48" y="140" font-size="17">从交互会话组织工作</text>
+    <text x="418" y="140" font-size="17">用专用 Operation 表达进度</text>
+    <text x="788" y="140" font-size="17">通用 Task 与行为定义分开</text>
+    <g fill="#ffffff" stroke="#475569" stroke-width="2">
+      <rect x="48" y="175" width="304" height="145" rx="8"/>
+      <rect x="418" y="175" width="304" height="145" rx="8"/>
+      <rect x="788" y="175" width="304" height="145" rx="8"/>
+      <rect x="48" y="395" width="304" height="125" rx="8"/>
+      <rect x="418" y="395" width="304" height="125" rx="8"/>
+      <rect x="788" y="395" width="304" height="125" rx="8"/>
+    </g>
+    <text x="64" y="207" font-size="19" font-weight="700">Agent / AgentSession</text>
+    <text x="64" y="239" font-size="17">请求模型、执行工具、反馈</text>
+    <text x="64" y="270" font-size="17">活动调用随进程运行</text>
+    <text x="64" y="301" font-size="17">会话操作围绕循环组织</text>
+    <text x="434" y="207" font-size="19" font-weight="700">Drive / 专用过程</text>
+    <text x="434" y="239" font-size="17">根据 state.at 分派</text>
+    <text x="434" y="270" font-size="17">生成、工具、摘要、导航</text>
+    <text x="434" y="301" font-size="17">按持久阶段恢复与推进</text>
+    <text x="804" y="207" font-size="19" font-weight="700">TaskScheduler + 任务定义</text>
+    <text x="804" y="239" font-size="17">调度器：认领、等待、结束</text>
+    <text x="804" y="270" font-size="17">定义：解释各自 checkpoint</text>
+    <text x="804" y="301" font-size="17">生成、工具与摘要各有定义</text>
+    <text x="64" y="426" font-size="19" font-weight="700">SessionManager / 历史</text>
+    <text x="64" y="459" font-size="17">消息、配置、树与摘要</text>
+    <text x="64" y="492" font-size="17">恢复资料用于重建上下文</text>
+    <text x="434" y="426" font-size="19" font-weight="700">Session / OperationState</text>
+    <text x="434" y="459" font-size="17">持久阶段、效果意图及结果</text>
+    <text x="434" y="492" font-size="17">状态与历史在提交处对齐</text>
+    <text x="804" y="426" font-size="19" font-weight="700">Session / Storage</text>
+    <text x="804" y="459" font-size="17">Task、Entry、Document</text>
+    <text x="804" y="492" font-size="17">记录与当前代码共同恢复工作</text>
+    <g fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)">
+      <path d="M115 320V391"/><path d="M285 395V324"/>
+      <path d="M485 320V391"/><path d="M655 395V324"/>
+      <path d="M855 320V391"/><path d="M1025 395V324"/>
+    </g>
+    <text x="62" y="357" font-size="16">保存历史</text><text x="235" y="378" font-size="16">构建请求</text>
+    <text x="432" y="357" font-size="16">提交进度</text><text x="617" y="378" font-size="16">按阶段读</text>
+    <text x="802" y="357" font-size="16">提交变化</text><text x="978" y="378" font-size="16">认领推进</text>
+    <text x="30" y="590" font-size="18" font-weight="700">比较的是控制表示与职责拆分；Lane 已经具备持久恢复与提交机制。</text>
+    <text x="30" y="624" font-size="17">三列不表示默认产品依次替换；具体发布范围与入口以本书版本说明及正文证据为准。</text>
+  </g>
+</svg>
