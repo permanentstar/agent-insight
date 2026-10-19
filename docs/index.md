@@ -14,7 +14,7 @@ verified_scope: "九对象的架构、主线、执行模式与比较入口；静
 
 Agent 的一次回答可能包含多次模型请求、工具调用和状态更新。理解它的实现，需要同时回答三个问题：谁决定继续执行，谁拥有正在变化的状态，发生中断后能恢复到哪里。
 
-本书从源码出发，研究 Pi、DeerFlow、Claude Code、Codex、Hermes、LangChain、LangGraph 与 DeepSeek Harness 的架构和运行机制。Pi 的 AgentSession 与 Pico5 分开讨论：前者围绕交互会话组织执行，后者把工作进度纳入持久状态。横向章节比较共同问题，各对象分册再展开自己的概念和调用链。
+本书从源码出发，研究 Pi、DeerFlow、Claude Code、Codex、Hermes、LangChain、LangGraph 与 DeepSeek Harness 的架构和运行机制。Pi 的 AgentSession 与 Pi Durable 分开讨论：前者围绕交互会话组织执行，后者把工作进度纳入持久状态。横向章节比较共同问题，各对象分册再展开自己的概念和调用链。
 
 ![从对象关系、概念词典进入执行链，再分析状态边界与设计取舍](assets/book-map.svg)
 

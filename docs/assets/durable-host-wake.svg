@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="930" height="775" viewBox="0 0 930 775" role="img" aria-labelledby="title desc">
+<title id="title">Pi Durable：等待保存以后，谁让进程再次出现</title><desc id="desc">sleeping 释放 invocation，常驻定时器或宿主 alarm 到期唤醒，重开存储并 resume。</desc>
+<rect width="930" height="775" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="38" font-size="23" fill="#172554">Pi Durable：等待保存以后，谁让进程再次出现</text>
+<rect x="40" y="85" width="850" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="56" y="113" font-size="18" fill="#172554">运行中的 Task</text>
+<text x="56" y="138" font-size="16" fill="#172554">提交 sleeping + until + 下一 phase 的 checkpoint，结束 invocation</text>
+<rect x="40" y="255" width="380" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="56" y="283" font-size="18" fill="#172554">常驻宿主</text>
+<text x="56" y="308" font-size="16" fill="#172554">scheduler 使用 setTimer</text>
+<text x="56" y="333" font-size="16" fill="#172554">now 到达 until 后认领</text>
+<rect x="510" y="255" width="380" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="526" y="283" font-size="18" fill="#172554">按需宿主</text>
+<text x="526" y="308" font-size="16" fill="#172554">onWake → 外部 alarm</text>
+<text x="526" y="333" font-size="16" fill="#172554">内核不为休眠保留定时器</text>
+<path d="M240 175 V251" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M700 175 V251" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="42" y="223" font-size="16" fill="#172554">宿主选择一种接线</text>
+<rect x="510" y="455" width="380" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="526" y="483" font-size="18" fill="#172554">平台唤醒 / 新进程</text>
+<text x="526" y="508" font-size="16" fill="#172554">重开同一 Storage 与 Registry</text>
+<text x="526" y="533" font-size="16" fill="#172554">先安排恢复唤醒，再 resume</text>
+<path d="M700 365 V451" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="40" y="455" width="380" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="56" y="483" font-size="18" fill="#172554">到期后的阶段</text>
+<text x="56" y="508" font-size="16" fill="#172554">读取已保存 checkpoint</text>
+<text x="56" y="533" font-size="16" fill="#172554">执行下一步，再提交状态</text>
+<path d="M230 365 V451" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M510 508 H424" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="40" y="650" width="850" height="85" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="56" y="678" font-size="18" fill="#172554">Wake 摘要：active 与 at 可以同时存在</text>
+<text x="56" y="703" font-size="16" fill="#172554">状态持久化由内核保证；进程再次出现由宿主负责。</text>
+<path d="M230 565 V646" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+</g></svg>

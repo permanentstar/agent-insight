@@ -3,7 +3,7 @@ id: "comparison-modes"
 title: "比较：执行模式与模型决策"
 subject: "comparison"
 status: "index"
-baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331"]
+baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331", "pi-20261019"]
 sources: ["comparison-legacy", "claude-march"]
 depends_on: ["pi-loop", "durable-loop", "deerflow-migrated", "deerflow-middleware", "claude-migrated", "codex-plan", "hermes-migrated", "langchain-migrated", "langgraph-migrated", "deepseek-plan"]
 evidence: ["source", "official", "historical-document", "static-inference", "proposal"]
@@ -120,7 +120,7 @@ allowed_tools 是本例传递的能力约定，实际执行政策还要在工具
 }
 ```
 
-outcome 是本应用的步骤结果，不是 Pico5 TaskOutcome 或 DeerFlow RunStatus。evidence 将说明联系到具体观察；它的内容仍需按步骤完成条件解释，不能仅因为字段存在就认定已完成整个用户目标。
+outcome 是本应用的步骤结果，不是 Pi Durable TaskOutcome 或 DeerFlow RunStatus。evidence 将说明联系到具体观察；它的内容仍需按步骤完成条件解释，不能仅因为字段存在就认定已完成整个用户目标。
 
 外层此时更新 change 进度，并继续 verify。若验证发现仍缺换行处理，执行器给出对应验证事实，外层可以将该结果交给 Replanner。Replanner 修订的是**剩余工作**，不能把已经保存的观察当作没发生过。
 
@@ -178,7 +178,7 @@ return explain_result(goal, plan.results)
 | 对象 | 主链路执行方式 | 其他模式及入口 | 支持方式 | 计划与决策放在哪里 | 程序怎样控制执行 | 源码与深入阅读 |
 |---|---|---|---|---|---|---|
 | Pi AgentSession | 模型—工具反馈循环 | Plan Mode 示例扩展：工具选择、规划文本提取、进度跟踪 | 主循环内置；Plan 为扩展示例 | 主模型消息；扩展保存计划清单 | loop、工具 hooks、steer/followUp、finishTurn | [循环与模式](../agents/pi/loop.md) |
-| Pico5 | generation→tool child→下一 generation 的反馈循环 | 自定义 Task、Document、hooks 可组织显式规划 | 主链路内置；独立规划是应用组装方向 | Entry 语义内容；应用可定义计划 Doc | Task 状态机、checkpoint、提交与接纳边界 | [生成状态机](../agents/pi-durable/loop.md) |
+| Pi Durable | generation→tool child→下一 generation 的反馈循环 | 自定义 Task/Document 可组织规划；codemode 可组织局部工具程序 | 主链路内置；独立规划是应用组装方向 | Entry 语义内容；应用可定义计划 Doc | Task 状态机、checkpoint、提交与接纳边界 | [生成状态机](../agents/pi-durable/loop.md) |
 | DeerFlow | Lead 的模型／工具图循环 | is_plan_mode 增加 Todo 与有限次数的续跑提醒；task 可委派 | 主循环内置；Todo 可配置启用 | Lead 消息与 Todo 状态；不是固定的独立 Planner 图 | middleware、Todo 续跑控制、工具策略和图执行 | [模式装配源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/agent.py#L358)、[中间件](../agents/deerflow/middleware.md) |
 | Claude Code | 主 query 的模型／工具循环 | 历史研究包含 Plan、Todo、Task 等工具；独立 P&E 链路未由本书证据确认 | 主线固定源码；具体 Plan 模式仍按实际分支 | query 消息与相应任务／工具资料 | executor、权限与循环条件 | [历史 query 分析](../agents/claude/architecture.md) |
 | Codex core | 一份 Turn 内多次模型 Step 与工具反馈 | Plan collaboration mode；另有 update_plan 清单工具 | 主循环和协作模式内置 | 模式说明进入上下文；清单产生 PlanUpdate 事件 | turn/step、ToolRouter、具体 handler 与执行控制 | [模式上下文](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/context/world_state/collaboration_mode.rs#L25)、[Plan handler](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/tools/handlers/plan.rs#L65) |
@@ -207,7 +207,7 @@ if turn.mode() == ModeKind::Plan {
 
 图中的三种模式可以处于不同层。一个外层 Plan & Execute 系统可以把“完成 CSV 修改”派给 Executor；这个 Executor 内部又使用模型—工具反馈循环，多次读取、修改和验证。外层只看到该步骤的结果，不必逐次调度内部每个工具。
 
-同样，固定产品流程可以先解析文件引用、查权限，再进入动态模型循环，最后由程序保存产物。Pico5 或 LangGraph 的持久机制可以承载其中的工作状态，但“能够恢复”与“怎样规划”仍是两个问题。这些是组合设计示意，不能推定九对象都已经实现相同组合。
+同样，固定产品流程可以先解析文件引用、查权限，再进入动态模型循环，最后由程序保存产物。Pi Durable 或 LangGraph 的持久机制可以承载其中的工作状态，但“能够恢复”与“怎样规划”仍是两个问题。这些是组合设计示意，不能推定九对象都已经实现相同组合。
 
 | 比较维度 | 回答的问题 | 常见示例 |
 |---|---|---|

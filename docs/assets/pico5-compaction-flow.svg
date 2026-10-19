@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="665" viewBox="0 0 960 665" role="img" aria-labelledby="title desc">
-<title id="title">Pico5 摘要：生成文字与采用范围分开</title><desc id="desc">CompactionTask 选择范围并总结；generation-owned 阻塞摘要直接追加，conversation-owned 背景摘要通过 write Submission 排队或放置，采用后改变 ContextView。</desc>
+<title id="title">Pi Durable 摘要：生成文字与采用范围分开</title><desc id="desc">CompactionTask 选择范围并总结；generation-owned 阻塞摘要直接追加，conversation-owned 背景摘要通过 write Submission 排队或放置，采用后改变 ContextView。</desc>
 <rect width="960" height="665" fill="#ffffff"/>
 <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
 <g font-family="system-ui, sans-serif" fill="#172554">
-<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pico5 摘要：生成文字与采用范围分开</text>
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pi Durable 摘要：生成文字与采用范围分开</text>
 <rect x="30" y="70" width="900" height="92" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
 <text x="46" y="98" font-size="18" fill="#172554" font-weight="700">select → summarize</text>
 <text x="46" y="125" font-size="16" fill="#172554">确定范围和 firstKept；模型在事务外生成摘要文字</text>

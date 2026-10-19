@@ -107,27 +107,35 @@
     ]
   },
   {
-    "title": "Pi 持久架构（实验）",
+    "title": "Pi Durable（实验）",
     "items": [
       {
-        "title": "Pico5 / pi-durable 分册",
+        "title": "Pi Durable 分册",
         "path": "agents/pi-durable/index.md"
       },
       {
-        "title": "Pico5 概念词典",
+        "title": "Pi Durable 概念词典",
         "path": "agents/pi-durable/glossary.md"
       },
       {
-        "title": "Pico5：事务、任务与副作用恢复",
+        "title": "Pi Durable：事务、任务与副作用恢复",
         "path": "agents/pi-durable/architecture.md"
       },
       {
-        "title": "Pico5：输入接纳、生成状态机与工具协作",
+        "title": "Pi Durable：输入接纳、生成状态机与工具协作",
         "path": "agents/pi-durable/loop.md"
       },
       {
-        "title": "Pico5：Document、上下文投影与异步摘要",
+        "title": "Pi Durable：Document、上下文投影与异步摘要",
         "path": "agents/pi-durable/documents.md"
+      },
+      {
+        "title": "Pi Durable：工具发现、嵌套调用与脚本恢复",
+        "path": "agents/pi-durable/tools.md"
+      },
+      {
+        "title": "Pi Durable：持久休眠、宿主唤醒与故障观测",
+        "path": "agents/pi-durable/hosting.md"
       }
     ]
   },

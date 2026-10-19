@@ -3,11 +3,11 @@ id: "comparison-business"
 title: "从 Agent 循环到业务系统：架构归纳与设计取舍"
 subject: "comparison"
 status: "verified-source"
-baselines: ["pi-20261009", "langgraph-20261009", "deerflow-20261009"]
+baselines: ["pi-20261009", "langgraph-20261009", "deerflow-20261009", "pi-20261019"]
 sources: []
 depends_on: ["comparison-reference", "comparison-modes", "comparison-ownership", "comparison-control", "comparison-context", "comparison-state", "comparison-execution", "comparison-observability", "pi-architecture", "pi-loop", "durable-architecture", "durable-documents", "langgraph-migrated", "deerflow-migrated", "deerflow-runtime", "pi-evolution"]
 evidence: ["source", "official", "static-inference", "proposal"]
-verified_scope: "基于 AgentSession、Pico5、LangGraph 与 DeerFlow 的固定实现归纳决策、运行及业务状态边界；CSV 服务与伪代码为教学设计，不声明现成集成、性能优势或行业普遍结论。"
+verified_scope: "基于 AgentSession、Pi Durable、LangGraph 与 DeerFlow 的固定实现归纳决策、运行及业务状态边界；CSV 服务与伪代码为教学设计，不声明现成集成、性能优势或行业普遍结论。"
 ---
 
 # 从 Agent 循环到业务系统：架构归纳与设计取舍
@@ -82,7 +82,7 @@ async def apply_patch_tool(args, call_context):
 
 这是职责区分，不要求使用三套数据库。应用可以在 durable 的 Document 或图状态中保存业务数据，也可以把外部服务作为事实源；选择后要明确谁有权修改，谁依据它推进。如果消息中说“r1 测试通过”，而业务验证记录只覆盖 r0，验收应按实际记录判断。
 
-durable 提供了一个有解释力的例子：Entry 表达历史贡献，Task 保存工作推进资料，Document 承载结构化状态；同一事务可共同修改这些记录。它让运行与应用数据有机会在一个提交边界对齐。[Session 提交实现](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/session/session.ts#L403)的主要顺序可以概括为：
+durable 提供了一个有解释力的例子：Entry 表达历史贡献，Task 保存工作推进资料，Document 承载结构化状态；同一事务可共同修改这些记录。它让运行与应用数据有机会在一个提交边界对齐。[Session 提交实现](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L714)的主要顺序可以概括为：
 
 ```typescript
 // 按源码整理的流程骨架；省略事务构造、失败处理与类型细节。
@@ -92,7 +92,7 @@ const documents = tx.adopt(seq);
 publish(seq, writes, documents, context);
 ```
 
-先提交，再采用，再发布，观察者读到的是已经采用的状态。这个事务覆盖 Session 内的写入；如果 A1 存在外部制品服务，外部上传与 Document 更新仍需单独设计交接。具体工具结果及回放边界见[Pico5 架构](../agents/pi-durable/architecture.md)，应用数据的历史与分支语义见[Document](../agents/pi-durable/documents.md)。
+先提交，再采用，再发布，观察者读到的是已经采用的状态。这个事务覆盖 Session 内的写入；如果 A1 存在外部制品服务，外部上传与 Document 更新仍需单独设计交接。具体工具结果及回放边界见[Pi Durable 架构](../agents/pi-durable/architecture.md)，应用数据的历史与分支语义见[Document](../agents/pi-durable/documents.md)。
 
 ## 第四步：依据验收事实收口，再交付结果
 
@@ -115,7 +115,7 @@ if (verification.revision == artifact.revision
 
 ## 从代表实现看：控制方式如何选择
 
-前四步确定了职责，现在才能选择推进机制。本节用 AgentSession、Pico5、LangGraph 与 DeerFlow 四种代表说明取舍；它们分别涉及交互产品、持久内核、图执行与产品宿主，不能视作四个完全同层的替代品。其他对象继续见各横向专题，本节不重复能力总表。
+前四步确定了职责，现在才能选择推进机制。本节用 AgentSession、Pi Durable、LangGraph 与 DeerFlow 四种代表说明取舍；它们分别涉及交互产品、持久内核、图执行与产品宿主，不能视作四个完全同层的替代品。其他对象继续见各横向专题，本节不重复能力总表。
 
 ### AgentSession：直接控制适合明确的交互生命周期
 
@@ -123,11 +123,13 @@ AgentSession 将会话操作与 Agent 反馈循环接在一起。SDK 构造 Agen
 
 如果 CSV 服务始终有人交互，失败后允许重新发起修复，这种表示便于实现与排查。应用仍可在外面提供 HTTP、业务记录和验收；增加服务入口并不强制更换内部循环。若后来要求自动延续中断的工具工作，就需要补充明确的恢复记录与政策。
 
-### Pico5：把工作阶段交给持久任务调度
+### Pi Durable：把工作阶段交给持久任务调度
 
-Pico5 的 generation、工具和摘要分别有任务定义；调度器处理通用状态，各定义解释自己的 checkpoint。恢复时，遗留的 running 可以回到 pending 并保留 checkpoint，再由当前 Registry 中的代码继续推进。[恢复启用](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/scheduler.ts#L238)与[任务阶段](../agents/pi-durable/loop.md)提供了实际路径。
+Pi Durable 的 generation、工具和摘要分别有任务定义；调度器处理通用状态，各定义解释自己的 checkpoint。恢复时，遗留的 running 可以回到 pending 并保留 checkpoint，再由当前 Registry 中的代码继续推进。[恢复启用](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L370)与[任务阶段](../agents/pi-durable/loop.md)提供了实际路径。
 
 这适合 W1 跨进程重启继续、后台工作不依附读连接等要求。代价是任务输入与 checkpoint 成为持久契约，代码升级要处理旧记录的版本；通用调度机制也不会自动理解 CSV 的验收条件。它为业务应用提供底座，具体领域规则仍由应用建立。
+
+Durable 还能把时间等待保存为 sleeping，让宿主按 wake 安排唤醒。W1 如果等待外部验证，记录负责保存下次检查位置，宿主负责让进程再次出现。它让业务循环的等待进入运行契约，仍需由应用决定验收、外部幂等及失败处置。[持久休眠与宿主](../agents/pi-durable/hosting.md)。
 
 ### LangGraph：显式安排计算与状态交接
 
@@ -165,7 +167,7 @@ stream = agent.astream(input_payload, config=stream_config,
 | 代表 | 权威状态与所有者 | 构造与生命周期 | 实际推进方式 | 适合补足的职责 | 需要承担的成本 |
 |---|---|---|---|---|---|
 | AgentSession | 会话管理器持历史，Agent 持活动执行 | SDK 绑定 Agent 与会话 | 进程内模型、工具反馈 | 直接交互与会话操作 | 持久历史与活工作恢复分别设计 |
-| Pico5 | Session 保存 Task/Entry/Document；Registry 提供代码 | Harness 打开存储，调度器认领工作 | 按 checkpoint 推进任务 | 长任务、后台工作及阶段恢复 | 持久契约、定义版本和存储要求 |
+| Pi Durable | Session 保存 Task/Entry/Document；Registry 提供代码 | Harness 打开存储，调度器认领工作 | 按 checkpoint 推进任务 | 长任务、后台工作及阶段恢复 | 持久契约、定义版本和存储要求 |
 | LangGraph | channels、checkpoint 与 pending writes | compile 定义，每次调用创建 Loop | 超步执行与状态合并 | 显式计算依赖、路由及图恢复 | reducer、节点重跑与后端契约 |
 | DeerFlow Gateway | RunManager/RunStore 管执行身份；图保存自身状态 | 产品工厂构图，worker 调用与收口 | 宿主管 run，图内模型工具反馈 | 接入、运行归属及产品读取 | 宿主、图和效果之间的责任交接 |
 
@@ -173,11 +175,11 @@ stream = agent.astream(input_payload, config=stream_config,
 
 ## durable 带来的启示与适用边界
 
-Pi 的架构演进让上述问题集中显现。AgentSession 从交互会话出发；Lane 已经用 Operation 保存阶段，并提供恢复与提交机制；Pico5 进一步把通用调度与任务专属行为分开。详细依据与三者取舍见[Pi 架构演化](../history/pi-lane/evolution.md)。从专用 Operation 转向通用任务降低扩展耦合，是本书根据模型划分作的工程判断，不是对作者全部决策动机的还原。
+Pi 的架构演进让上述问题集中显现。AgentSession 从交互会话出发；Lane 已经用 Operation 保存阶段，并提供恢复与提交机制；Pi Durable 进一步把通用调度与任务专属行为分开。详细依据与三者取舍见[Pi 架构演化](../history/pi-lane/evolution.md)。从专用 Operation 转向通用任务降低扩展耦合，是本书根据模型划分作的工程判断，不是对作者全部决策动机的还原。
 
 官方对 durable 的定位是走出终端、支持更长工作和不同交互入口，同时保留 coding agent 自身的定位。[发布说明](https://earendil.com/posts/pi-1-0/)与[设计说明](https://earendil.com/posts/pi-durable/)支持这些目标。它们让本章可以提出一个更一般的设计认识：Agent 应用可以沿软件服务熟悉的职责建立运行保障，同时把开放求解交给模型。
 
-这种认识有三项具体后果。首先，模型换一种执行模式，不应迫使业务服务改写自己的事实定义。其次，运行时支持恢复，不代表外部操作自动恰好一次；例如外部修改已成功、工具结果尚未保存就中断，仍需幂等、结果查询或具名不确定处理。最后，运行数据与业务数据如果分属两个存储，就要明确跨存储交接，不能把框架内的事务扩大成全系统事务。[工具的安全重放判断](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/tool.ts#L104)给出了实际边界。
+这种认识有三项具体后果。首先，模型换一种执行模式，不应迫使业务服务改写自己的事实定义。其次，运行时支持恢复，不代表外部操作自动恰好一次；例如外部修改已成功、工具结果尚未保存就中断，仍需幂等、结果查询或具名不确定处理。最后，运行数据与业务数据如果分属两个存储，就要明确跨存储交接，不能把框架内的事务扩大成全系统事务。[工具的安全重放判断](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L189)给出了实际边界。
 
 因此，把 Agent 产品理解成 SaaS/PaaS 的一种应用形态是有用的设计视角，但 durable 本身仍是运行底座。业务规则、用户隔离和对外服务承诺由产品建立。一个只有前台交互需求的程序，可以继续使用直接循环；长期运行需求出现以后，再选择能承担这些职责的控制与持久机制。
 

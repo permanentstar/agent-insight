@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="750" viewBox="0 0 960 750" role="img" aria-labelledby="title desc">
-<title id="title">Pico5 工具：正常执行与恢复入口</title><desc id="desc">call 解析 assistant 调用，校验最终参数，先提交 execute intent，再事务外执行，最后提交结果；重开 execute 阶段检查历史和当前 replay。</desc>
+<title id="title">Pi Durable 工具：正常执行与恢复入口</title><desc id="desc">call 解析 assistant 调用，校验最终参数，先提交 execute intent，再事务外执行，最后提交结果；重开 execute 阶段检查历史和当前 replay。</desc>
 <rect width="960" height="750" fill="#ffffff"/>
 <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
 <g font-family="system-ui, sans-serif" fill="#172554">
-<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pico5 工具：正常执行与恢复入口</text>
+<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pi Durable 工具：正常执行与恢复入口</text>
 <rect x="30" y="75" width="590" height="92" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
 <text x="46" y="103" font-size="18" fill="#172554" font-weight="700">call 阶段</text>
 <text x="46" y="130" font-size="16" fill="#172554">解析工具 → 准备参数 → 校验 → beforeTool</text>

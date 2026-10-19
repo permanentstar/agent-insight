@@ -3,7 +3,7 @@ id: "comparison-context"
 title: "比较：Prompt、压缩与长期记忆"
 subject: "comparison"
 status: "index"
-baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331"]
+baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331", "pi-20261019"]
 sources: []
 depends_on: ["pi-context", "durable-documents", "deerflow-context", "claude-context", "codex-context", "hermes-context", "langchain-retrieval", "langgraph-advanced", "deepseek-context"]
 evidence: ["source", "historical-document", "static-inference", "proposal"]
@@ -39,7 +39,7 @@ verified_scope: "九对象固定基线的静态机制比较；Claude 的源码�
 
 **历史视图**回答发生过什么，可能包含全部分支、事件与运行元数据；**当前状态**回答现在在做什么，可以包括清单、活跃任务和提交位置；**模型视图**回答本次模型看见什么，通常只取与当前路径、预算和任务有关的贡献。三者有联系，却无需字段完全相同。
 
-Pi 保存历史树，沿当前 leaf 的 parent 链选择分支，再解释 compaction 和 context edit。Pico5 分开保存 Entry、Task 与 Document，ContextView 从提交范围读取模型贡献。DeepSeek 保留事件而用 surface 指定模型可见内容。LangGraph 保存 channels，LangChain 的模型节点再从 messages 与当次 ModelRequest 形成输入。这些代表不同的资料组织方式，不是用四种名字指同一个数组。
+Pi 保存历史树，沿当前 leaf 的 parent 链选择分支，再解释 compaction 和 context edit。Pi Durable 分开保存 Entry、Task 与 Document，ContextView 从提交范围读取模型贡献。DeepSeek 保留事件而用 surface 指定模型可见内容。LangGraph 保存 channels，LangChain 的模型节点再从 messages 与当次 ModelRequest 形成输入。这些代表不同的资料组织方式，不是用四种名字指同一个数组。
 
 下面以资料增长解释“压缩”为什么还需要覆盖关系。假设已有用户目标 U、读取结果 R、修改动作 W、修改结果 O、验证结果 T，随后还追加了新要求 N。模型预算不够时，可以用摘要 S 替代较老语义贡献，同时详细保留验证结果和新要求。S 必须说明覆盖哪部分；不能因为摘要是在 N 之后写入，就把 N 当作也已总结并丢掉。
 
@@ -50,7 +50,7 @@ Pi 保存历史树，沿当前 leaf 的 parent 链选择分支，再解释 compa
 | 修改当前可见结果 | 保存编辑记录或更新特定消息 | 采用新视图；原始审计是否保留由实现决定 |
 | 检索长期记忆 | 从独立存储读入所需内容 | 只加入本次相关材料，无需加载全部记忆库 |
 
-摘要文字质量由模型决定，覆盖边界和采用条件由程序管理。不要把“LLM 已返回摘要”误解为“当前请求已采用摘要”；Pico5 的背景 write submission、Hermes 的提交许可、DeerFlow 的 checkpoint reservation 都是在管理这两者之间的边界。下面再逐对象对照。
+摘要文字质量由模型决定，覆盖边界和采用条件由程序管理。不要把“LLM 已返回摘要”误解为“当前请求已采用摘要”；Pi Durable 的背景 write submission、Hermes 的提交许可、DeerFlow 的 checkpoint reservation 都是在管理这两者之间的边界。下面再逐对象对照。
 
 
 ## 第三步：生成候选，再提交覆盖关系
@@ -66,18 +66,18 @@ session.append('user/message', checkpointMessage, {
 })
 ```
 
-这里替换模型贡献并保留审计来源。Pi 则让 CompactionEntry 与保留起点参与分支投影，Pico5 用持久摘要结果与 admission 管采用，DeerFlow 通过受预约保护的 checkpoint 更新覆盖 messages。共同职责是“明确谁能采用哪段摘要”，而不是共享一种数据格式。[查看 DeepSeek surface 提交](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/compaction/compaction-basic/src/region.ts#L491)。
+这里替换模型贡献并保留审计来源。Pi 则让 CompactionEntry 与保留起点参与分支投影，Pi Durable 用持久摘要结果与 admission 管采用，DeerFlow 通过受预约保护的 checkpoint 更新覆盖 messages。共同职责是“明确谁能采用哪段摘要”，而不是共享一种数据格式。[查看 DeepSeek surface 提交](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/compaction/compaction-basic/src/region.ts#L491)。
 
 ## 第四步：从已采用资料准备下一请求
 
-提交后的有效视图才是后续请求的输入。各实现的消息构建器读取这份视图，并补上当前规则、能力或新观察；工具调用与结果还需保持协议配对。Hermes 将 `commit.compressed` 返回调用方回赋，DeepSeek 手工维护先完成 flush 再允许下一请求，Pico5 观察者只消费 Session 已采用状态。
+提交后的有效视图才是后续请求的输入。各实现的消息构建器读取这份视图，并补上当前规则、能力或新观察；工具调用与结果还需保持协议配对。Hermes 将 `commit.compressed` 返回调用方回赋，DeepSeek 手工维护先完成 flush 再允许下一请求，Pi Durable 观察者只消费 Session 已采用状态。
 
 因此可以按同一问题读下表：历史存在哪里，模型输入由谁准备，摘要在什么位置采用，后续消费者又读哪一份资料。
 
 | 对象 | 权威状态与所有者 | 构造与生命周期 | 实际机制与执行点 | 提供的能力 | 机制边界 | 深入阅读 |
 |---|---|---|---|---|---|---|
 | AgentSession | SessionManager 历史树；Agent 请求消息 | 沿 parent 链构造分支上下文 | CompactionEntry / context edit 参与 buildSessionContext | 逻辑覆盖与物理 append 顺序可分开解释 | 不按日志最后一行推定覆盖；不把候选 async 设计当默认 | [历史](../agents/pi/context.md) |
-| Pico5，实验 | Entry/Task/Document + admission | CompactionTask 持久阶段，摘要调用在事务外 | generation-owned 直接 commit；conversation-owned 写 submission | 活跃边界投放或 stale 核销，观察只见已提交状态 | 内核提交与产品服务暴露是不同边界 | [摘要](../agents/pi-durable/documents.md) |
+| Pi Durable，实验库 | Entry/Task/Document + admission | CompactionTask 持久阶段，摘要调用在事务外 | generation-owned 直接 commit；conversation-owned 写 submission | 活跃边界投放或 stale 核销，观察只见已提交状态 | 内核提交与产品服务暴露是不同边界 | [摘要](../agents/pi-durable/documents.md) |
 | DeerFlow，应用 | ThreadState/checkpointer，长期 memory 单独 | DurableContext 捕获持久事实；request override 临时重投影 | summary middleware；手工 reserve_checkpoint_write → Overwrite messages | 手工操作与 Run 竞争有产品 reservation；source/role 分层 | XML/标签不提供隔离；摘要正确性另需验收 | [Prompt/压缩](../agents/deerflow/context-prompt.md) |
 | Claude | transcript、请求预算、session/长期 memory | 预算/minor reduction/正式摘要按触发点分层 | cached microcompact 与本地历史修改不同 | 本地历史、请求视图与记忆分开 | snip/collapse 的算法实现缺少证据 | [压缩/记忆](../agents/claude/context.md) |
 | Codex，core | ContextManager、WorldState、rollout | local/remote 各构 replacement history | replace_compacted_history + compact metadata + usage | 当前 initial context/WorldState 重建，不只拼 summary | feature gate/远端质量未知；record 与 flush 分开 | [上下文](../agents/codex/context-capabilities.md) |
@@ -90,13 +90,15 @@ session.append('user/message', checkpointMessage, {
 
 | 判断顺序 | 应核验的字段/行为 | 对应机制 |
 |---|---|---|
-| 摘要覆盖什么 | 分支祖先、水位/选中区间/原快照 | Pi parent 链、Pico5 head、DeepSeek surface seq |
-| 谁能写入 | 当前 owner/generation、宿主资格、操作预约 | Pico5 admission、Hermes fence、DeerFlow reservation |
+| 摘要覆盖什么 | 分支祖先、水位/选中区间/原快照 | Pi parent 链、Pi Durable head、DeepSeek surface seq |
+| 谁能写入 | 当前 owner/generation、宿主资格、操作预约 | Pi Durable admission、Hermes fence、DeerFlow reservation |
 | 何时采用 | 前台运行边界或稳定检查后的 commit | durable write submission、selected-span assertStable |
 | 新消息如何保留 | 摘要覆盖之外的 delta 再投影 | 不能按 JSONL 时间或 append 尾部裁剪 |
 | 观察何时成功 | 内存采用、复制发布与存储确认 | DocumentState、checkpoint、rollout/flush 分开 |
 
 这张表提供检查顺序，各对象不必采用同一种后台算法。消息标记、surface 序号、历史树的 parent 链与 feature 分支各有自己的控制条件，不能互相替代。
+
+Durable 的上下文投影还会把完整 system baseline 放到摘要及保留消息之前；按模型窗口选择 modelOverrides。阻塞摘要明确失败时，当前生成以 model_error 收口；后台失败则留 compactionFailure 供观察。比较摘要时应同时检查请求排列、预算选择和失败是否阻止后续请求。[摘要后的请求重建](../agents/pi-durable/documents.md#摘要之后如何恢复请求基线)。
 
 ## 条件化取舍
 

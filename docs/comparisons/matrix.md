@@ -3,7 +3,7 @@ id: "comparison-matrix"
 title: "对象矩阵：同一问题与不同阶段"
 subject: "comparison"
 status: "index"
-baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331"]
+baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331", "pi-20261019"]
 sources: []
 depends_on: ["pi-architecture", "durable-architecture", "deerflow-migrated", "claude-migrated", "codex-plan", "hermes-migrated", "langchain-migrated", "langgraph-migrated", "deepseek-plan"]
 evidence: ["source", "historical-document", "static-inference"]
@@ -21,7 +21,7 @@ verified_scope: "已比较层次、驱动器和代表主链路；全部配置、
 | 对象 / 阶段 | 输入与组合根 | 循环驱动 / 所在层 | 状态与扩展的特色 | 宿主/部署边界 | 证据 |
 |---|---|---|---|---|---|
 | Pi AgentSession，正式默认 | CLI/SDK → services/session | AgentSession 编排；Agent loop 执行 | 历史树、扩展事件与会话运行绑定 | 本地进程；其他接入未穷举 | [默认分册](../agents/pi/index.md) |
-| Pico5，实验 | durable TUI/Worker → Harness.open | TaskScheduler / generation-tool Task | Session 统一提交 entries/tasks/documents | 实验服务接入，未达到完整旧接口等价 | [实验分册](../agents/pi-durable/index.md) |
+| Pi Durable，实验库 | 应用 / Node / Durable Object → Harness.open | TaskScheduler / generation-tool Task | Session 统一提交 entries/tasks/documents | 独立实验库；宿主自行接纳、唤醒和交付 | [实验分册](../agents/pi-durable/index.md) |
 | DeerFlow，应用 | Gateway worker 或嵌入 Client | LangChain 构图，LangGraph 执行 | 产品 middleware、thread/run 与平台存储 | Gateway 与 Client 生命周期不同 | [应用分册](../agents/deerflow/index.md) |
 | Claude | 冻结源码的 CLI → REPL/SDK | query async generator | deferred tools、权限、分层上下文 | 原始源码快照冻结；不推定当前部署 | [分册](../agents/claude/index.md) |
 | Codex，开源 core | 宿主 → ThreadManager/SessionIo | SessionTask → run_turn → sampling/tools | Turn/Step 快照、rollout writer、执行审批 | 开源 core；桌面私有宿主未分析 | [core 分册](../agents/codex/index.md) |

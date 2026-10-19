@@ -42,7 +42,7 @@ verified_scope: "按共同职责与学习依赖组织阅读和演算；不以目
 
 **路线二：图状态及应用装配。** 先读 LangChain 的模型、工具与 middleware，再读 LangGraph 的 State、reducer、超步和路由。最后读 DeerFlow，解释产品工厂、图运行与平台 run 的分工。这里不能把应用与两个框架当成三套互斥系统，也不能把图内一个节点自动称为完整 Agent。
 
-**路线三：持久工作与事件资料。** 对照 Pico5 的 Submission、Task、Entry、Document 与 DeepSeek 的 phase、turn/step、event、surface。两者都能记录工作事实，但当前推进、投影和恢复采用不同表示。将这些表示放回共同问题，比按同名 Task/Session 作类比更可靠。
+**路线三：持久工作与事件资料。** 对照 Pi Durable 的 Submission、Task、Entry、Document 与 DeepSeek 的 phase、turn/step、event、surface。两者都能记录工作事实，但当前推进、投影和恢复采用不同表示。将这些表示放回共同问题，比按同名 Task/Session 作类比更可靠。
 
 Claude 以已注明范围的历史研究阅读，Lane 在历史附录中提供另一个控制设计的参照。具体研究版本与证据范围只查[版本说明](baselines.md)。
 

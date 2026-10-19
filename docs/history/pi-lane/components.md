@@ -7,7 +7,7 @@ baselines: ["pi-lane-20260916", "pi-20261009"]
 sources: ["pi-chord", "pi-radius"]
 depends_on: ["lane-runtime", "durable-documents"]
 evidence: ["source", "historical-document"]
-verified_scope: "旧 Chord 状态序列/Radius 接入及当前 Host/Document 接口核验；外部 Radius Gateway 部署和实现未知。"
+verified_scope: "旧 Chord 状态序列/Radius 接入及当时 Host/Document 接口核验；不代表最新 Chord Host；外部 Radius Gateway 部署和实现未知。"
 ---
 
 # Chord 与 Radius：组合、复制与远程传输
@@ -35,7 +35,7 @@ setup 内实际调用 use/observe/provide/provideMany，Host 据此记录依赖�
 
 可远程 Service 仅允许方法与 ReplicatedState，参数/结果是严格 JSON，尾部 Context 属控制面；local Service 可保存本地对象。应用 Adapter 负责把 Chord 信封放进 Pi RPC、关联响应与选择 route/认证。远程成员 metadata 与 keyed generation 防止把迟到调用交给同名新实例，不能替代网络登录或业务授权。
 
-证据：[当前 Host 依赖/激活](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/chord/src/facets/host.ts#L340)、[历史 Service 契约](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/types.ts)。
+证据：[当时 Host 依赖/激活](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/chord/src/facets/host.ts#L340)、[历史 Service 契约](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/types.ts)。
 
 ## 第二步：从工作状态发布，再由 Consumer 采用
 
@@ -50,7 +50,7 @@ publish 无实际差异不推送；有差异则 sequence 加一。订阅先拿�
 
 路径 ops 表达从旧发布值到新值：r 替根、s 设字段、d 删除、a 追加字符串、t 裁字符串前部、p 数组 splice。decoded paths 与压缩 wire paths 是两层，codec 绑定具体订阅/实例/state member，replacement 与断线重建。对脏子树的 diff 仍可能昂贵，不能笼统承诺每次常数时间。
 
-[历史 Provider/Replica 序列](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/state.ts#L6)、[订阅与传输](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/provider.ts)、[当前 Delta tracker](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/chord/src/delta/tracker.ts)。Pico5 [DocumentState](../../agents/pi-durable/documents.md) 直接从已提交 Document 建观察源；旧 Harness event→transcript bridge 是产品投影，事件原文不是 Chord delta。
+[历史 Provider/Replica 序列](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/state.ts#L6)、[订阅与传输](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/provider.ts)、[该版 Delta tracker](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/chord/src/delta/tracker.ts)。Pico5 [DocumentState](../../agents/pi-durable/documents.md) 直接从已提交 Document 建观察源；旧 Harness event→transcript bridge 是产品投影，事件原文不是 Chord delta。
 
 ### 用一次状态变化看发布与采用
 

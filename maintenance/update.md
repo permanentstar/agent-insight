@@ -16,6 +16,26 @@ verified_scope: "本页维护书籍组织与阅读契约，不声明目标 Agent
 
 后续新增及修订内容先读 [写作与教学评审规范](writing.md)。该页将已确认的学习定位、全章流程、段落承接、概念前置、中文代码阅读注释与教学评审要求固化为全书规则；下面记录各批实际修订范围和验证，不承担另一份写作规范。
 
+## 2026-10-19：Durable 主干校对
+
+owner 要求 Durable 按最新实现维护。已检查源码与书籍 checkout，均无 staged、unstaged 或 untracked 改动；执行 fetch 与 fast-forward 检查后，Pi main 已在 `2ec55d808d455b1a64a2bf7888198207a096120a`，提交时间为 2026-10-19T06:26:02Z。此次登记 `pi-20261019`，原 `pi-20261009` 保留给 AgentSession 的固定研究版本，Lane 继续使用历史基线。未运行目标 Agent 或真实模型。
+
+| 原 Pico5 分册的理解 | 当前实现与本轮校对 |
+|---|---|
+| 实验 TUI / Worker 接入 Durable | 实验前端栈已删除；改从 packages/durable 的聊天、编码及 Durable Object 宿主示例进入，普通 CLI 仍走 AgentSession |
+| 五类调度状态，阶段内等时间 | 新增 sleeping/until；sleepUntil 保存等待并结束阶段；blocked 为推导的检查结果 |
+| 模型发起工具，结果进入历史 | pi.tool v2 区分 model/nested；executeTool 子任务把结构结果放入父任务 NestedCallDoc |
+| 主要解释工具 intent/replay | 增补 codemode 的启动资料、交付日志、稳定调用 key 与脚本重放条件 |
+| 重开后继续派发 | 增补 wake/onWake、宿主 alarm、restartLimit、retryTask、typed reports 和跨重开 trace |
+| Entry 范围与摘要采用 | 增补应用 InputEntry、忙时展示写、system baseline 前置、modelOverrides 与压缩失败交接 |
+| 文档与 SQLite 后端 | 增补文档缓存回收、prefix 命名空间及 schema v2 升级边界；提交驱动与定时全量快照分开 |
+
+Durable 原五页修订并新增 tools/hosting 两页，保持概念、主链路、局部机制的阅读顺序；横向比较与业务承接篇同步修订受影响的结论。正文使用 Pi Durable 名称，Pico5 在版本说明中作为早期名称解释。源码引用按固定提交校对，版本差异集中在开篇与演化篇。旧 Lane/Chord/Radius 的源码解释不升级基线。代码及数据结构为静态阅读证据，未把上游测试存在写成实测通过。
+
+验证结果：67 个阅读页面的 check、普通构建和审稿构建通过；包含 404 的两套输出各有 68 份 HTML，591 个去重内部目标与锚点均无断链。最新提交的 67 个去重源码引用目标涉及 25 个文件，文件及行号检查通过，并结合调用点核对语义。source-status 使用 AGENT_SOURCE_ROOT 后确认 Pi baseline_match、HEAD 与 cached origin 均为 2ec55d8、wip=0；其他仓库只读检查，已有 WIP 保留。
+
+独立读者完整检查七篇、版本页、演化页和图示，发现 fork 继承范围及 retry/poll 图中回流两处问题，修正后同一读者复核收敛。Task 状态、生成流程、嵌套工具、宿主唤醒四幅结构图已在实际页面浅深主题检查；画布与颜色自包含。普通构建未含审稿标记，本地 15 条已解决批注保留，.review/ 继续被忽略。本地审稿服务已重建并在 127.0.0.1:4173 提供新分册，hosting 页面 HTTP 200。未运行目标 Agent、真实模型、故障注入、平台唤醒、数据库升级或性能实验。owner 随后授权提交并推送本轮文档，交付版本以 Git 提交记录为准。
+
 ## 业务系统承接篇与 Pi 演化归纳
 
 2026-10-15 owner 确认将跨框架模式归纳置于横向比较之后、各对象分册之前，Pi 演化篇保留三套架构的机制证据与具体取舍。本轮新增 `comparisons/agent-in-business.md`，沿 CSV 修复服务解释接纳、开放求解、动作受理、事实保存与验收，比较 AgentSession、Pico5、LangGraph 与 DeerFlow 的职责及组合条件；补充两幅可编辑 SVG、Pi 演化篇及阅读入口。

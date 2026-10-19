@@ -1,18 +1,18 @@
 ---
 id: "durable-glossary"
-title: "Pico5 概念词典"
+title: "Pi Durable 概念词典"
 subject: "pi-durable"
 status: "verified-source"
-baselines: ["pi-20261009"]
+baselines: ["pi-20261019"]
 sources: []
 depends_on: []
 evidence: ["source", "official"]
 verified_scope: "代表性对象、定义与运行句柄关系静态核验；未验证全部任务组合。"
 ---
 
-# Pico5 概念词典
+# Pi Durable 概念词典
 
-Pico5 将“历史贡献”“正在做的工作”“当前可变资料”分开建模。先学会辨认这些对象，再读调度流程；流程中的 Session 管提交，Conversation 定范围，Task 保存具体工作的身份。
+Pi Durable 将“历史贡献”“正在做的工作”“当前可变资料”分开建模。先学会辨认这些对象，再读调度流程；流程中的 Session 管提交，Conversation 定范围，Task 保存具体工作的身份。
 
 ![Harness 连接代码定义、调度与 Session；Session 管理 Conversation 下的 Entry、Task、Document 和 Submission，模型及工具在事务外执行](../../assets/pico5.svg)
 
@@ -33,7 +33,7 @@ Pico5 将“历史贡献”“正在做的工作”“当前可变资料”分�
 | Registry | 当前可执行任务、工具和扩展的代码定义 | 应用装配；scheduler 按 kind/version 查定义 | 代码留在进程里 |
 | Storage | 读取记录、接收一批事务写入的后端 | Session 使用；Memory/JSONL/SQLite 等实现 | 耐久能力取决于后端 |
 
-术语定义与关系见[类型契约](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/types.ts#L486)、[Harness 门面](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/harness.ts)、[Pico5 设计说明](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/docs/spec.md#L44)。实际推进以[架构](architecture.md)和[执行章](loop.md)的实现为准。
+术语定义与关系见[类型契约](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/types.ts#L599)、[Harness 门面](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/harness.ts)、[Pi Durable 设计说明](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/docs/spec.md#L44)。实际推进以[架构](architecture.md)和[执行章](loop.md)的实现为准。
 
 ## status、phase 与当前视图各回答什么
 
@@ -49,10 +49,20 @@ Task 的 `status` 告诉调度器能否运行它，例如 pending、running、wa
 | 当前可以展示哪些输出？ | 已提交 Document／Entry 的视图 |
 | 下一次模型会看到哪些语义材料？ | ContextView.messages |
 
+`sleeping` 表示按保存的时刻等待，期间没有 invocation；`waiting` 表示等待其他 Task 的结果。两者都可以跨进程保留。`inspect()` 还可能将一个任务判为 `blocked`，例如当前缺少定义或连续崩溃达到上限；blocked 是根据记录和当前运行环境推导的检查结果，不是 `TaskState` 的第七个状态。[TaskState](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/types.ts#L599)、[TaskInspection](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/types.ts#L668)。
+
+## 会话历史与工作归属是两种关系
+
+Conversation 可以通过 `parent` 继承另一个会话截至指定 Entry（含该条）的历史；`fork()` 使用这一关系。它还可以通过 `owner` 归属于某个 Task，用于等待、取消及完成判断。两个字段回答的问题不同：读到了谁的历史，由谁发起并管理工作。
+
+前台子 Agent 示例创建 Conversation 时只指定 `ownership: { kind: "task", taskId: api.taskId }`，没有指定历史 parent。子 Agent 收到调用者显式传入的任务，默认不继承主会话全文。因此，同一个 Session 内可以有多个历史根，同时通过 Task 所有权参与同一项工作。[Conversation 记录](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/types.ts#L397)、[前台子 Agent 示例](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/test/examples/22-subagent-foreground.ts)。
+
+Document 按声明的 scope 寻址：session 文档可以被同一 Session 的多个会话和任务共同读写；conversation 文档绑定一个 Conversation；task 文档绑定一个 Task。共享 session 文档不要求这些会话具有相同历史根。是否把几项工作放在同一 Session，应根据共同提交、协作与恢复的需求判断。
+
 ## 一个用户任务为什么会有很多 Task
 
 用户提交一个输入后得到 Submission。该输入被放入 Conversation，开始一段运行；`pi.live.run` 保存 inputs 及当前负责收口的 generation Task。模型请求工具时，这个 generation 创建并等待工具 child Task；工具结束后，它创建 successor generation，并把 run 的控制权交过去。
 
-因此，**一个生成 Task 终止，不表示用户任务已经结束**。一项需要读、改、验证的任务，可以对应多个 generation 和多个 tool Task，而用户仍等待同一个 Submission。`endRun` 才按当前归属收口输入并清理 live 状态。[run 归属字段](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/live.ts#L43)、[生成之间的移交](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/generation.ts#L663)。
+因此，**一个生成 Task 终止，不表示用户任务已经结束**。一项需要读、改、验证的任务，可以对应多个 generation 和多个 tool Task，而用户仍等待同一个 Submission。`endRun` 才按当前归属收口输入并清理 live 状态。[run 归属字段](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/live.ts#L81)、[生成之间的移交](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L752)。
 
-Pico5 的 Session 组织事务，AgentSession 编排交互产品；两者的具体职责在各自构造章展开。两者都组织对话，但对象边界和恢复方式不同。读完本词典，应能把“输入已接纳、生成正在请求、工具正在执行、视图已经更新”分别放到正确对象上。
+Pi Durable 的 Session 组织事务，AgentSession 编排交互产品；两者的具体职责在各自构造章展开。两者都组织对话，但对象边界和恢复方式不同。读完本词典，应能把“输入已接纳、生成正在请求、工具正在执行、视图已经更新”分别放到正确对象上。

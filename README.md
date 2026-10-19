@@ -2,7 +2,7 @@
 
 一本研究 Agent 架构、运行机制和设计取舍的源码书。正文中文，Markdown 与可编辑 SVG 保存研究内容，VitePress 提供导航和本地搜索。
 
-研究对象包括 Pi AgentSession、Pico5、DeerFlow、Claude Code、Codex、Hermes、LangChain、LangGraph 与 DeepSeek Harness；Lane Harness 作为历史架构附录。横向比较位于各对象分册之前。
+研究对象包括 Pi AgentSession、Pi Durable、DeerFlow、Claude Code、Codex、Hermes、LangChain、LangGraph 与 DeepSeek Harness；Lane Harness 作为历史架构附录。横向比较位于各对象分册之前。
 
 | 阅读入口 | 内容 |
 |---|---|

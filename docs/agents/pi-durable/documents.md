@@ -1,18 +1,18 @@
 ---
 id: "durable-documents"
-title: "Pico5：Document、上下文投影与异步摘要"
+title: "Pi Durable：Document、上下文投影与异步摘要"
 subject: "pi-durable"
 status: "verified-source"
-baselines: ["pi-20261009"]
+baselines: ["pi-20261019"]
 sources: []
 depends_on: ["durable-architecture", "durable-glossary"]
 evidence: ["source"]
-verified_scope: "核验 Document 身份/观察与 CompactionTask 提交分支；未执行存储恢复或远端视图测试。"
+verified_scope: "核验 Document 身份/缓存、输入与展示写入、上下文 baseline、模型压缩政策及摘要采用；未执行恢复或远端视图测试。"
 ---
 
-# Pico5：Document、上下文投影与异步摘要
+# Pi Durable：Document、上下文投影与异步摘要
 
-Pico5 用 Entry 保留历史贡献，用 Document 管理可变资料，再把历史范围投影为模型上下文。Document 的“当前运行视图”和 ContextView 的“模型输入”用途不同；学习时先问消费者是谁。
+Pi Durable 用 Entry 保留历史贡献，用 Document 管理可变资料，再把历史范围投影为模型上下文。Document 的“当前运行视图”和 ContextView 的“模型输入”用途不同；学习时先问消费者是谁。
 
 ![Entry、Task、Document 同批提交；Document 经已提交观察发布；模型从 Entry 范围投影 ContextView，摘要只在允许的边界采用](../../assets/pico5-documents.svg)
 
@@ -30,7 +30,7 @@ Pico5 用 Entry 保留历史贡献，用 Document 管理可变资料，再把历
 
 在导出任务里，UserEntry 保存原目标，assistant Entry 保存模型动作请求，tool result Entry 保存观察。这些贡献应当可以追溯。与此同时，界面想知道“当前哪个工具正在运行”，scheduler 想知道“哪一个生成负责输入收口”，应用还可能要保存自己的可变任务资料。将所有这些都当成历史消息，会让消费者反复解析文本来判断当前状态。
 
-Document 为后者提供 typed JSON。`pi.live` 保存当前 run、generation 和 tools，工具进度可以更新它；历史 Entry 则保存已结束的贡献。一个工具结束时，结果进入 Entry，工具 slot 变成 done 并清理运行中输出，两种变化可同批提交。[pi.live 的字段与视图职责](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/live.ts#L43)。
+Document 为后者提供 typed JSON。`pi.live` 保存当前 run、generation 和 tools，工具进度可以更新它；历史 Entry 则保存已结束的贡献。一个工具结束时，结果进入 Entry，工具 slot 变成 done 并清理运行中输出，两种变化可同批提交。[pi.live 的字段与视图职责](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/live.ts#L81)。
 
 | 资料 | 谁消费 | 应放到哪里 |
 |---|---|---|
@@ -52,17 +52,21 @@ defineDoc/defineDocFamily 声明 kind、schema version、scope 以及初始值�
 | conversation | 一段会话 | pi.live、该会话配置和资料 |
 | task | 一份 Task | 特定工作自己的结构资料 |
 
-Pico5 检查 owner 身份和记录 schema，不允许只凭同一个 kind 在任意作用域读写。history 与 fork 策略也影响资料在回退或分支时如何解释，例如 pi.live 声明 latest 与 fork=initial，不能把运行进度视为应原样复制到新分支的历史事实。[定义与地址](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/documents.ts#L109)、[LiveDoc 策略](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/live.ts#L63)。
+例如宿主可用 session scope 保存各会话的业务索引，用 conversation scope 保存 CSV 修复计划，用 task scope 保存一次 codemode 的交付日志。后者随所属任务终态退休；conversation 文档的 history/fork 控制分支如何读取或复制资料。Document 是一个有地址和生命周期的 JSON 对象，业务里称作 session 或 task 的实体需要由应用自己映射。
+
+Pi Durable 检查 owner 身份和记录 schema，不允许只凭同一个 kind 在任意作用域读写。history 与 fork 策略也影响资料在回退或分支时如何解释，例如 pi.live 声明 latest 与 fork=initial，不能把运行进度视为应原样复制到新分支的历史事实。[定义与地址](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/documents.ts#L109)、[LiveDoc 策略](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/live.ts#L111)。
 
 ## 第二步：提交成功后向观察者发布
 
-Session.documentState 在 Session 队列中加载记录，接入 CommittedStateSource，再包成 Chord replicatedState。事务内部的 Draft 不直接送给观察者；Storage 提交、Session 采用后才发布。Chord 负责可观察状态与复制，存储与 Task 调度仍由各自层承担。[观察句柄构造](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/session/session.ts#L213)。
+Session.documentState 在 Session 队列中加载记录，接入 CommittedStateSource，再包成 Chord replicatedState。事务内部的 Draft 不直接送给观察者；Storage 提交、Session 采用后才发布。Chord 负责可观察状态与复制，存储与 Task 调度仍由各自层承担。[观察句柄构造](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L356)。
 
 因此，界面可以订阅 pi.live，而模型并不会因此自动读到所有 Document。要把文档资料交给模型，需要 Prompt section 或其他请求组织代码明确读取并转换成语义材料。观察者消费已提交视图；模型消费请求组织代码明确提供的消息。
 
+观察句柄存活期间需要保留其当前值；没有观察者、最近也没读写的文档可以从进程缓存回收。`documentRetentionMs` 默认十分钟，设为 0 表示用后即可释放，再次读取从 Storage 加载。回收内存不删除持久文档。它使一个长期 Session 接触很多会话时，不必把全部当前 JSON 永久留在堆中。[文档缓存生命周期](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L121)。
+
 ## 第三步：从固定范围构造模型消息
 
-ContextView 包含 head、entries、contributions 和 messages。读取时先在 Session line 捕获范围：当前 tail 或指定 at，加上可见的最新 head marker；随后从稳定范围扫描不可变 Entry，应用 edit 和 model 贡献，整理工具 call/result 次序并形成消息。[范围捕获](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/context.ts#L18)、[贡献与消息整理](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/context.ts#L117)。
+ContextView 包含 head、entries、contributions 和 messages。读取时先在 Session line 捕获范围：当前 tail 或指定 at，加上可见的最新 head marker；随后从稳定范围扫描不可变 Entry，应用 edit 和 model 贡献，整理工具 call/result 次序并形成消息。[范围捕获](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/context.ts#L19)、[贡献与消息整理](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/context.ts#L123)。
 
 这一步先确定哪些记录对当前请求有效。Entry 可以只有结构资料而没有 model 贡献，edit 可以改变旧贡献的视图，summary/reset 的 head marker 可以改变当前范围。generation.prepare 渲染位置化 Prompt sections 与工具声明；request 再从保存的 cutoff 取得上下文并运行 beforeRequest。模型看到的是被组织好的消息，而不是 Session 的所有数据表。
 
@@ -79,9 +83,15 @@ if (at === undefined) {
 return { head: await storage.findLatestHeadMarker(conversationId, tail, context), tail };
 ```
 
-generation 使用执行章第二步准备时保存的 cutoff 调用 runtime.context，下一生成会捕获新的范围。因此同一轮请求与随后新增资料有明确时间关系。[范围捕获实现](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/context.ts#L18)。
+generation 使用执行章第二步准备时保存的 cutoff 调用 runtime.context，下一生成会捕获新的范围。因此同一轮请求与随后新增资料有明确时间关系。[范围捕获实现](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/context.ts#L19)。
 
-假设摘要标记 H 的 ID 为 E10，H.head=E5，tail=E12，则范围扫描 E5 至 E12；活动记录采用 H，再接 E5/E6/E7/E8/E9/E11/E12。这个例子假定其他记录都没有 head 字段；标记 H 从扫描段中移除，作为摘要放到最前。[扫描查询与活动记录选择](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/context.ts#L228)。
+假设摘要标记 H 的 ID 为 E10，H.head=E5，tail=E12，则范围扫描 E5 至 E12；活动记录采用 H，再接 E5/E6/E7/E8/E9/E11/E12。这个例子假定其他记录都没有 head 字段；标记 H 从扫描段中移除，作为摘要放到最前。[扫描查询与活动记录选择](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/context.ts#L268)。
+
+### 应用输入与展示记录怎样进入
+
+输入 Submission 可以附带 `entry: { kind, data }`，将业务目标保存为应用自己的 Entry 类型，content 仍贡献用户消息。kind 需非空且不以 pi. 开头。程序因此能按业务字段关联输入，无需从模型正文猜测工作身份。
+
+只含 kind/data 的展示 write 不改变模型上下文，允许在忙时直接追加并收为 done；若前面排着 reset，则仍等待，避免记录被该 reset 隐藏。包含 model、head 或 edits 的写入会影响模型，仍需遵守接纳边界。[输入与展示写入的接纳](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/submissions.ts#L201)。
 
 ## 第四步：生成摘要，并在允许边界放置
 
@@ -94,7 +104,7 @@ generation 使用执行章第二步准备时保存的 cutoff 调用 runtime.cont
 | generation-owned 阻塞摘要 | 当前生成需要先减小上下文，才能继续请求 | generation 持有 run 并等待 child；摘要直接追加到受控边界 |
 | conversation-owned 背景摘要 | 主工作继续推进，摘要并行准备 | 用 write Submission 接纳；空闲直接放，忙时等允许边界 |
 
-背景摘要生成期间，Conversation 可能继续增加 Entry。因此“LLM 返回摘要”只代表文字准备好；真正生效要经过接纳、放置和范围检查。若旧范围已经不适用，write 可以按 stale 收口。这样不会让后台任务绕过活跃生成，直接改写它正在依据的上下文。[CompactionTask](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/compaction.ts#L103)、[两种放置路径](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/compaction.ts#L401)。
+背景摘要生成期间，Conversation 可能继续增加 Entry。因此“LLM 返回摘要”只代表文字准备好；真正生效要经过接纳、放置和范围检查。若旧范围已经不适用，write 可以按 stale 收口。这样不会让后台任务绕过活跃生成，直接改写它正在依据的上下文。[CompactionTask](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/compaction.ts#L112)、[两种放置路径](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/compaction.ts#L428)。
 
 举例说，摘要浓缩“已读需求、确认 CSV 的转义规则”，近期修改与验证结果仍逐条保留；接下来模型既有任务方向，也能读取最近验证失败的具体细节。摘要作为语义材料进入下一请求，近期结果继续提供具体观察。
 
@@ -102,21 +112,29 @@ placeSummary 的两个采用出口直接对应上表。下面节选入口选择�
 
 ```ts
 const result: CompactionResult = current.owner === undefined
-  ? { submissionId: await admitSubmission(
+  ? { submissionId: (await admitSubmission(
       tx, runtime.conversationId,
       { type: "write", requestId: `compaction:${runtime.taskId}`, entry },
       runtime.now(), runtime.settings,
-    ) }
+    )).id }
   : { entryId: (await tx.appendEntry(runtime.conversationId, entry)).id };
 return { status: "terminal", outcome: { status: "completed", result } };
 ```
 
-无 owner 的后台摘要取得 write Submission，由接纳流程决定放置；有 generation owner 的阻塞摘要直接追加，等待它的 generation 随后继续。这条分支把文字生成接到了会话的实际采用位置。[摘要放置实现](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/compaction.ts#L401)。
+无 owner 的后台摘要取得 write Submission，由接纳流程决定放置；有 generation owner 的阻塞摘要直接追加，等待它的 generation 随后继续。这条分支把文字生成接到了会话的实际采用位置。[摘要放置实现](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/compaction.ts#L428)。
+
+## 摘要之后如何恢复请求基线
+
+保留段可能已经包含 assistant 消息，而摘要后重新渲染的完整 system baseline 出现在后面。ContextView 会识别这个 baseline，将其放到请求最前，再接摘要及保留内容；其他后续 system 贡献保持原有位置。因而前面的活动 Entry 顺序不等于最终 messages 的排列。读者推导消息时，需要在贡献整理后再应用这一规则。[baseline 与消息整理](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/context.ts#L145)。
+
+压缩政策还可按精确的 provider/modelId 设置 modelOverrides。阈值判断、溢出恢复和摘要任务读取适用模型的配置；一次 Harness 服务不同窗口的模型时，不必共享同一组阈值。[模型政策选择](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/compaction.ts#L262)。
+
+阻塞压缩明确失败时，等待它的 generation 以 model_error 收口，避免仍用过大的上下文继续请求。后台或手动压缩失败则保留最新 compactionFailure 供界面读取，直到成功产生摘要清除。摘要文字、采用时机、失败状态各有消费者；不能只观察压缩 Task 已离开任务图。[阻塞结果检查](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L147)、[失败展示资料](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/live.ts#L74)。
 
 ## 预算与结构的分工
 
-上下文预算会利用适用范围内的 assistant usage，再估算新增消息；缺少可用测量时改用估算。它判断请求是否需要压缩，不等于统计 Storage 的字节数。可变 Document、完整历史和模型上下文的规模因此不能混算。[预算与摘要处理](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/compaction.ts#L307)。
+上下文预算会利用适用范围内的 assistant usage，再估算新增消息；缺少可用测量时改用估算。它判断请求是否需要压缩，不等于统计 Storage 的字节数。可变 Document、完整历史和模型上下文的规模因此不能混算。[预算与摘要处理](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/compaction.ts#L331)。
 
-Pico5 的组合体现了三种职责：Entry 保存语义来源，Document 维护当前结构状态，Task checkpoint 保存推进位置。ContextView 把语义来源组织给模型，事务与调度把模型选择组织成程序工作。与 AgentSession 的历史树比较时，应分别比较这些问题，分别定位历史贡献、当前资料与工作推进的位置。
+Pi Durable 的组合体现了三种职责：Entry 保存语义来源，Document 维护当前结构状态，Task checkpoint 保存推进位置。ContextView 把语义来源组织给模型，事务与调度把模型选择组织成程序工作。与 AgentSession 的历史树比较时，应分别比较这些问题，分别定位历史贡献、当前资料与工作推进的位置。
 
 学习自检：pi.live 更新为什么不会自动进入模型 Prompt？cutoff、head、firstKept 各限定哪一部分输入？后台摘要已生成但尚未放置时，当前请求应该采用哪段上下文？

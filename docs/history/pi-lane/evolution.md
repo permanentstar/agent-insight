@@ -3,7 +3,7 @@ id: "pi-evolution"
 title: "Pi：持久架构路线与产品入口"
 subject: "pi-lane"
 status: "frozen-source"
-baselines: ["pi-lane-20260916", "pi-20261009"]
+baselines: ["pi-lane-20260916", "pi-20261009", "pi-20261019"]
 sources: ["pi-lane"]
 depends_on: ["pi-architecture", "durable-architecture"]
 evidence: ["source", "official", "static-inference"]
@@ -28,8 +28,9 @@ verified_scope: "固定基线的发布入口与三套控制表示已静态核验
 | 0.85.1，2026-09-16 | 正式 cli.ts 到 main→AgentSession；远程前端被 build 与发布检查排除 | 不能说 Lane 没有代码/不能自集成；也不能说存在官方产品部署入口 |
 | 1.0.0，2026-10-01 | 旧 Harness 从 agent-core 删除；durable 成独立包；实验 TUI/worker 改用 Pico5 | 正式默认已切 durable，或能力完整等价 |
 | 2026-10-09 | 正式 main 仍构造 AgentSession；实验 Worker 使用 durable | 未来切默认的日期与承诺 |
+| 2026-10-19 | 实验 TUI/worker/client-server 已删除；Durable 保留独立库与示例，增加持久休眠、嵌套工具及宿主唤醒；普通 CLI 仍构造 AgentSession | 不能沿用旧实验脚本，也不能把库新增能力当成默认产品切换 |
 
-源码证据：[提升 API 的提交](https://github.com/earendil-works/pi/commit/44289550aa06750542c0ace8ab4bac0c7e68ce54)、[0.84.0 tag 对应源码](https://github.com/earendil-works/pi/blob/a5f43bf8aff3c55752432655f7334e3dafd1e256/packages/agent/src/index.ts)、[旧正式入口](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/coding-agent/src/main.ts#L816)、[旧发布排除](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/coding-agent/package.json)、[旧消费者检查](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/scripts/coding-agent-consumer.mjs#L79)、[最新 main](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/main.ts#L841)。
+源码证据：[提升 API 的提交](https://github.com/earendil-works/pi/commit/44289550aa06750542c0ace8ab4bac0c7e68ce54)、[0.84.0 tag 对应源码](https://github.com/earendil-works/pi/blob/a5f43bf8aff3c55752432655f7334e3dafd1e256/packages/agent/src/index.ts)、[旧正式入口](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/coding-agent/src/main.ts#L816)、[旧发布排除](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/coding-agent/package.json)、[旧消费者检查](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/scripts/coding-agent-consumer.mjs#L79)、[当前 main](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/coding-agent/src/main.ts#L842)。
 
 架构调整的上游说明见 [删除旧 Harness](https://github.com/earendil-works/pi/commit/7fd478a2e888ebc28869566f33a186303d372838) 和 [移植实验 client/server](https://github.com/earendil-works/pi/commit/48dd1e2f0f9dc7a767d7e5ee693bc85a4d6db38c)。
 
@@ -37,7 +38,7 @@ verified_scope: "固定基线的发布入口与三套控制表示已静态核验
 
 沿同一项 CSV 修复任务比较：模型需要读源码、提出修改、运行验证，再决定是否继续。三套实现都能组织这类反馈，区别在于程序怎样知道当前在哪里，以及中断后根据什么继续。
 
-| 观察点 | AgentSession | Lane Harness | Pico5 / durable |
+| 观察点 | AgentSession | Lane Harness | Pi Durable |
 |---|---|---|---|
 | 主要组织单位 | 交互会话与 Agent 运行 | 处理道中的专用 Operation | Conversation、Submission 与不同种类 Task |
 | 下一步由什么表示 | 活动循环与调用结果 | 持久 OperationState 的阶段 | Task 的状态与 checkpoint |
@@ -76,26 +77,30 @@ switch (state.at) {
 
 因此 Lane 已经提供持久工作阶段、效果恢复与状态历史的提交边界。它相对 AgentSession 的变化，在于将活动工作的控制资料显式保存。代价是生成、工具、摘要、导航等行为共同进入一套专用状态体系；扩展运行行为时，需要理解它们与主 Operation 的关系。本书据此判断，复杂度容易集中到主控制模型，但没有通过维护成本实验为三者排序。
 
-### Pico5：通用调度与任务行为分别解释状态
+### Pi Durable：通用调度与任务行为分别解释状态
 
-Pico5 将生成、工具和摘要表示为不同 Task。调度器处理 pending、running、waiting、completing 和 terminal 等通用状态；各任务定义处理自己的阶段。一个 generation 等待工具 child Task，读取其结果，再把同一用户工作交给后续 generation。这些身份与完成层次详见[Pico5 词典](../../agents/pi-durable/glossary.md)。
+Pi Durable 将生成、工具和摘要表示为不同 Task。调度器处理 pending、running、waiting、sleeping、completing 和 terminal 等通用状态；各任务定义处理自己的阶段。一个 generation 等待工具 child Task，读取其结果，再把同一用户工作交给后续 generation。这些身份与完成层次详见[Durable 词典](../../agents/pi-durable/glossary.md)。
 
 状态由通用调度器和任务定义共同解释。调度器重开时会将遗留 running 改回 pending，并保留 checkpoint；认领后从 Registry 取得对应定义。下面是重开路径的源码节选，省略扫描和事务外围：
 
 ```typescript
 if (record.state.status === "running") {
-  tx.setTask(withState(record, {
-    status: "pending",
-    checkpoint: record.state.checkpoint,
-  }));
+  const restarts = (record.restarts ?? 0) + 1;
+  const pending = withState(record, {
+    status: "pending", checkpoint: record.state.checkpoint,
+  });
+  tx.setTask({ ...pending, restarts } as AnyTaskRecord);
 }
 ```
 
-它使旧进程的认领失效，并不把运行推进到任意新阶段。`open` 本身也不派发工作；启用调度后，当前定义才从 checkpoint 继续。[调度器重开](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/scheduler.ts#L238)与[阶段运行](../../agents/pi-durable/loop.md)分别解释这两步。
+
+它使旧进程的认领失效，同时统计无状态进展的截断次数。达到 restartLimit 的任务暂时阻塞；sleeping 则保留 until，交由宿主安排到期唤醒。`open` 本身也不派发工作；启用调度后，当前定义才从 checkpoint 继续。[调度器重开](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L370)与[阶段运行](../../agents/pi-durable/loop.md)分别解释这两步。
 
 对于 CSV 任务，用户工作可以跨多个 generation 与工具 Task，Entry 保存观察，Document 保存可变资料。通用调度器无需把 CSV 验证或摘要的具体策略写进自己的状态枚举。我的工程判断是，这比继续扩大专用 Operation 更适合增加后台工作和新的任务种类；收益来自职责划分，并非来自状态数量更少。
 
 ## durable 的收益需要与成本一起判断
+
+独立运行底座继续完善了三个方向：嵌套工具让程序组合中的每次调用有自己的恢复身份；sleeping/wake 将阶段等待接到按需宿主；typed reports 与 trace carrier 使重开前后的运行可关联。基本的 Entry、Task、Document 分工延续，演进并不意味着又换了一套会话模型。详见[工具组合](../../agents/pi-durable/tools.md)和[宿主恢复](../../agents/pi-durable/hosting.md)。
 
 与 AgentSession 相比，durable 增强了进行中工作的表示与恢复；与 Lane 相比，更显著的变化是通用调度、任务策略和数据职责的分开。Lane 已具备持久恢复和提交，不能把这些能力都算作 durable 首创。
 
@@ -108,9 +113,9 @@ if (record.state.status === "running") {
 | 外部操作 | 保存执行意图不能自动使外部效果恰好一次，需要安全重放、幂等或结果查询 |
 | 延迟与吞吐 | 提交路径与存储配置会影响成本；没有相同任务测量，不作性能排名 |
 
-工具恢复说明了持久性边界：Pico5 在真正执行前保存最终参数及 replay 政策，恢复时只有历史与当前定义都标为 safe 才重跑；否则以中断结果收口。外部操作若已成功、结果尚未提交，系统仍需表达不确定性。[工具意图与恢复](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/tool.ts#L104)。
+工具恢复说明了持久性边界：Pi Durable 在真正执行前保存最终参数及 replay 政策，恢复时只有历史与当前定义都标为 safe 才重跑；否则以中断结果收口。外部操作若已成功、结果尚未提交，系统仍需表达不确定性。[工具意图与恢复](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L189)。
 
-代码兼容也是新责任。调度器按 kind/version 查找定义；版本变化时需要有效迁移，把旧 input 与 checkpoint 转成新表示。持久化保存的是资料，不会同时保存旧函数的执行环境。[定义解析与迁移](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/durable/src/harness/scheduler.ts#L827)。
+代码兼容也是新责任。调度器按 kind/version 查找定义；版本变化时需要有效迁移，把旧 input 与 checkpoint 转成新表示。持久化保存的是资料，不会同时保存旧函数的执行环境。[定义解析与迁移](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1589)。
 
 ## 哪些动机有说明，哪些属于本书归纳
 

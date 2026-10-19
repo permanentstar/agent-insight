@@ -36,7 +36,7 @@ Lane 接入口与 Document bridge 在不同层连接；外部 Radius 服务实�
 <rect x="540" y="420" width="420" height="110" rx="10" fill="#eff6ff" stroke="#334155" stroke-width="2"/>
 <text x="558" y="449" fill="#172554" font-family="Arial, sans-serif" font-size="20" font-weight="700">Pi Server / Worker</text>
 <text x="558" y="476" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">Server.accept → attachment 路由</text>
-<text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">当前 Pico5 Doc 对接 Chord 观察</text>
+<text x="558" y="503" fill="#172554" font-family="Arial, sans-serif" font-size="18" font-weight="400">当前 Pi Durable Doc 对接 Chord 观察</text>
 <text x="30" y="612" fill="#475569" font-family="Arial, sans-serif" font-size="16">Chord 不等于网络、认证或存储；Radius 模型网关与 Session relay 是不同用途。</text>
 <text x="30" y="635" fill="#475569" font-family="Arial, sans-serif" font-size="16">Lane 接入口与 Document bridge 在不同层连接；外部 Radius 服务实现未知。</text>
 </svg>

@@ -3,7 +3,7 @@ id: "comparison-reference"
 title: "共同架构：从模型调用到完整工作闭环"
 subject: "comparison"
 status: "index"
-baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331"]
+baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331", "pi-20261019"]
 sources: []
 depends_on: ["pi-loop", "durable-loop", "deerflow-migrated", "codex-plan", "hermes-migrated", "langchain-migrated", "langgraph-migrated", "deepseek-plan", "claude-migrated"]
 evidence: ["source", "official", "static-inference", "proposal"]
@@ -159,7 +159,7 @@ Pi 的 CLI/SDK 构造 AgentSession；DeerFlow Gateway 管 thread 与 run；Herme
 
 原始历史回答“发生过什么”；工作状态回答“现在推进到哪里”；模型视图回答“本次看见什么”。长期记忆、知识库和产物可以提供额外资料，但不会自动成为当前请求，也不会自动代表正在执行的工作。
 
-Pi 的历史树、DeepSeek 的事件与 surface、LangGraph 的 channels/checkpoint、Pico5 的 Entry/Task/Document，是对这些问题的不同组织。先问资料由谁生产、谁消费、何时生效，再解释具体类型名，就不会把所有内容压成一个 messages 数组。
+Pi 的历史树、DeepSeek 的事件与 surface、LangGraph 的 channels/checkpoint、Pi Durable 的 Entry/Task/Document，是对这些问题的不同组织。先问资料由谁生产、谁消费、何时生效，再解释具体类型名，就不会把所有内容压成一个 messages 数组。
 
 ### 横切职责：不另造一个平行 Agent
 
@@ -175,7 +175,7 @@ Pi 的历史树、DeepSeek 的事件与 surface、LangGraph 的 channels/checkpo
 |---|---|---|---|
 | 进程内控制流 | 函数收到结果，回到下一请求边界 | 活跃调用栈、取消、队列与会话重建分开 | AgentSession、Codex core、Hermes 原生；Claude 冻结 query |
 | 状态图与调度 | 节点返回 update，合并状态，再按边和任务调度 | state、reducer、超步、节点重跑与 checkpoint | LangChain 构图，LangGraph 执行，DeerFlow 装配产品策略 |
-| 持久任务阶段 | 任务保存 checkpoint，等待子工作，按提交状态重新认领 | Task 身份、status/phase、事务及外部效果分开 | Pico5 |
+| 持久任务阶段 | 任务保存 checkpoint，等待子工作，按提交状态重新认领 | Task 身份、status/phase、事务及外部效果分开 | Pi Durable |
 
 这三种表示可以嵌套。图中的节点可以包含一个进程内工具循环；持久 Task 可以请求一个远端执行器。DeepSeek 的驱动主线仍是进程循环，同时用事件和 surface 组织资料；“事件历史”是数据表示维度，不应再当成与前三种互斥的执行策略。
 

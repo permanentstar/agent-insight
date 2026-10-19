@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1140" height="650" viewBox="0 0 1140 650" role="img" aria-labelledby="title desc">
   <title id="title">Pi 三套架构的工作表示</title>
-  <desc id="desc">AgentSession 由进程内 Agent 循环推进，SessionManager 保存历史并重建上下文；Lane 由 Drive 按持久 OperationState 阶段分派；Pico5 由通用调度器认领 Task，任务定义解释 checkpoint，Session 共同保存 Entry、Task 和 Document。三列比较设计表示，不表示三个默认产品版本依次替换。</desc>
+  <desc id="desc">AgentSession 由进程内 Agent 循环推进，SessionManager 保存历史并重建上下文；Lane 由 Drive 按持久 OperationState 阶段分派；Pi Durable 由通用调度器认领 Task，任务定义解释 checkpoint，Session 共同保存 Entry、Task 和 Document。三列比较设计表示，不表示三个默认产品版本依次替换。</desc>
   <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9Z" fill="#334155"/></marker></defs>
   <rect width="1140" height="650" fill="#ffffff"/>
   <g font-family="system-ui, sans-serif" fill="#172554">
@@ -10,7 +10,7 @@
     <rect x="770" y="75" width="340" height="475" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
     <text x="48" y="109" font-size="21" font-weight="700">AgentSession</text>
     <text x="418" y="109" font-size="21" font-weight="700">Lane Harness</text>
-    <text x="788" y="109" font-size="21" font-weight="700">Pico5 / durable</text>
+    <text x="788" y="109" font-size="21" font-weight="700">Pi Durable / durable</text>
     <text x="48" y="140" font-size="17">从交互会话组织工作</text>
     <text x="418" y="140" font-size="17">用专用 Operation 表达进度</text>
     <text x="788" y="140" font-size="17">通用 Task 与行为定义分开</text>

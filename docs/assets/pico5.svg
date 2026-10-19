@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="920" height="690" viewBox="0 0 920 690" role="img" aria-labelledby="title desc">
-  <title id="title">Pico5：进程内句柄、持久任务与事务外效果</title>
+  <title id="title">Pi Durable：进程内句柄、持久任务与事务外效果</title>
   <desc id="desc">实验应用用 Harness 接纳输入并取得 Submission。Scheduler 按持久 Task record 推进，TaskRuntime 经 Session 事务提交到 Storage。模型与工具执行在事务之外，工具先提交 intent，再执行效果，最后提交 outcome。</desc>
   <rect width="920" height="690" fill="#ffffff"/>
   <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#334155"/></marker></defs>
   <g font-family="system-ui, sans-serif" fill="#172554">
-    <text x="30" y="40" font-size="22" font-weight="700">Pico5：进程内句柄、持久任务与事务外效果（实验）</text>
+    <text x="30" y="40" font-size="22" font-weight="700">Pi Durable：进程内句柄、持久任务与事务外效果（实验）</text>
     <rect x="30" y="62" width="860" height="78" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-    <text x="48" y="90" font-size="17" font-weight="700">应用层 · durable TUI / experimental Session Worker</text>
+    <text x="48" y="90" font-size="17" font-weight="700">应用层 · 自建应用 / Node / Cloudflare Durable Object</text>
     <text x="48" y="117" font-size="15">Harness.open 组合 Models、Registry、Storage；获取 root Conversation</text>
     <path d="M275,140 V179" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
     <rect x="30" y="182" width="860" height="78" rx="8" fill="#eff6ff" stroke="#475569" stroke-width="2"/>

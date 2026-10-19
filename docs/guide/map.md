@@ -21,7 +21,7 @@ verified_scope: "本页维护书籍组织与阅读契约，不声明目标 Agent
 | 对象 | 研究侧重 | 入口 |
 |---|---|---|
 | Pi AgentSession | 交互会话、模型循环、历史树与扩展绑定 | [分册](../agents/pi/index.md) |
-| Pico5 / pi-durable | 持久 Task、事务、Document 与副作用恢复 | [分册](../agents/pi-durable/index.md) |
+| Pi Durable / pi-durable | 持久 Task、事务、Document 与副作用恢复 | [分册](../agents/pi-durable/index.md) |
 | DeerFlow | 产品装配、Gateway/Client、中间件、工具与子 Agent | [分册](../agents/deerflow/index.md) |
 | Claude Code | query 循环、权限、分层压缩、记忆与交互宿主 | [分册](../agents/claude/index.md) |
 | Codex | Rust core 的线程、轮次快照、工具执行与 rollout | [分册](../agents/codex/index.md) |

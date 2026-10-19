@@ -1,43 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="880" viewBox="0 0 960 880" role="img" aria-labelledby="title desc">
-<title id="title">Pico5 Generation：阶段、等待与控制移交</title><desc id="desc">prepare 保存请求 cutoff 后进入 request；最终回答结束；工具调用创建 child，等待 tools 阶段后创建 successor；retry 与 poll 为请求旁路。</desc>
-<rect width="960" height="880" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="1040" viewBox="0 0 1060 1040" role="img" aria-labelledby="title desc">
+<title id="title">Pi Durable Generation：正常反馈与持久等待</title>
+<desc id="desc">prepare 准备请求，request 取得响应，classify 分类。工具进入 tools 等待并移交 successor；回答收口。retry 休眠到期后回 prepare；poll 到期 fetchDeferred，再交 classify，不重新发送 request。</desc>
+<rect width="1060" height="1040" fill="#ffffff"/>
 <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
 <g font-family="system-ui, sans-serif" fill="#172554">
-<text x="30" y="37" font-size="22" fill="#172554" font-weight="700">Pico5 Generation：阶段、等待与控制移交</text>
-<rect x="30" y="75" width="550" height="104" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="103" font-size="18" fill="#172554" font-weight="700">prepare</text>
-<text x="46" y="130" font-size="16" fill="#172554">渲染 Prompt 与工具声明，准备 ContextView</text>
-<text x="46" y="154" font-size="16" fill="#172554">提交 model / thinking / streamOptions / cutoff</text>
-<rect x="30" y="233" width="550" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="261" font-size="18" fill="#172554" font-weight="700">request</text>
-<text x="46" y="288" font-size="16" fill="#172554">事务外调用模型；按响应分类并提交</text>
-<rect x="30" y="405" width="550" height="106" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="433" font-size="18" fill="#172554" font-weight="700">tools</text>
-<text x="46" y="460" font-size="16" fill="#172554">保存 assistant 与工具 IDs；waiting</text>
-<text x="46" y="484" font-size="16" fill="#172554">child 全部收口后重新进入该阶段</text>
-<rect x="30" y="584" width="550" height="98" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="46" y="612" font-size="18" fill="#172554" font-weight="700">当前 generation 结束</text>
-<text x="46" y="639" font-size="16" fill="#172554">处理工具结果，创建 successor generation</text>
-<text x="46" y="663" font-size="16" fill="#172554">移交 pi.live.run.taskId</text>
-<rect x="665" y="405" width="265" height="106" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
-<text x="681" y="433" font-size="18" fill="#172554" font-weight="700">回答分支</text>
-<text x="681" y="460" font-size="16" fill="#172554">保存最终 assistant</text>
-<text x="681" y="484" font-size="16" fill="#172554">endRun 收口输入</text>
-<path d="M305,179 V229" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M305,323 V401" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="326" y="368" font-size="16" fill="#172554">请求工具</text>
-<path d="M305,511 V580" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<path d="M580,636 H618 V126 H584" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="629" y="166" font-size="15" fill="#172554">新 Task</text>
-<path d="M580,278 H797 V401" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="665" y="369" font-size="16" fill="#172554">最终回答</text>
-<rect x="665" y="72" width="265" height="142" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="681" y="100" font-size="18" fill="#172554" font-weight="700">请求旁路</text>
-<text x="681" y="127" font-size="16" fill="#172554">retry：保存等待时点</text>
-<text x="681" y="151" font-size="16" fill="#172554">poll：保存延后句柄</text>
-<text x="681" y="175" font-size="16" fill="#172554">按相应条件继续请求</text>
-<path d="M665,178 H646 V278 H584" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="30" y="737" font-size="17" fill="#172554">status 表达调度状态；phase 表达任务阶段，二者不能混称。</text>
-<text x="30" y="778" font-size="17" fill="#172554">G1 → successor G2 是 Task 移交；同一个用户 Submission 尚可继续。</text>
-<text x="30" y="824" font-size="15" fill="#172554">图示正常路径；prepare 也可能等待阻塞摘要，request 可失败或被中止。</text>
+<text x="30" y="38" font-size="23" fill="#172554">Pi Durable Generation：正常反馈与持久等待</text>
+<rect x="40" y="90" width="510" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="56" y="118" font-size="18" fill="#172554">prepare</text>
+<text x="56" y="143" font-size="16" fill="#172554">渲染 Prompt / 工具，保存请求配置与 cutoff</text>
+<rect x="40" y="250" width="510" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="56" y="278" font-size="18" fill="#172554">request</text>
+<text x="56" y="303" font-size="16" fill="#172554">按 cutoff 读取消息，事务外调用模型</text>
+<rect x="40" y="420" width="510" height="90" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="56" y="448" font-size="18" fill="#172554">classify（响应处理函数）</text>
+<text x="56" y="473" font-size="16" fill="#172554">分类并提交回答、工具轮次或持久休眠</text>
+<rect x="40" y="600" width="510" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="56" y="628" font-size="18" fill="#172554">tools / status=waiting</text>
+<text x="56" y="653" font-size="16" fill="#172554">等待工具 child，处理结果后准备移交</text>
+<rect x="40" y="790" width="510" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="56" y="818" font-size="18" fill="#172554">当前 generation 收口</text>
+<text x="56" y="843" font-size="16" fill="#172554">创建 successor，移交 pi.live.run.taskId</text>
+<rect x="700" y="90" width="310" height="120" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="716" y="118" font-size="18" fill="#172554">retry / status=sleeping</text>
+<text x="716" y="143" font-size="16" fill="#172554">保存 until / attempt</text>
+<text x="716" y="168" font-size="16" fill="#172554">到期后准备下一次请求</text>
+<rect x="700" y="275" width="310" height="120" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="716" y="303" font-size="18" fill="#172554">poll / status=sleeping</text>
+<text x="716" y="328" font-size="16" fill="#172554">保存 pollAt / handle</text>
+<text x="716" y="353" font-size="16" fill="#172554">到期 fetchDeferred(handle)</text>
+<rect x="700" y="600" width="310" height="100" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="716" y="628" font-size="18" fill="#172554">正常回答</text>
+<text x="716" y="653" font-size="16" fill="#172554">保存 assistant，处理最终边界</text>
+<text x="716" y="678" font-size="16" fill="#172554">endRun 收口输入</text>
+<path d="M295 190 V246" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M295 340 V416" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M295 510 V596" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="315" y="558" font-size="16" fill="#172554">请求工具</text>
+<path d="M295 700 V786" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M550 840 H610 V140 H554" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="568" y="757" font-size="15" fill="#172554">新 Task</text>
+<path d="M550 470 H850 V596" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="865" y="549" font-size="15" fill="#172554">回答</text>
+<path d="M550 440 H650 V155 H696" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="655" y="250" font-size="15" fill="#172554">重试</text>
+<path d="M700 120 H554" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="575" y="101" font-size="14" fill="#172554">到期回 prepare</text>
+<path d="M700 365 H675 V487 H554" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="704" y="420" font-size="14" fill="#172554">查询结果回 classify</text>
+<path d="M1010 470 H1030 V335 H1014" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="867" y="455" font-size="14" fill="#172554">延后：提交 poll</text>
+<path d="M850 470 H1010" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="40" y="956" font-size="17" fill="#172554">retry 重发前先 prepare；poll 查询旧 handle，结果直接进入分类。</text>
+<text x="40" y="995" font-size="16" fill="#172554">图示正常反馈；prepare 还可能等待阻塞压缩，任务可失败或取消。</text>
 </g></svg>

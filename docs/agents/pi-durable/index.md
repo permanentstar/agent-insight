@@ -1,18 +1,18 @@
 ---
 id: "durable-index"
-title: "Pico5 / pi-durable 分册"
+title: "Pi Durable 分册"
 subject: "pi-durable"
 status: "index"
-baselines: ["pi-20261009"]
+baselines: ["pi-20261019"]
 sources: []
-depends_on: ["durable-glossary", "durable-architecture", "durable-loop", "durable-documents"]
+depends_on: ["durable-glossary", "durable-architecture", "durable-loop", "durable-documents", "durable-tools", "durable-hosting"]
 evidence: []
 verified_scope: "入口按共同职责定位并连接实现专题；正文的静态证据、历史范围与教学核验各自说明。"
 ---
 
-# Pico5 / pi-durable 分册
+# Pi Durable 分册
 
-Pico5 把进行中的模型与工具工作表示为持久 Task，用事务对齐历史、任务状态和可观察资料。本分册词典先给对象定位，架构章解释一次持久工作如何推进，执行章沿 CSV 修复任务串起五步；上下文章再解释记录怎样分别提供给界面和模型。
+Pi Durable 把进行中的模型与工具工作表示为持久 Task，用事务对齐历史、任务状态和可观察资料。本分册词典先给对象定位，架构章解释一次持久工作如何推进，执行章沿 CSV 修复任务串起五步；上下文章解释记录怎样分别提供给界面和模型；工具组合章深入脚本与嵌套工作；宿主章连接等待、唤醒和诊断。
 
 ## 在共同架构中定位
 
@@ -34,5 +34,7 @@ Pico5 把进行中的模型与工具工作表示为持久 Task，用事务对齐
 | [事务与 Task 状态机](architecture.md) | status 和 phase 有什么区别？提交与工具效果怎样分工？ |
 | [一项任务怎样推进](loop.md) | 一份输入为什么对应多个 generation？工具结果怎样回到模型？ |
 | [Document 与上下文](documents.md) | 当前状态、模型输入和摘要采用怎样协作？ |
+| [工具组合与脚本恢复](tools.md) | 模型、程序和延迟工具怎样接入同一执行内核？ |
+| [宿主、休眠与故障观测](hosting.md) | 没有常驻进程时谁唤醒任务，反复崩溃怎样收住？ |
 
 建议对照 [AgentSession 循环](../pi/loop.md)阅读。两者都保留模型按观察选择动作的反馈机制，工作推进在进程与持久记录中的表示不同。模式层面的共同概念见[执行模式比较](../../comparisons/execution-modes.md)。

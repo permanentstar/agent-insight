@@ -37,4 +37,4 @@ migration.json 登记历史原稿的版本、archive.path、bytes、sha256 与�
 
 digested 表示重要结论、独有机制、学习目标和未知已提炼，不能等同 verified-source 或运行验证。remaining_scope 只登记尚未完成的材料整理工作；初版已完成时为空。known_limits 保存缺失证据、冻结版本冲突、未执行练习/故障实验及明确归档取舍。以后新增原稿或扩大提炼范围时重新登记，不用“存在未知”反推材料仍未整理，也不用“已提炼”消除未知。
 
-最终比较对象固定为 Pi AgentSession 与 Pico5；Lane 为历史附录。“转正”按 owner 定义为官方 Agent 默认在生产使用。公开库导出、包版本、实验命令分别记录，不代替默认生产状态。
+最终比较对象固定为 Pi AgentSession 与 Pi Durable；Lane 为历史附录。“转正”按 owner 定义为官方 Agent 默认在生产使用。公开库导出、包版本、实验命令分别记录，不代替默认生产状态。

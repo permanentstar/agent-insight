@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
-<title id="title">Pico5：持久实体与摘要投影</title>
+<title id="title">Pi Durable：持久实体与摘要投影</title>
 <desc id="desc">ContextView 按 Entry/head 形成模型输入；Document 地址校验 owner 与 scope。
 忙会话按 admission 接纳摘要，边界放置或 stale 核销；不会直接跳过前台工作。</desc>
 <defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#334155"/></marker></defs>
 <rect width="1000" height="660" fill="#ffffff"/>
-<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">Pico5：持久实体与摘要投影</text>
+<text x="30" y="38" fill="#172554" font-family="Arial, sans-serif" font-size="23" font-weight="700">Pi Durable：持久实体与摘要投影</text>
 <polyline points="460,135 540,135" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>
 <text x="500.0" y="122" fill="#334155" font-family="Arial, sans-serif" font-size="14" text-anchor="middle">事务</text>
 <polyline points="750,190 750,220.0 250,220.0 250,250" fill="none" stroke="#334155" stroke-width="2.4" marker-end="url(#arrow)"/>

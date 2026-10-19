@@ -3,7 +3,7 @@ id: "comparison-control"
 title: "比较：理解、规划、委派与控制"
 subject: "comparison"
 status: "index"
-baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331"]
+baselines: ["pi-20261009", "deerflow-20261009", "codex-20261009", "hermes-20261009", "langchain-20261009", "langgraph-20261009", "deepseek-20261009", "claude-source-20260331", "pi-20261019"]
 sources: ["comparison-legacy"]
 depends_on: ["comparison-modes", "pi-platform", "durable-documents", "deerflow-context", "deerflow-capabilities", "claude-capabilities", "codex-context", "hermes-capabilities", "langchain-components", "langgraph-advanced", "deepseek-capabilities"]
 evidence: ["source", "historical-document", "static-inference", "proposal"]
@@ -93,7 +93,7 @@ SystemMessage 已由子任务 initial state 提供；这份图有独立上下文
 | 对象 | 权威状态与所有者 | 构造与生命周期 | 实际机制与执行点 | 提供的能力 | 机制边界 | 深入阅读 |
 |---|---|---|---|---|---|---|
 | AgentSession | Session 的模式/扩展，Agent 当前循环 | SDK 装配 active tools；扩展绑定会话 | 输入 hook → 模型循环 → 工具；扩展按需加 plan/委派 | 自然语言和工具反馈在同一循环消费 | core 不因 plan 示例存在就变成强制 Planner；未穷举子扩展 | [循环](../agents/pi/loop.md)、[扩展](../agents/pi/extensions.md) |
-| Pico5，实验 | Submission/Task 的持久归属 | Harness Registry 提供当前代码，scheduler 恢复任务 | generation → tool child Task → outcome → generation | 工作身份与推进恢复点显式 | 内核与实验产品子会话暴露不同；不是强制语义分类器 | [Task](../agents/pi-durable/architecture.md) |
+| Pi Durable，实验库 | Submission/Task 的持久归属 | Harness Registry 提供当前代码，scheduler 恢复任务 | generation → tool child Task → outcome → generation | 工作身份与推进恢复点显式 | 历史 parent 与工作 owner 分开；产品验收仍由应用定义 | [Task](../agents/pi-durable/architecture.md) |
 | DeerFlow，应用 | Lead 图、RunManager 与子执行器 | Lead 按入口持有；子 Agent 另建图 | task_tool → executor → create_agent(checkpointer=False) | child 输出通过工具/Command 回父，不混同 Lead checkpoint | 子图不提供同等持久恢复；prompt 规约不等同执行授权 | [子 Agent](../agents/deerflow/capabilities.md)、[Run](../agents/deerflow/runtime.md) |
 | Claude | 主 query、异步子 Agent/团队各自状态 | 隔离上下文，执行环境可以共享 | Task、团队通知与工具 executor 分层 | 命令、子 Agent 与团队协作粒度不同 | in-process 分配经消息进入 query；跨崩溃确认未证 | [架构](../agents/claude/architecture.md)、[能力](../agents/claude/capabilities.md) |
 | Codex，core | Thread/AgentControl/registry | 父身份、容量、驻留先准入，再启动子线程 | spawn_agent_internal → reserve slot → inherit environment → publish | 子线程有独立身份与准入，fork/resume 与 Git 分开 | V1/V2/source 分支不同；不代替任务验收 | [子线程](../agents/codex/context-capabilities.md) |
@@ -101,6 +101,8 @@ SystemMessage 已由子任务 initial state 提供；这份图有独立上下文
 | LangChain，构图 | create_agent 配置与 AgentState | hooks 在建图期组合，模型调用期消费 | 模型/工具循环 + middleware 控制 | 提供可组合决策循环，不要求统一 Planner | 产品路由、身份和多 Agent 由应用实现 | [构图](../frameworks/langchain/architecture.md) |
 | LangGraph，执行 | 图边、channels 与 task | compile 注册节点；每超步调度 | static edge + conditional + Command；子图 namespace | 显式状态/路由，动态 goto 可和静态边并存 | 子图不天然是独立 Agent；END 不取消所有兄弟工作 | [图控制](../frameworks/langgraph/advanced.md) |
 | DeepSeek，preview | SubagentManager、parent catalog、activation | Profile 选 provider；先保留父归属与容量 | 本地 continuable child 或 external run；delivery parent/caller | 区分持久 child 与一次在线 activation，避免重复父通知 | unknown 可发现不代表可继续；外部一次执行不自动多轮 | [子执行](../agents/deepseek/capabilities.md) |
+
+Durable 的前台子 Agent 示例只设工作 owner，不设历史 parent：它有独立上下文，取消与收口仍归发起工具 Task 管。后台示例另建 background anchor，让普通父层取消与空闲等待不穿过该边界。多历史根可以服务同一业务任务；判断协作时，应同时追历史、工作所有权和效果环境。[会话关系](../agents/pi-durable/glossary.md#会话历史与工作归属是两种关系)。
 
 ## 同一输入：任务先查资料，随后发现需要修改
 
