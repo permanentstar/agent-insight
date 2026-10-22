@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="1000" viewBox="0 0 960 1000" role="img" aria-labelledby="title desc">
+<title id="title">Pi Durable：扩展装配能力，任务承担工作</title>
+<desc id="desc">宿主把扩展安装进 Registry。内置和扩展任务进入同一任务定义表，Conversation 从所选扩展解析工具、钩子和提示词。TaskScheduler 统一驱动所有任务。模型返回工具名后，GenerationTask 识别工具调用并提交 ToolTask；ToolTask 按名执行扩展工具。工具代码显式创建 Reporter，提交成功后 Scheduler 观察变更并驱动它；Reporter 等待子对话完成，再向主对话提交后续输入。</desc>
+<rect width="960" height="1000" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="38" font-size="23" font-weight="700">扩展装配能力，任务承担工作</text>
+<rect x="30" y="65" width="900" height="100" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+<text x="48" y="94" font-size="19" font-weight="700">宿主安装 Extension → Registry</text>
+<text x="48" y="123" font-size="17">可带 tools、sections、hooks、wraps、tasks；定义随代码安装，尚未创建运行实例</text>
+<text x="48" y="148" font-size="16">例如 subagent-tools：一个 subagent 工具 + Anchor / Reporter 自定义任务</text>
+<path d="M300,165 V210" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M760,165 V210" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="215" width="540" height="120" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="48" y="244" font-size="18" font-weight="700">同一张任务定义表（按 kind / 名称找定义）</text>
+<text x="48" y="274" font-size="16">内置：GenerationTask / ToolTask / CompactionTask</text>
+<text x="48" y="303" font-size="16">扩展：Anchor / Reporter；须创建实例后才调度</text>
+<rect x="600" y="215" width="330" height="120" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="618" y="244" font-size="18" font-weight="700">Conversation 选择扩展</text>
+<text x="618" y="274" font-size="16">解析工具、提示词、hooks / wraps</text>
+<text x="618" y="303" font-size="16">供任务在对应入口使用</text>
+<path d="M300,335 V375" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M760,335 V375" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="380" width="900" height="70" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="48" y="408" font-size="19" font-weight="700">同一个 TaskScheduler 驱动内置与自定义 Task</text>
+<text x="48" y="434" font-size="16">按 checkpoint.phase 调用 handler；共用 Session 提交、等待、取消与恢复机制</text>
+<text x="30" y="492" font-size="20" font-weight="700">谁决定下一段：模型选工具，程序创建任务，Scheduler 认领后执行</text>
+<rect x="30" y="520" width="200" height="132" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="44" y="550" font-size="17" font-weight="700">模型决定调用哪个工具</text>
+<text x="44" y="579" font-size="15">GenerationTask 请求模型</text>
+<text x="44" y="605" font-size="15">模型返回 toolCall.name</text>
+<text x="44" y="631" font-size="15">例如 subagent</text>
+<rect x="270" y="520" width="200" height="132" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="284" y="550" font-size="17" font-weight="700">框架接住工具请求</text>
+<text x="284" y="579" font-size="15">classify → startToolRound</text>
+<text x="284" y="605" font-size="15">commit 创建 ToolTask</text>
+<text x="284" y="631" font-size="15">当前生成等待工具结束</text>
+<rect x="510" y="520" width="200" height="132" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="524" y="550" font-size="17" font-weight="700">按名称执行单个工具</text>
+<text x="524" y="579" font-size="15">ToolTask 查找工具定义</text>
+<text x="524" y="605" font-size="15">校验、hooks、记录意图</text>
+<text x="524" y="631" font-size="15">tool.execute(args, api, ...)</text>
+<rect x="750" y="520" width="180" height="132" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="764" y="550" font-size="17" font-weight="700">结果交回生成流程</text>
+<text x="764" y="579" font-size="15">工具结果持久化</text>
+<text x="764" y="605" font-size="15">原生成处理本轮观察</text>
+<text x="764" y="631" font-size="15">正常路径创建下一生成</text>
+<path d="M230,586 H265" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M470,586 H505" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M710,586 H745" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M610,652 V673 H130 V740" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="255" y="701" font-size="16">示例工具在 api.commit 中显式 tx.createTask(Reporter, ...)</text>
+<text x="255" y="726" font-size="16">提交成功 → Scheduler 收到变更 → 按 initial 的 phase 执行</text>
+<rect x="30" y="745" width="200" height="140" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="44" y="774" font-size="18" font-weight="700">投递并等待答案</text>
+<text x="44" y="805" font-size="16">自定义 Reporter</text>
+<text x="44" y="832" font-size="16">deliver 阶段</text>
+<text x="44" y="861" font-size="16">向子对话提交输入</text>
+<rect x="270" y="745" width="200" height="140" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="284" y="774" font-size="18" font-weight="700">子对话完成工作</text>
+<text x="284" y="805" font-size="16">复用内置生成循环</text>
+<text x="284" y="832" font-size="16">GenerationTask</text>
+<text x="284" y="861" font-size="16">及所需 ToolTask</text>
+<rect x="510" y="745" width="200" height="140" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="524" y="774" font-size="18" font-weight="700">把答案送回主对话</text>
+<text x="524" y="805" font-size="16">同一个 Reporter</text>
+<text x="524" y="832" font-size="16">保存后进入 report</text>
+<text x="524" y="861" font-size="16">提交 followUp 输入</text>
+<rect x="750" y="745" width="180" height="140" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="764" y="774" font-size="18" font-weight="700">主对话处理汇报</text>
+<text x="764" y="805" font-size="16">空闲时开始</text>
+<text x="764" y="832" font-size="16">忙时先排队</text>
+<text x="764" y="861" font-size="16">再用内置生成循环</text>
+<path d="M230,815 H265" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M470,815 H505" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M710,815 H745" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="30" y="927" font-size="17">蓝色是内置流程；橙色是应用定义的工作阶段。Extension 本身没有整包执行节点。</text>
+<text x="30" y="961" font-size="16">后台示例中工具可先返回；省略锚点和失败分支。CompactionTask 仅在需要压缩时另行创建。</text>
+</g>
+</svg>

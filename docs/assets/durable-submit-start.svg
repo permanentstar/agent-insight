@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="740" viewBox="0 0 1000 740" role="img" aria-labelledby="title desc">
+<title id="title">同一个 root：恢复旧 run，排队新输入，完成后再接下一轮</title>
+<desc id="desc">教学变体采用已有活动 run 的同一 JSONL。open 恢复任务，root 是同一根 Conversation；submit 启用 Scheduler 继续旧任务，并把普通新输入作为 followUp 入队。旧 run 正常到达 final 后取队首输入、启动新 run，新输入完成后 wait 返回。L77 在此前 wait 之后，因此通常直接启动下一 run；其它对话和后台工作可以并发。</desc>
+<rect width="1000" height="740" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<g font-family="system-ui, sans-serif" fill="#172554">
+<text x="30" y="38" font-size="22" font-weight="700">同一个 root：恢复旧 run，排队新输入，完成后再接下一轮</text>
+<rect x="30" y="80" width="270" height="120" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+<text x="46" y="110" font-size="19" font-weight="700">L62：打开 Harness</text>
+<text x="46" y="141" font-size="16">JSONL 恢复未结束的 Task</text>
+<text x="46" y="170" font-size="16">仅登记，尚未启用阶段派发</text>
+<rect x="365" y="80" width="270" height="120" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+<text x="381" y="110" font-size="19" font-weight="700">L63：取得根 Conversation</text>
+<text x="381" y="141" font-size="16">root 始终是同一段对话</text>
+<text x="381" y="170" font-size="16">假设此时还有未结束的旧 run</text>
+<rect x="700" y="80" width="270" height="120" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="716" y="110" font-size="19" font-weight="700">L71：调用 root.submit</text>
+<text x="716" y="141" font-size="16">先调用 Scheduler.resume()</text>
+<text x="716" y="170" font-size="16">enabled=true，启用调度检查</text>
+<path d="M300,140 H360" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M635,140 H695" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M835,200 V225 H500 V280" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="30" y="251" font-size="17">假设：旧 run 正常完成，普通输入默认 followUp。</text>
+<rect x="700" y="285" width="270" height="145" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="716" y="315" font-size="19" font-weight="700">新输入先排进对话队列</text>
+<text x="716" y="347" font-size="16">main：Submission=queued</text>
+<text x="716" y="376" font-size="16">doc：InboxDoc 加 followUp</text>
+<text x="716" y="405" font-size="16">此时尚未为它创建生成任务</text>
+<rect x="365" y="285" width="270" height="145" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="381" y="315" font-size="19" font-weight="700">resume 触发旧任务认领</text>
+<text x="381" y="347" font-size="16">kick 唤起 drain / reserve</text>
+<text x="381" y="376" font-size="16">认领符合条件的恢复任务</text>
+<text x="381" y="405" font-size="16">start / run 按 checkpoint 执行</text>
+<rect x="30" y="285" width="270" height="145" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="46" y="315" font-size="19" font-weight="700">旧 run 从恢复点继续</text>
+<text x="46" y="347" font-size="16">原来的生成、工具等 Task</text>
+<text x="46" y="376" font-size="16">阶段仍可等待、休眠或执行工具</text>
+<text x="46" y="405" font-size="16">各阶段继续 commit 保存进度</text>
+<path d="M870,200 V280" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M365,357 H305" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M165,430 V505" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="30" y="510" width="270" height="105" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="46" y="539" font-size="18" font-weight="700">旧 run 到达 final 边界</text>
+<text x="46" y="570" font-size="16">结束旧 run，挑选队首 followUp</text>
+<text x="46" y="595" font-size="16">把选中的新输入放入历史</text>
+<rect x="365" y="510" width="270" height="105" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="381" y="539" font-size="18" font-weight="700">为新输入启动新的 run</text>
+<text x="381" y="570" font-size="16">startRun 创建 GenerationTask</text>
+<text x="381" y="595" font-size="16">继续它自己的生成与工具流程</text>
+<rect x="700" y="510" width="270" height="105" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="716" y="539" font-size="18" font-weight="700">新输入得到回答后 wait 返回</text>
+<text x="716" y="570" font-size="16">新 Submission 完成，L72 继续</text>
+<text x="716" y="595" font-size="16">wait 只等本次 Submission</text>
+<path d="M300,562 H360" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M835,430 V465 H220 V505" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M635,562 H695" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="30" y="657" font-size="16">root 始终是同一 Conversation；L77 在 L71 的 wait 之后，正常无并发输入时直接启动下一 run。</text>
+<text x="30" y="695" font-size="16">同一对话的普通输入依次推进；其他 Conversation、后台 Task 和工具并行另按各自规则运行。</text>
+<text x="30" y="722" font-size="16">依据源码静态推导的 JSONL 变体，未运行模型、bash 或故障恢复实验。</text>
+</g>
+</svg>

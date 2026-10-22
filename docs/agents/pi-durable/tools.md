@@ -7,7 +7,7 @@ baselines: ["pi-20261019"]
 sources: []
 depends_on: ["durable-architecture", "durable-loop", "durable-documents"]
 evidence: ["source"]
-verified_scope: "静态核验工具集合、pi.tool v2、NestedCallDoc 及 codemode 重放；未运行沙箱、模型或故障实验。"
+verified_scope: "静态核验扩展装配、自定义任务接续、工具集合、pi.tool v2、NestedCallDoc 及 codemode 重放；未运行沙箱、模型或故障实验。"
 ---
 
 # Pi Durable：工具发现、嵌套调用与脚本恢复
@@ -17,6 +17,78 @@ verified_scope: "静态核验工具集合、pi.tool v2、NestedCallDoc 及 codem
 ![模型直接选择工具或 codemode；工具内部通过 executeTool 创建子 pi.tool，结果写入父任务的 NestedCallDoc；codemode 记录交付日志以重建脚本，最终只把外层结果交回模型。](../../assets/durable-nested-tools.svg)
 
 本章沿四次交接展开：从可用定义得到模型可见集合，将脚本里的调用接到工具内核，将结果交给正确消费者，最后用已有结果重建脚本。外层生成与工具反馈循环沿用[执行章](loop.md)，这里放大一次工具调用内部发生的工作。
+
+## 先看 Extension 怎样接到内置任务
+
+Extension 是宿主安装的一包能力，Task 是调度器推进的一件工作。Registry 保存定义，Harness 为自己的 Session 建立 TaskScheduler；内置和自定义 Task 都交给这个调度器执行。本文说的是 Durable 的 Extension；Pi AgentSession 扩展使用的 pi.registerTool / pi.on 是另一套接口，不能直接套用本节的装配方式。[Harness 装配](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/harness.ts#L213)。
+
+![扩展把工具、钩子、提示词和自定义任务装入 Registry；Conversation 选择工具与钩子，TaskScheduler 统一驱动内置和自定义任务。模型选择工具名，GenerationTask 创建 ToolTask，ToolTask 调用扩展工具；工具显式提交 Reporter，Scheduler 再驱动它，完成后向主对话送回后续输入。](../../assets/durable-extension-tasks.svg)
+
+先从最简单的 read 工具理解：扩展声明工具名称、参数和 execute；GenerationTask 向模型提供这份声明。模型决定调用 read 后，框架创建内置 ToolTask，由它校验参数、调用 read.execute、保存观察结果。read 自己不需要再定义 ReadTask；[CodingTools 的实际装配](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/tools/index.ts#L33)就只提供工具。内置 GenerationTask、ToolTask、CompactionTask 已经实现模型交互、工具执行和历史压缩的常用流程；TaskScheduler 则承担这些任务共有的阶段派发、等待、取消和恢复。
+
+扩展可以在不同位置参与这条主线：
+
+| 扩展带来的内容 | 在什么时候起作用 | 是否需要额外 Task |
+|---|---|---|
+| tools | 模型选择动作后，ToolTask 调用工具的 execute | 普通工具无需新增 |
+| sections | GenerationTask 准备请求时，补充系统提示词 | 无需新增 |
+| hooks | 内置任务主动开放的位置，例如请求前、工具执行前、准备结束回答时 | 无需新增 |
+| wraps | 解析该会话的工具或提示词时，包装已有定义，执行时采用包装结果 | 无需新增 |
+| tasks | 宿主或工具创建实例后，执行自定义阶段流程 | 为独立生命周期的工作新增 |
+
+### 能力展开以后，谁决定执行哪一个
+
+Extension 是安装和会话启用的组织单位，框架没有“执行整个 Extension”的入口。它在运行时仍决定哪些工具、提示词、hooks 和 wraps 被采用，也保留错误归属；但它没有一个把这些成员依次全跑完的执行顺序。
+
+准备请求时，GenerationTask 通过 runtime.agent 获取本阶段解析的 Agent。resolveAgent 先选择 Conversation 启用的扩展，再分别合并工具与提示词、应用 wraps，最后按工具配置过滤出模型可见集合。GenerationTask 渲染有效的 sections（render 返回 undefined 可省略），并把工具声明送给模型；此时不会调用这些工具的 execute。模型之后只按工具名选择动作，hooks 则由任务在相应入口主动调用。[能力展开与过滤](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/agent.ts#L229)、[准备提示词与工具声明](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L135)。
+
+因此，自行实现 myTool 后放入自己的最小扩展，同样由 ToolTask 执行，不必加入 CodingTools 等现成扩展：
+
+```ts
+registry.install(defineExtension({ name: "my-tools", tools: [myTool] }));
+```
+
+这里省略 myTool 的定义。当前 Durable Registry 只有 install(extension) 这一安装接口，没有独立 registerTool(tool)；“不用现成扩展”可行，完全绕过扩展直接注册工具则不属于这套接口。工具自身执行路径相同，但原扩展若附带提示词、hooks 或 wraps，省去这些成员会改变整体行为。[Registry 安装接口](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/types.ts#L402)。
+
+例如 Reviewer 扩展只有提示词和 GenerationTask.onYield hook：模型准备结束回答时，hook 可以要求再检查一遍。它继续使用内置生成循环，不需要实现 ReviewerTask。hooks 只有在任务代码调用对应入口时才执行，不会自动包围每一行代码。[扩展契约](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/types.ts#L370)、[Reviewer 示例](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/test/examples/28-reviewer.ts#L33)。
+
+### 一次工具调用怎样启动自定义工作
+
+仓库的后台子 Agent 示例把这两层组合在一起。以下是示例的真实装配节选，省略各定义的实现：
+
+```ts
+const SubagentTools = defineExtension({
+  name: "subagent-tools",
+  tasks: [Anchor, Reporter],
+  tools: [subagentTool],
+});
+registry.install(SubagentTools);
+```
+
+用户要求主 Agent 分出一个后台任务后，先由模型选择动作，再由代码落实为具体工作。下面沿有效工具调用的正常路径标明每次交接：
+
+| 顺序与操作意图 | 谁判断或触发 | 代码与交接结果 |
+|---|---|---|
+| 1. 决定要启动子 Agent | 模型 | streamResponse 返回带 name=subagent 的 toolCall；GenerationTask.request 将响应交给 classify |
+| 2. 把模型的工具请求变成可调度工作 | GenerationTask.classify / startToolRound | 检查 stopReason=toolUse 且存在调用；确认工具在已提供集合中后，commit 创建内置 ToolTask，同时将当前 GenerationTask 设为等待 |
+| 3. 找到并运行这一个工具 | 内置 ToolTask.call | 按 call.name 从 agent.tools 找定义；参数校验、beforeTool 和执行意图提交通过后，调用 subagentTool.execute |
+| 4. 决定需要哪些额外工作 | 扩展工具自己的业务代码 | 依据 action=spawn/send，在 api.commit 中显式 tx.createTask(Reporter, ...)；框架不会仅因扩展中注册了 Reporter 就创建它 |
+| 5. 开始执行新建的 Reporter | Session 提交发布 + TaskScheduler | 新 Task 保存为 pending，checkpoint 来自 initial；提交成功后 Scheduler 观察 Task 变更，认领条件满足且调度启用时，从 deliver 阶段执行 |
+| 6. 把后台结果送回主对话 | Reporter 自己的 deliver / report 阶段 | 向子对话提交输入并等待答案，子对话复用内置生成和工具循环；得到答案后先保存 report checkpoint，再向主对话提交 followUp，最后结束 Reporter |
+
+这条路径没有一个“GenerationTask 下一步执行某 Extension”的通用分支。第一次决定是模型选择工具名；第二次决定是工具代码创建自定义 Task；调度器随后处理已经提交的工作。宿主或 hook 代码也可按业务需要创建 Task，但触发逻辑仍须由代码显式实现。[响应分派](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L532)、[工具轮次提交](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L648)、[实际执行工具](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L427)。
+
+提交成功怎样触发下一段，可以沿通用调用链核对：Session 发布提交结果 → Scheduler.#observe 跟踪 Task 变化并调用 #kick → #drain / #reserve 认领可执行任务 → #run 按 checkpoint.phase 调用 handler。采用 JSONL 后端时，创建 ToolTask 或 Reporter 的 commit 都先保存任务内容，再由 main 确认批次，之后才发布给 Scheduler；不会在 tx.createTask 尚未提交时执行新任务。[创建时保存 initial 与 pending](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/transaction.ts#L424)、[提交观察](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L624)、[调度认领](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1437)。
+
+Reporter 是应用自定义的“投递并汇报”流程，模型与工具循环仍复用内置流程。示例将 Reporter 设为 conversation-owned background 工作，因此它可在原 ToolTask 和主对话本轮回答结束后继续运行；普通 task-owned 子工作则受 owner 生命周期约束。[工具创建后台任务](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/test/examples/23-subagent-background.ts#L182)、[Reporter 两阶段](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/test/examples/23-subagent-background.ts#L79)。这里依据源码解释，未运行该示例或真实模型。
+
+### 安装定义、启用能力和创建实例是三个动作
+
+Registry 始终保有三个内置 Task，扩展 tasks 追加到同一张按名称检索的定义表；重名会报错，扩展不能同名替换内置定义。安装只让调度器认识这种工作，真正开始要调用 tx.createTask 或 api.createTask。新实例从 initial 给出的 phase 执行；之后 Scheduler 按已保存的 kind 找定义、按 checkpoint.phase 找 handler。定义是运行代码，不会随 TaskRecord 序列化；重开宿主时仍须安装相应扩展，才能继续解析并执行保存的任务。[定义合并](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/registry.ts#L18)、[按阶段执行](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1727)。
+
+Conversation 选择启用哪些扩展，用于解析它的工具、提示词、hooks 和 wraps；已安装的 tasks 则供所有会话按名称解析。移除某会话对扩展的选择，不等于卸载 Registry 中的 Task 定义。自定义 Task 也不会自动成为模型工具：需要额外提供工具作为入口，或者由宿主直接创建。子任务示例中的 Checkout 就由宿主创建，再创建并等待 Payment，无需模型参与。[会话能力解析](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/agent.ts#L229)、[宿主创建任务示例](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/test/examples/24-child-tasks.ts)。
+
+自定义 Task 使用同一套 runtime.commit 和 Session/Storage 提交机制。采用 JSONL 后端时，未结束任务的状态与 checkpoint 写入 task 文件，终态回执进入 main，文档修改进入 doc；创建子 Task 不会自动新增模型历史 Entry。自定义 Task 要把业务结果交给模型，需要明确追加历史、经工具交回结果，或像 Reporter 一样提交新输入。[统一持久化过程](documents.md#storage-writes)。
 
 ## 第一步：区分已启用、模型可见与程序可调用
 

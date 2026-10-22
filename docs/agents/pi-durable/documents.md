@@ -7,7 +7,7 @@ baselines: ["pi-20261019"]
 sources: []
 depends_on: ["durable-architecture", "durable-glossary"]
 evidence: ["source"]
-verified_scope: "核验 Document 身份/缓存、输入与展示写入、上下文 baseline、模型压缩政策及摘要采用；未执行恢复或远端视图测试。"
+verified_scope: "核验八种 StorageWrite 的 JSONL/SQLite 映射、JSONL 确认与回收、Document 缓存及上下文摘要；未执行恢复或远端视图测试。"
 ---
 
 # Pi Durable：Document、上下文投影与异步摘要
@@ -58,7 +58,32 @@ Pi Durable 检查 owner 身份和记录 schema，不允许只凭同一个 kind �
 
 ## 第二步：提交成功后向观察者发布
 
-Session.documentState 在 Session 队列中加载记录，接入 CommittedStateSource，再包成 Chord replicatedState。事务内部的 Draft 不直接送给观察者；Storage 提交、Session 采用后才发布。Chord 负责可观察状态与复制，存储与 Task 调度仍由各自层承担。[观察句柄构造](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L356)。
+### 同一批 StorageWrite，怎样落到文件或表 {#storage-writes}
+
+实际后端来自 [Harness 的显式装配](architecture.md#第一步-装配会话、定义与调度器)，没有“默认唯一使用 JSONL”的约定。Session 先产生与后端无关的 StorageWrite[]，再调用已注入实例的 commit。SQLite 在数据库事务中处理它们；JSONL 则把同一批编码为 main 中的完整记录或附属文件引用。[八种 StorageWrite](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/types.ts#L852)、[SQLite 事务入口](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/storage/sqlite/storage.ts#L187)、[SQLite 文档写入执行点](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/storage/sqlite/storage.ts#L864)。
+
+| write.type | JSONL 后端的保存位置 | SQLite 后端的主要落点 |
+|---|---|---|
+| conversation | main.jsonl 中的完整记录 | conversations |
+| entry | main.jsonl 中的完整记录 | entries |
+| submission | main.jsonl 中的完整记录 | submissions |
+| task | 非 terminal 的完整记录进 task-&lt;id&gt;.jsonl，main 保存引用；terminal 的完整记录进 main | tasks，状态作为记录的一部分更新 |
+| document.create | main 保存元数据与引用，doc-&lt;id&gt;.jsonl 保存初始 base | documents 与 document_revisions |
+| document.copy | 从来源物化内容，按新文档的 create 保存 | 新 documents 记录与初始修订 |
+| document.change | doc-&lt;id&gt;.jsonl 保存 base 或 delta，main 保存引用 | document_revisions；当前内容按 seq 查询并重建 |
+| document.retire | main 保存退休标记，符合回收条件的 doc 文件可删除 | 文档的退休状态及按保留策略处理的修订 |
+
+所以文件布局是 main.jsonl 加上**每个 Task／Document 各自的文件**，不是固定三个 JSONL。LiveDoc、UsageDoc 和 InboxDoc 有不同 DocumentId，也各有文件。Task checkpoint 是完整任务记录中的字段；Document base 是完整 JSON 值，delta 是文档操作，两者不能当作同一种 checkpoint。document.copy 也不是另有一类 copy 文件；JSONL 的内存准备层会把它展开为 create。[JSONL 编码分流](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/storage/jsonl/storage.ts#L384)、[copy 的准备](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/storage/memory.ts#L268)。
+
+### JSONL 如何确认同一批，失败后读哪一份 {#jsonl-confirmation}
+
+一次推进可能同时改变消息、任务和展示资料，重开时需要知道这些变化是否已经共同确认。JSONL 因此先写任务与文档的内容，再用主文件确认整批；消费者随后才采用新事实。[提交顺序大图](architecture.md#commit-map)底部给出实现对照：校验本批并分配 seq，追加 task/doc 附属文件，再向 main.jsonl 追加 {format,type:"commit",seq,writes}；附属记录按 seq/ordinal 与主文件引用配对。完成后后端更新索引并返回 seq，Session 才 adopt/publish。[JSONL commit 执行点](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/storage/jsonl/storage.ts#L278)。
+
+重开时，完整的 main commit marker 用于确认批次；没有确认的附属尾部会被截断，不完整的尾行也按恢复规则处理。已经确认、仍应保留的内容缺失则报损坏。terminal Task 的完整记录已经在 main，可回收它的 task 文件；只保留当前值的 Document 出现新 base 时，可回收旧链。因此文件里的 append 历史和可重建范围还要结合回收规则解释。[恢复与一致性检查](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/storage/jsonl/storage.ts#L535)、[回收计划](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/storage/jsonl/storage.ts#L451)。
+
+这里保证的是按提交标记恢复一致状态；断电耐久性还取决于文件 flush。`fsync` 默认 false，启用后会在追加 main marker 前 flush 受影响的附属文件，不能据此宣称所有提交都具有断电零丢失保证。Storage 抛错后 Session 也不会假定“什么都没写”，而是停止使用当前实例并由重开恢复确认。[JSONL fsync 选项](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/storage/jsonl/storage.ts#L77)、[Session 失败边界](architecture.md#失败发生在哪一步-决定能撤销什么)。
+
+界面要看到已确认的当前资料，不能把尚可能丢弃的草稿当作完成事实。因此观察句柄读取已提交值，只有存储成功并被 Session 采用后，才收到变化通知。构造链是 Session.documentState 在会话队列加载记录，接入 CommittedStateSource，再包成 Chord replicatedState；Chord 提供可观察状态与复制，存储和任务调度仍各有执行者。[观察句柄构造](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L356)。
 
 因此，界面可以订阅 pi.live，而模型并不会因此自动读到所有 Document。要把文档资料交给模型，需要 Prompt section 或其他请求组织代码明确读取并转换成语义材料。观察者消费已提交视图；模型消费请求组织代码明确提供的消息。
 

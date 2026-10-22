@@ -1,0 +1,309 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="4530" viewBox="0 0 2200 4530" role="img" aria-labelledby="title desc">
+<title id="title">Pi Durable：从输入、模型生成、工具执行到 JSONL 原子提交的完整主链路</title>
+<desc id="desc">一份输入被接纳后，由生成任务负责推进：固定请求依据、登记生成、在事务外接收模型响应并按间隔保存进度。完整响应或与完成回执一起确认，或把动作交给工具；工具先记录最终动作和重跑约定，再实际执行并保存观察，随后新生成接手同一输入。每个节点先说明操作目的，再附字段和源码对照；文件列保留各 JSONL 去向。底部说明隔离候选、共同确认、采用与通知，以及取消、等待、失败和恢复。编号为阅读顺序，主线限定无排队、无嵌套和无额外所属工作的正常情形。</desc>
+<defs><marker id="arrow" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5.5 L0 11 Z" fill="#334155"/></marker></defs>
+<rect width="2200" height="4530" fill="#ffffff"/>
+<g font-family="system-ui, -apple-system, PingFang SC, Noto Sans CJK SC, sans-serif">
+<text x="48" y="59" font-size="38" fill="#0f172a" font-weight="600">Pi Durable 持久化大图：阶段动作、提交内容与 JSONL 文件</text>
+<text x="48" y="103" font-size="23" fill="#0f172a" font-weight="400">限定 JSONL 后端：一个输入从生成到工具执行再到最终回答；按编号读提交点，灰框为事务外动作，旁路单列。</text>
+<text x="48" y="137" font-size="21" fill="#334155" font-weight="400">文件名中的 &lt;id&gt; 是实际数字 ID：每个 task / doc 各有一个文件；LiveDoc、UsageDoc、InboxDoc 对应不同文档。</text>
+<rect x="48" y="166" width="620" height="160" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="68" y="200" font-size="24" fill="#1d4ed8" font-weight="600">同一个 Session，多个提交点</text>
+<text x="68" y="230" font-size="20" fill="#0f172a" font-weight="400">由同一个会话统一受理修改，按提交顺序推进。</text>
+<text x="68" y="258" font-size="20" fill="#0f172a" font-weight="400">调度器根据已提交结果，派发后续工作。</text>
+<text x="68" y="286" font-size="20" fill="#0f172a" font-weight="400">（HarnessImpl / SessionImpl / TaskScheduler）</text>
+<text x="68" y="312" font-size="17" fill="#334155" font-weight="400">harness.ts:192–217；session.ts:896</text>
+<rect x="692" y="166" width="770" height="160" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="712" y="200" font-size="24" fill="#1d4ed8" font-weight="600">修改的基线是最新已提交状态</text>
+<text x="712" y="230" font-size="19" fill="#0f172a" font-weight="400">隔离本次修改，让读取方仍看到最新已提交值。</text>
+<text x="712" y="257" font-size="19" fill="#0f172a" font-weight="400">本批成功才采用候选；失败可丢弃，不复制整个 Session。</text>
+<text x="712" y="284" font-size="19" fill="#0f172a" font-weight="400">（Doc 用 beginChange 创建 Draft；Task 等记录由事务暂存）</text>
+<text x="712" y="312" font-size="17" fill="#334155" font-weight="400">transaction.ts:484、612；chord/delta/tracker.ts:235</text>
+<rect x="1486" y="166" width="666" height="160" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1506" y="200" font-size="24" fill="#1d4ed8" font-weight="600">模型和工具访问在事务外</text>
+<text x="1506" y="230" font-size="20" fill="#0f172a" font-weight="400">等待模型或工具时，不占着会话修改队列。</text>
+<text x="1506" y="258" font-size="20" fill="#0f172a" font-weight="400">进度或结果准备好后，再短暂进入提交点保存。</text>
+<text x="1506" y="286" font-size="20" fill="#0f172a" font-weight="400">已发生的外部效果不随会话事务撤销。</text>
+<text x="1506" y="312" font-size="17" fill="#334155" font-weight="400">spec.md:65–78；generation.ts；tool.ts</text>
+<text x="48" y="372" font-size="27" fill="#0f172a" font-weight="600">每个提交点共用的机制：隔离本次修改，共同保存，成功后才供后续工作采用</text>
+<rect x="48" y="397" width="432" height="166" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="68" y="431" font-size="24" fill="#1d4ed8" font-weight="600">① 依次受理，核对执行资格</text>
+<text x="68" y="461" font-size="20" fill="#0f172a" font-weight="400">按顺序修改，避免旧状态覆盖新结果。</text>
+<text x="68" y="489" font-size="20" fill="#0f172a" font-weight="400">轮到本批时创建事务（Transaction）。</text>
+<text x="68" y="517" font-size="20" fill="#0f172a" font-weight="400">阶段回调前检查是否仍有效（#gated）。</text>
+<text x="68" y="549" font-size="17" fill="#334155" font-weight="400">session.ts:237、716；scheduler.ts:2327</text>
+<rect x="514" y="397" width="620" height="166" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="534" y="431" font-size="24" fill="#1d4ed8" font-weight="600">② 准备尚未生效的变化</text>
+<text x="534" y="461" font-size="20" fill="#0f172a" font-weight="400">保存候选，失败时可丢弃，读者仍读取已提交值。</text>
+<text x="534" y="489" font-size="20" fill="#0f172a" font-weight="400">阶段要继续或结束时，同时准备新的任务状态。</text>
+<text x="534" y="517" font-size="20" fill="#0f172a" font-weight="400">（返回 next 才改 Task；仅报进度可保持恢复位置）</text>
+<text x="534" y="549" font-size="17" fill="#334155" font-weight="400">scheduler.ts:2133–2139；transaction.ts:484</text>
+<rect x="1168" y="397" width="434" height="166" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1188" y="431" font-size="24" fill="#1d4ed8" font-weight="600">③ 固定并校验本批变化</text>
+<text x="1188" y="461" font-size="18" fill="#0f172a" font-weight="400">结束草稿写入，阻止回调外继续改候选。</text>
+<text x="1188" y="487" font-size="18" fill="#0f172a" font-weight="400">汇总共同提交的变化（StorageWrite[]）。</text>
+<text x="1188" y="513" font-size="18" fill="#0f172a" font-weight="400">本批无变化则返回，避免空写入。</text>
+<text x="1188" y="549" font-size="17" fill="#334155" font-weight="400">transaction.ts:700、784；session.ts:742</text>
+<rect x="1636" y="397" width="516" height="166" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1656" y="431" font-size="24" fill="#1d4ed8" font-weight="600">④ 成功后才采用并通知</text>
+<text x="1656" y="461" font-size="20" fill="#0f172a" font-weight="400">存储确认后，才将候选接入当前状态。</text>
+<text x="1656" y="489" font-size="20" fill="#0f172a" font-weight="400">随后通知调度器和观察者采用新事实。</text>
+<text x="1656" y="517" font-size="20" fill="#0f172a" font-weight="400">（Storage.commit → adopt → publish）</text>
+<text x="1656" y="549" font-size="17" fill="#334155" font-weight="400">session.ts:750–765；scheduler.ts:624</text>
+<path d="M480 480 H504" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1134 480 H1158" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1602 480 H1626" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="48" y="605" font-size="22" fill="#0f172a" font-weight="400">任务 checkpoint 是继续执行所需的数据；文档 base 是完整内容。二者不是一回事，也不是两种提交机制。</text>
+<text x="48" y="638" font-size="21" fill="#334155" font-weight="400">下表文件列写明内容去向；每个非空事务都会在 main.jsonl 增加一条整批 commit marker（含内容或引用）。</text>
+<text x="80" y="690" font-size="25" fill="#0f172a" font-weight="600">阶段 / 提交位置</text>
+<text x="520" y="690" font-size="25" fill="#0f172a" font-weight="600">操作意图与生效后的交接</text>
+<text x="1535" y="690" font-size="25" fill="#0f172a" font-weight="600">文件与记录对照</text>
+<rect x="80" y="720" width="2055" height="158" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<path d="M500 732 V866 M1515 732 V866" stroke="#1d4ed8" stroke-width="1" fill="none"/>
+<text x="100" y="755" font-size="24" fill="#1d4ed8" font-weight="400">0  新建会话（仅首次）</text>
+<text x="100" y="797" font-size="17" fill="#334155" font-weight="400">harness.ts:410；tx.createConversation</text>
+<text x="520" y="754" font-size="21" fill="#0f172a" font-weight="400">为后续输入建立会话与当前资料的持久身份；已有会话可省略。</text>
+<text x="520" y="783" font-size="21" fill="#0f172a" font-weight="400">分开保存运行、排队、用量与配置，供后续工作读取；尚无生成任务。</text>
+<text x="520" y="812" font-size="21" fill="#0f172a" font-weight="400">（Conversation；LiveDoc / InboxDoc / UsageDoc / ProviderDoc / AgentDoc）</text>
+<text x="1535" y="754" font-size="20" fill="#0f172a" font-weight="400">main.jsonl：Conversation、文档元数据 / 引用。</text>
+<text x="1535" y="782" font-size="20" fill="#0f172a" font-weight="400">各 doc-&lt;id&gt;.jsonl：对应文档的初始 base。</text>
+<rect x="80" y="905" width="2055" height="163" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<path d="M500 917 V1056 M1515 917 V1056" stroke="#1d4ed8" stroke-width="1" fill="none"/>
+<text x="100" y="940" font-size="24" fill="#1d4ed8" font-weight="400">1  接住输入并安排生成</text>
+<text x="100" y="982" font-size="17" fill="#334155" font-weight="400">submissions.ts:276；startRun()</text>
+<text x="520" y="939" font-size="21" fill="#0f172a" font-weight="400">把这份输入交给会话处理，并明确由哪个生成任务负责完成。</text>
+<text x="520" y="968" font-size="21" fill="#0f172a" font-weight="400">保存消息与接纳回执，再创建等待执行的首个生成任务。</text>
+<text x="520" y="997" font-size="21" fill="#0f172a" font-weight="400">（新建 prepare checkpoint；Submission=placed；live.run 关联输入与任务）</text>
+<text x="1535" y="939" font-size="20" fill="#0f172a" font-weight="400">main.jsonl：user、submission、task / doc 引用。</text>
+<text x="1535" y="967" font-size="20" fill="#0f172a" font-weight="400">task-&lt;生成任务ID&gt;.jsonl：完整 pending 记录。</text>
+<text x="1535" y="995" font-size="20" fill="#0f172a" font-weight="400">LiveDoc 的 doc-&lt;id&gt;.jsonl：base。</text>
+<rect x="80" y="1095" width="2055" height="119" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<path d="M500 1107 V1202 M1515 1107 V1202" stroke="#1d4ed8" stroke-width="1" fill="none"/>
+<text x="100" y="1130" font-size="24" fill="#1d4ed8" font-weight="400">2  调度器认领生成 Task</text>
+<text x="100" y="1172" font-size="17" fill="#334155" font-weight="400">scheduler.ts:1466 #reserve()</text>
+<text x="520" y="1129" font-size="21" fill="#0f172a" font-weight="400">为可执行任务取得本次执行资格，避免重复派发；可一次认领多个任务。</text>
+<text x="520" y="1158" font-size="21" fill="#0f172a" font-weight="400">认领提交后才准备请求（pending/prepare → running/prepare，记录 startedAt）。</text>
+<text x="1535" y="1129" font-size="20" fill="#0f172a" font-weight="400">task-&lt;生成任务ID&gt;.jsonl：完整 running 记录。</text>
+<text x="1535" y="1157" font-size="20" fill="#0f172a" font-weight="400">main.jsonl：task.sidecar 引用。</text>
+<rect x="80" y="1240" width="2055" height="165" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<path d="M500 1252 V1393 M1515 1252 V1393" stroke="#1d4ed8" stroke-width="1" fill="none"/>
+<text x="100" y="1275" font-size="24" fill="#1d4ed8" font-weight="400">3  固定本次请求依据</text>
+<text x="100" y="1317" font-size="17" fill="#334155" font-weight="400">generation.ts:190–207</text>
+<text x="520" y="1274" font-size="21" fill="#0f172a" font-weight="400">为本次请求固定模型配置和历史范围，供恢复时重建。</text>
+<text x="520" y="1303" font-size="21" fill="#0f172a" font-weight="400">事务外准备提示与工具声明；保存提示的变化，以及模型、参数和消息截止位置。</text>
+<text x="520" y="1332" font-size="21" fill="#0f172a" font-weight="400">（request checkpoint：model / thinkingLevel / streamOptions / attempt / cutoff）</text>
+<text x="1535" y="1274" font-size="20" fill="#0f172a" font-weight="400">main.jsonl：可选 system Entry、Task 引用。</text>
+<text x="1535" y="1302" font-size="20" fill="#0f172a" font-weight="400">task-&lt;生成任务ID&gt;.jsonl：完整 request 记录。</text>
+<rect x="80" y="1432" width="2055" height="139" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<path d="M500 1444 V1559 M1515 1444 V1559" stroke="#1d4ed8" stroke-width="1" fill="none"/>
+<text x="100" y="1467" font-size="24" fill="#1d4ed8" font-weight="400">4  登记本次生成已开始</text>
+<text x="100" y="1509" font-size="17" fill="#334155" font-weight="400">generation.ts:212–217、434</text>
+<text x="520" y="1466" font-size="21" fill="#0f172a" font-weight="400">让观察者知道本次生成已开始；此时还没有新的模型内容。</text>
+<text x="520" y="1495" font-size="21" fill="#0f172a" font-weight="400">重入请求时先把旧进度留作中断观察并累计用量，再登记本次尝试。</text>
+<text x="520" y="1524" font-size="21" fill="#0f172a" font-weight="400">（旧 partial 转 aborted assistant；live.generation={attempt}；Task 阶段不变）</text>
+<text x="1535" y="1466" font-size="20" fill="#0f172a" font-weight="400">LiveDoc 的 doc-&lt;id&gt;.jsonl；main 保存 Doc 引用。</text>
+<text x="1535" y="1494" font-size="20" fill="#0f172a" font-weight="400">仅有旧 partial 时：main 追加 assistant，</text>
+<text x="1535" y="1522" font-size="20" fill="#0f172a" font-weight="400">并更新 UsageDoc 对应的 doc 文件。</text>
+<rect x="80" y="1598" width="2055" height="139" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+<path d="M500 1610 V1725 M1515 1610 V1725" stroke="#64748b" stroke-width="1" fill="none"/>
+<text x="100" y="1633" font-size="24" fill="#64748b" font-weight="400">事务外：持续接收响应</text>
+<text x="100" y="1675" font-size="17" fill="#334155" font-weight="400">generation.ts:233、484–492</text>
+<text x="520" y="1632" font-size="21" fill="#0f172a" font-weight="400">持续接收模型响应，及时更新待保存的最新进度。</text>
+<text x="520" y="1661" font-size="21" fill="#0f172a" font-weight="400">接收不被写盘拖住；保存端按时机取走累计快照（pending / timer / inFlight）。</text>
+<text x="520" y="1690" font-size="21" fill="#0f172a" font-weight="400">流结束时等已发出的保存完成，避免旧进度盖过最终结果。</text>
+<text x="1535" y="1632" font-size="20" fill="#0f172a" font-weight="400">此处本身不写文件。</text>
+<text x="1535" y="1660" font-size="20" fill="#0f172a" font-weight="400">局部状态：pending / timer / inFlight。</text>
+<text x="1535" y="1688" font-size="20" fill="#0f172a" font-weight="400">事件流结束才进入 classify。</text>
+<rect x="80" y="1764" width="2055" height="140" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<path d="M500 1776 V1892 M1515 1776 V1892" stroke="#1d4ed8" stroke-width="1" fill="none"/>
+<text x="100" y="1799" font-size="24" fill="#1d4ed8" font-weight="400">5  按间隔保存可观察进度</text>
+<text x="100" y="1841" font-size="17" fill="#334155" font-weight="400">generation.ts:459–480</text>
+<text x="520" y="1798" font-size="21" fill="#0f172a" font-weight="400">让界面与重开后的会话看到最近已保存的生成进度。</text>
+<text x="520" y="1827" font-size="21" fill="#0f172a" font-weight="400">复制累计回答再提交；跳过中间快照仍保留已生成文字。</text>
+<text x="520" y="1856" font-size="21" fill="#0f172a" font-weight="400">（修改 LiveDoc.generation.message；不移动 Task 恢复位置，不追加最终 Entry）</text>
+<text x="1535" y="1798" font-size="20" fill="#0f172a" font-weight="400">LiveDoc 的 doc-&lt;id&gt;.jsonl：通常为 delta。</text>
+<text x="1535" y="1826" font-size="20" fill="#0f172a" font-weight="400">main.jsonl：document.change 引用。</text>
+<text x="1535" y="1854" font-size="20" fill="#0f172a" font-weight="400">不追加 Task / assistant Entry。</text>
+<rect x="80" y="1931" width="2055" height="113" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+<path d="M500 1943 V2032 M1515 1943 V2032" stroke="#64748b" stroke-width="1" fill="none"/>
+<text x="100" y="1966" font-size="24" fill="#64748b" font-weight="400">判断后续动作（无提交）</text>
+<text x="100" y="2008" font-size="17" fill="#334155" font-weight="400">generation.ts:493、501–538</text>
+<text x="520" y="1965" font-size="21" fill="#0f172a" font-weight="400">写最终结果前，先收齐响应并决定接下来做什么。</text>
+<text x="520" y="1994" font-size="21" fill="#0f172a" font-weight="400">回答直接收口；动作交给工具任务（classify，仍在 request 的 await 内）。</text>
+<text x="1535" y="1965" font-size="20" fill="#0f172a" font-weight="400">分类本身不落盘；由对应分支提交。</text>
+<path d="M285 878 V895" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M285 1068 V1085" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M285 1214 V1230" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M285 1405 V1422" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M285 1571 V1588" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M285 1737 V1754" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M285 1904 V1921" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M790 2044 V2062 H575 V2083" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1430 2044 V2062 H1655 V2083" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="80" y="2093" width="990" height="286" rx="10" fill="#f0fdf4" stroke="#166534" stroke-width="1.5"/>
+<text x="100" y="2127" font-size="24" fill="#166534" font-weight="600">6A  回答与完成回执一起生效</text>
+<text x="100" y="2157" font-size="21" fill="#0f172a" font-weight="400">保存最终回答和用量，让调用者取得有持久记录的结果。</text>
+<text x="100" y="2186" font-size="21" fill="#0f172a" font-weight="400">同时确认本轮输入已回答，并保存它对应的回答身份。</text>
+<text x="100" y="2215" font-size="21" fill="#0f172a" font-weight="400">释放当前运行归属，清理生成与工具视图；无后续输入时回到空闲。</text>
+<text x="100" y="2244" font-size="21" fill="#0f172a" font-weight="400">main.jsonl：完整 assistant、submission、生成 Task 终态，以及 Doc 引用。</text>
+<text x="100" y="2273" font-size="21" fill="#0f172a" font-weight="400">LiveDoc 文件写 base；UsageDoc 有变化时也写 base；Task sidecar 可回收。</text>
+<text x="100" y="2302" font-size="21" fill="#0f172a" font-weight="400">（assistant + usage；Submission=done；Task=terminal/completed；endRun 清理 live）</text>
+<text x="100" y="2365" font-size="17" fill="#334155" font-weight="400">generation.ts:597–621；live.ts:endRun</text>
+<rect x="1160" y="2093" width="990" height="247" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1180" y="2127" font-size="24" fill="#1d4ed8" font-weight="600">6B  把模型动作交给工具，等待观察</text>
+<text x="1180" y="2157" font-size="20" fill="#0f172a" font-weight="400">把模型动作变成可调度工作，让本轮生成等待工具观察。</text>
+<text x="1180" y="2185" font-size="20" fill="#0f172a" font-weight="400">保存调用来源与模型用量，创建工具任务，让后续执行有据可查。</text>
+<text x="1180" y="2213" font-size="20" fill="#0f172a" font-weight="400">原输入仍由本轮负责；记住待处理调用，供恢复时继续。</text>
+<text x="1180" y="2241" font-size="20" fill="#0f172a" font-weight="400">（同批写 checkpoint：生成 tools；新工具 call；live.tools 展示动作）</text>
+<text x="1180" y="2269" font-size="20" fill="#0f172a" font-weight="400">main.jsonl：assistant、Task / Doc 引用；两个 Task 的文件保存完整非终态记录。</text>
+<text x="1180" y="2297" font-size="20" fill="#0f172a" font-weight="400">LiveDoc 文件写 base；UsageDoc 有变化时写 base。</text>
+<text x="1180" y="2326" font-size="17" fill="#334155" font-weight="400">generation.ts:startToolRound，648–674</text>
+<rect x="1160" y="2367" width="990" height="117" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1180" y="2401" font-size="24" fill="#1d4ed8" font-weight="600">7  为工具取得本次执行资格</text>
+<text x="1180" y="2431" font-size="20" fill="#0f172a" font-weight="400">先取得执行资格，再解析与校验调用（pending/call → running/call）。</text>
+<text x="1180" y="2458" font-size="20" fill="#0f172a" font-weight="400">task-&lt;工具任务ID&gt;.jsonl：完整 running 记录；main.jsonl 保存引用。</text>
+<rect x="1160" y="2511" width="990" height="190" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1180" y="2545" font-size="24" fill="#1d4ed8" font-weight="600">8  外部动作前，记住要做什么</text>
+<text x="1180" y="2575" font-size="20" fill="#0f172a" font-weight="400">先记录最终动作与能否重跑，让中断恢复有依据。</text>
+<text x="1180" y="2603" font-size="20" fill="#0f172a" font-weight="400">参数与 beforeTool 校验在事务外完成；提交后才展示开始并调用工具。</text>
+<text x="1180" y="2631" font-size="20" fill="#0f172a" font-weight="400">task-&lt;工具任务ID&gt;.jsonl、LiveDoc 文件、main.jsonl 引用一起提交。</text>
+<text x="1180" y="2659" font-size="20" fill="#0f172a" font-weight="400">（execute checkpoint 保存 arguments / replay；成功后才 tool.execute）</text>
+<text x="1180" y="2687" font-size="17" fill="#334155" font-weight="400">tool.ts:166–178</text>
+<rect x="1160" y="2728" width="990" height="109" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+<text x="1180" y="2762" font-size="24" fill="#64748b" font-weight="600">事务外：实际读写文件或调用服务</text>
+<text x="1180" y="2792" font-size="20" fill="#0f172a" font-weight="400">执行已确认的动作；持续输出先留在本地，供界面按间隔取用。</text>
+<text x="1180" y="2819" font-size="20" fill="#0f172a" font-weight="400">会话事务能丢弃内部候选，无法撤回已发生的外部效果。</text>
+<rect x="1160" y="2864" width="990" height="138" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1180" y="2898" font-size="24" fill="#1d4ed8" font-weight="600">9  保存界面可见的运行进度（可省）</text>
+<text x="1180" y="2928" font-size="20" fill="#0f172a" font-weight="400">让界面看到持续输出；尚无最终结果（LiveDoc 进度；Task=running/execute）。</text>
+<text x="1180" y="2955" font-size="20" fill="#0f172a" font-weight="400">LiveDoc 的 doc-&lt;id&gt;.jsonl：delta；main.jsonl 保存 Doc 引用。</text>
+<text x="1180" y="2988" font-size="17" fill="#334155" font-weight="400">tool.ts:publishProgress，502–522</text>
+<rect x="1160" y="3029" width="990" height="218" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1180" y="3063" font-size="24" fill="#1d4ed8" font-weight="600">10  保存工具观察，确认动作已结束</text>
+<text x="1180" y="3093" font-size="20" fill="#0f172a" font-weight="400">给等待方一份可消费的工具观察，同时确认工具任务已结束。</text>
+<text x="1180" y="3121" font-size="20" fill="#0f172a" font-weight="400">保存结果和可选用量；展示由运行进度切到最终结果（done / EntryId / outcome）。</text>
+<text x="1180" y="3149" font-size="20" fill="#0f172a" font-weight="400">main.jsonl：完整 tool-result、工具 Task 终态、Doc 引用。</text>
+<text x="1180" y="3177" font-size="20" fill="#0f172a" font-weight="400">LiveDoc 文件：最后一个运行工具结束时可写 base；UsageDoc 有修改才写。</text>
+<text x="1180" y="3205" font-size="20" fill="#0f172a" font-weight="400">释放任务专属的临时资料：退休 task-scope 文档，回收不再需要的 Task 附属文件。</text>
+<text x="1180" y="3233" font-size="17" fill="#334155" font-weight="400">tool.ts:settle，653–695；appendToolResult:887</text>
+<rect x="1160" y="3274" width="990" height="113" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1180" y="3308" font-size="24" fill="#1d4ed8" font-weight="600">11  让等待生成重新取得执行资格</text>
+<text x="1180" y="3338" font-size="20" fill="#0f172a" font-weight="400">工具满足等待条件后恢复生成，让它处理本轮观察（waiting/tools → running/tools）。</text>
+<text x="1180" y="3365" font-size="20" fill="#0f172a" font-weight="400">完整 Task 写回 task-&lt;生成任务ID&gt;.jsonl；main.jsonl 保存引用。</text>
+<rect x="1160" y="3414" width="990" height="235" rx="10" fill="#f0fdf4" stroke="#166534" stroke-width="1.5"/>
+<text x="1180" y="3448" font-size="24" fill="#166534" font-weight="600">12  把同一输入交给下一轮模型判断</text>
+<text x="1180" y="3478" font-size="21" fill="#0f172a" font-weight="400">把新观察交给下一轮判断，保留对原输入的处理责任。</text>
+<text x="1180" y="3507" font-size="21" fill="#0f172a" font-weight="400">（结束 G1；新 G2 初始 prepare checkpoint；live.run 移交，清理工具视图）</text>
+<text x="1180" y="3536" font-size="21" fill="#0f172a" font-weight="400">main.jsonl：旧 Task 终态、新 Task / Doc 引用；旧 Task 文件可回收。</text>
+<text x="1180" y="3565" font-size="21" fill="#0f172a" font-weight="400">新 task-&lt;id&gt;.jsonl：pending/prepare；LiveDoc 文件：base。</text>
+<text x="1180" y="3594" font-size="21" fill="#0f172a" font-weight="400">沿回线先认领新任务，再重建请求；旧生成完成，原输入仍待回答。</text>
+<text x="1180" y="3635" font-size="17" fill="#334155" font-weight="400">generation.ts:finishToolRound，708–736</text>
+<path d="M1655 2340 V2357" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1655 2484 V2501" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1655 2701 V2718" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1655 2837 V2854" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1655 3002 V3019" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1655 3247 V3264" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1655 3387 V3404" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M2135 1654 H2160 V1985 H2143" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)" stroke-dasharray="7 5"/>
+<path d="M2150 3531 H2180 V1081 H285 V1086" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="100" y="2425" font-size="25" fill="#0f172a" font-weight="600">条件旁路：仍使用同一事务机制；不混入上面的正常主链</text>
+<rect x="80" y="2450" width="990" height="198" rx="10" fill="#fff7ed" stroke="#9a3412" stroke-width="1.5"/>
+<text x="100" y="2484" font-size="24" fill="#9a3412" font-weight="600">模型请求失败：等一段时间再尝试</text>
+<text x="100" y="2514" font-size="20" fill="#0f172a" font-weight="400">先保存失败观察与用量，让用户和恢复逻辑能解释本次中断。</text>
+<text x="100" y="2542" font-size="20" fill="#0f172a" font-weight="400">记住下次尝试时点，结束本次执行占用；到期再准备请求。</text>
+<text x="100" y="2570" font-size="20" fill="#0f172a" font-weight="400">（sleeping/retry；until / attempt；main、Task、LiveDoc / UsageDoc 同批保存）</text>
+<text x="100" y="2598" font-size="20" fill="#0f172a" font-weight="400">无法继续时结束本轮输入，并记录未获回答的原因（unanswered 与失败终态）。</text>
+<text x="100" y="2634" font-size="17" fill="#334155" font-weight="400">generation.ts:559–589、238–251</text>
+<rect x="80" y="2675" width="990" height="166" rx="10" fill="#fff7ed" stroke="#9a3412" stroke-width="1.5"/>
+<text x="100" y="2709" font-size="24" fill="#9a3412" font-weight="600">服务端尚未产出结果：稍后查询</text>
+<text x="100" y="2739" font-size="20" fill="#0f172a" font-weight="400">让服务端已有工作继续，本地记住如何取回结果，以及何时再查。</text>
+<text x="100" y="2767" font-size="20" fill="#0f172a" font-weight="400">等待期间退出本次执行；到期查询同一份工作，结果再交给响应分类。</text>
+<text x="100" y="2795" font-size="20" fill="#0f172a" font-weight="400">（sleeping/poll；handle / cutoff / pollAt；Task、LiveDoc 和 main 同批保存）</text>
+<text x="100" y="2827" font-size="17" fill="#334155" font-weight="400">generation.ts:253–266、511–529</text>
+<rect x="80" y="2868" width="990" height="197" rx="10" fill="#fff7ed" stroke="#9a3412" stroke-width="1.5"/>
+<text x="100" y="2902" font-size="24" fill="#9a3412" font-weight="600">上下文压缩与新的排队输入</text>
+<text x="100" y="2932" font-size="21" fill="#0f172a" font-weight="400">先缩短过长上下文再重建请求；阻塞压缩要等结果，后台压缩可并行。</text>
+<text x="100" y="2961" font-size="21" fill="#0f172a" font-weight="400">（等待压缩子任务：waiting/prepare；溢出时先保存错误观察，再回 prepare）</text>
+<text x="100" y="2990" font-size="21" fill="#0f172a" font-weight="400">忙时先可靠接住新输入，不立即改变当前请求依据（queued + InboxDoc）。</text>
+<text x="100" y="3019" font-size="21" fill="#0f172a" font-weight="400">到工具后／回答边界再放入历史，交后续生成采用（user + placed；更新 InboxDoc）。</text>
+<text x="100" y="3051" font-size="17" fill="#334155" font-weight="400">generation.ts:181–207、544–555；submissions.ts:229–264</text>
+<rect x="80" y="3092" width="990" height="231" rx="10" fill="#fff7ed" stroke="#9a3412" stroke-width="1.5"/>
+<text x="100" y="3126" font-size="24" fill="#9a3412" font-weight="600">取消与故障：先停止旧执行，再收口</text>
+<text x="100" y="3156" font-size="20" fill="#0f172a" font-weight="400">先保存取消意图，拒绝旧执行迟到的结果（abortRequested；#gated）。</text>
+<text x="100" y="3184" font-size="20" fill="#0f172a" font-weight="400">取消清理留下中断观察，记录未回答的原因，并清理运行视图。</text>
+<text x="100" y="3212" font-size="20" fill="#0f172a" font-weight="400">若所属普通工作尚活跃，先记住自己的结果，等它们结束再完成收口。</text>
+<text x="100" y="3240" font-size="20" fill="#0f172a" font-weight="400">（completing 仍写 Task 文件；下属结束后写 terminal，完整记录进入 main）</text>
+<text x="100" y="3268" font-size="20" fill="#0f172a" font-weight="400">已发生的外部动作无法自动撤销；工具仅在保存和当前声明均为 safe 时重跑。</text>
+<text x="100" y="3309" font-size="17" fill="#334155" font-weight="400">scheduler.ts:546、1942、2327；generation.ts:abort；tool.ts:execute</text>
+<rect x="80" y="3350" width="990" height="299" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+<text x="100" y="3384" font-size="24" fill="#64748b" font-weight="600">图的覆盖范围与允许出现的额外提交</text>
+<text x="100" y="3414" font-size="20" fill="#0f172a" font-weight="400">主链按无排队输入、无嵌套调用、工具未要求 terminate / handoff 的正常路径绘制。</text>
+<text x="100" y="3442" font-size="20" fill="#0f172a" font-weight="400">顺序工具：前一个结束后才创建下一调用的工作，再继续等待（tools / pending）。</text>
+<text x="100" y="3470" font-size="20" fill="#0f172a" font-weight="400">调用不可执行也要留下错误观察；错误结果可在 6B 同批保存，不实际执行工具。</text>
+<text x="100" y="3498" font-size="20" fill="#0f172a" font-weight="400">回答边界仍有后续工作时，直接交给下一轮，保持处理连续（新输入 / onYield 等）。</text>
+<text x="100" y="3526" font-size="20" fill="#0f172a" font-weight="400">扩展可创建工作或固定可复用结果，增加独立提交（api.commit / 嵌套调用 / memo 等）。</text>
+<text x="100" y="3554" font-size="20" fill="#0f172a" font-weight="400">阶段间先检查能否继续；没有记录变化便不写文件（#step 不自动补一次提交）。</text>
+<text x="100" y="3582" font-size="20" fill="#0f172a" font-weight="400">旧会话缺请求侧关联资料时，先补齐再访问模型（补建 pi.provider）。</text>
+<text x="100" y="3635" font-size="17" fill="#334155" font-weight="400">tool.ts:361、742；scheduler.ts:1886；provider.ts:30</text>
+<text x="48" y="3704" font-size="28" fill="#0f172a" font-weight="600">每一次 JSONL 提交的真实文件顺序：附属文件先写，main 最后确认</text>
+<rect x="48" y="3730" width="460" height="175" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="68" y="3764" font-size="24" fill="#1d4ed8" font-weight="600">1  确认本批可共同写入</text>
+<text x="68" y="3794" font-size="17" fill="#0f172a" font-weight="400">校验并复制候选，避免写入中再变化。</text>
+<text x="68" y="3819" font-size="17" fill="#0f172a" font-weight="400">物化复制文档的内容（copy → create）。</text>
+<text x="68" y="3844" font-size="17" fill="#0f172a" font-weight="400">分配批次与记录位置，供引用（seq / ordinal）。</text>
+<text x="68" y="3891" font-size="17" fill="#334155" font-weight="400">jsonl/storage.ts:278；memory.ts:268、291</text>
+<rect x="546" y="3730" width="492" height="175" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="566" y="3764" font-size="24" fill="#1d4ed8" font-weight="600">2  先写任务与文档的内容</text>
+<text x="566" y="3794" font-size="17" fill="#0f172a" font-weight="400">留下恢复任务所需的完整记录（Task）。</text>
+<text x="566" y="3819" font-size="17" fill="#0f172a" font-weight="400">留下重建文档所需的完整值或变化（base / delta）。</text>
+<text x="566" y="3844" font-size="17" fill="#0f172a" font-weight="400">按选项先刷附属文件（fsync=true 时 flush）。</text>
+<text x="566" y="3891" font-size="17" fill="#334155" font-weight="400">jsonl/storage.ts:291–300</text>
+<rect x="1076" y="3730" width="520" height="175" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1096" y="3764" font-size="23" fill="#1d4ed8" font-weight="600">3  用主文件确认整批已提交</text>
+<text x="1096" y="3794" font-size="19" fill="#0f172a" font-weight="400">重开据此确认本批（main commit marker）。</text>
+<text x="1096" y="3821" font-size="19" fill="#0f172a" font-weight="400">消息、输入回执与已结束任务保存完整记录；</text>
+<text x="1096" y="3848" font-size="19" fill="#0f172a" font-weight="400">其他内容按记录位置引用（seq + ordinal）。</text>
+<text x="1096" y="3891" font-size="17" fill="#334155" font-weight="400">jsonl/storage.ts:301、384–448</text>
+<rect x="1634" y="3730" width="518" height="175" rx="10" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.5"/>
+<text x="1654" y="3764" font-size="24" fill="#1d4ed8" font-weight="600">4  让运行与观察者采用新事实</text>
+<text x="1654" y="3794" font-size="20" fill="#0f172a" font-weight="400">后端接入已确认记录并返回批次（seq）。</text>
+<text x="1654" y="3822" font-size="20" fill="#0f172a" font-weight="400">候选成为当前已提交值（tx.adopt）。</text>
+<text x="1654" y="3850" font-size="20" fill="#0f172a" font-weight="400">通知调度器、等待方与观察者（publish）。</text>
+<text x="1654" y="3891" font-size="17" fill="#334155" font-weight="400">jsonl/storage.ts:303；session.ts:758–765</text>
+<path d="M508 3815 H536" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1038 3815 H1066" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1596 3815 H1624" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="48" y="3935" width="2104" height="164" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+<text x="68" y="3969" font-size="24" fill="#64748b" font-weight="600">文件内容与回收：不是所有记录都永久追加在各自文件中</text>
+<text x="68" y="3999" font-size="20" fill="#0f172a" font-weight="400">main.jsonl 保留提交历史；任务 checkpoint 作为完整 Task 的一部分保存。任务 terminal 后，Task sidecar 可删除，终态仍在 main 中。</text>
+<text x="68" y="4027" font-size="20" fill="#0f172a" font-weight="400">Doc 的 base 是完整内容，delta 是 Chord 操作；latest 文档出现新 base 时可回收旧链。LiveDoc / UsageDoc / InboxDoc 各有自己的 base 策略。</text>
+<text x="68" y="4055" font-size="20" fill="#0f172a" font-weight="400">document.retire 本身只在 main.jsonl 写退役标记；仅保留当前值的文档可回收对应 Doc 文件。</text>
+<text x="68" y="4083" font-size="20" fill="#0f172a" font-weight="400">fsync 默认 false；本图不承诺断电零丢失。图中每个提交编号只是阅读顺序，真实一次提交可能同时修改多个 Task / Doc。</text>
+<text x="48" y="4145" font-size="28" fill="#0f172a" font-weight="600">失败与恢复：事务候选可以丢弃，已发生的外部动作和已确认提交不能靠它倒退</text>
+<rect x="48" y="4171" width="666" height="240" rx="10" fill="#fff7ed" stroke="#9a3412" stroke-width="1.5"/>
+<text x="68" y="4205" font-size="24" fill="#9a3412" font-weight="600">准备本批变化失败：保留原已提交值</text>
+<text x="68" y="4235" font-size="20" fill="#0f172a" font-weight="400">丢弃本次候选，保留原已提交事实。</text>
+<text x="68" y="4263" font-size="20" fill="#0f172a" font-weight="400">（settleFailure / discard 中止文档变化；不恢复整份备份）</text>
+<text x="68" y="4291" font-size="20" fill="#0f172a" font-weight="400">本批消息、任务与输入回执尚未进入持久事实。</text>
+<text x="68" y="4319" font-size="20" fill="#0f172a" font-weight="400">存储成功而采用失败：停用会话并重开，无法撤回磁盘。</text>
+<text x="68" y="4397" font-size="17" fill="#334155" font-weight="400">transaction.ts:688–725；session.ts:729–762</text>
+<rect x="738" y="4171" width="704" height="240" rx="10" fill="#fff7ed" stroke="#9a3412" stroke-width="1.5"/>
+<text x="758" y="4205" font-size="24" fill="#9a3412" font-weight="600">存储抛错：不猜测“已经回滚”</text>
+<text x="758" y="4235" font-size="20" fill="#0f172a" font-weight="400">本批可能部分写入，也可能已确认；不能猜作已回滚。</text>
+<text x="758" y="4263" font-size="20" fill="#0f172a" font-weight="400">停止会话，避免在结果不确定时追加（GuardedStorage）。</text>
+<text x="758" y="4291" font-size="20" fill="#0f172a" font-weight="400">重开后确认哪些批次有效（完整 main marker）；</text>
+<text x="758" y="4319" font-size="20" fill="#0f172a" font-weight="400">丢弃未获确认的附属尾部；</text>
+<text x="758" y="4347" font-size="20" fill="#0f172a" font-weight="400">若应保留的已确认内容缺失，则报告存储损坏。</text>
+<text x="758" y="4397" font-size="17" fill="#334155" font-weight="400">session.ts:974、1096；jsonl/storage.ts:535–760</text>
+<rect x="1466" y="4171" width="686" height="240" rx="10" fill="#f0fdf4" stroke="#166534" stroke-width="1.5"/>
+<text x="1486" y="4205" font-size="24" fill="#166534" font-weight="600">恢复执行：从最近已提交的任务状态继续</text>
+<text x="1486" y="4235" font-size="20" fill="#0f172a" font-weight="400">重开不沿用旧进程的执行占用，重新认领工作。</text>
+<text x="1486" y="4263" font-size="20" fill="#0f172a" font-weight="400">按最近恢复资料继续（running → pending，保留 checkpoint）。</text>
+<text x="1486" y="4291" font-size="20" fill="#0f172a" font-weight="400">请求仍可能重发，不能由保存进度推导只访问模型一次。</text>
+<text x="1486" y="4319" font-size="20" fill="#0f172a" font-weight="400">工具按保存与当前的重跑约定恢复（safe / unsafe）。</text>
+<text x="1486" y="4347" font-size="20" fill="#0f172a" font-weight="400">整批确认保证一致解释；断电能否保留还要看文件刷盘。</text>
+<text x="1486" y="4397" font-size="17" fill="#334155" font-weight="400">scheduler.ts:374–414；generation.ts:212；tool.ts:execute</text>
+<text x="48" y="4440" font-size="19" fill="#334155" font-weight="400">固定源码基线 pi-20261019；依据：packages/durable/src/harness/{generation,tool,submissions,scheduler,live}.ts；session/{session,transaction}.ts；storage/jsonl/storage.ts。</text>
+<text x="48" y="4474" font-size="19" fill="#334155" font-weight="400">蓝框：事务提交点 / 共用机制；灰框：事务外计算或范围说明；绿框：正常结算或交接；橙框：条件旁路和失败边界。颜色之外均有文字标识。</text>
+</g></svg>

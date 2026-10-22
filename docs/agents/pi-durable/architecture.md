@@ -7,12 +7,14 @@ baselines: ["pi-20261019"]
 sources: []
 depends_on: ["durable-glossary"]
 evidence: ["source", "official"]
-verified_scope: "最新 Harness 装配、六类 TaskState、工具 intent/replay、Session 提交与进度政策静态核验；未做 crash 注入及后端耐久测试。"
+verified_scope: "核验 Harness/Storage 注入、六类 TaskState、runtime 到 Session 的事务链、JSONL 提交顺序和工具 intent/replay；未做 crash 注入及后端耐久测试。"
 ---
 
 # Pi Durable：事务、任务与副作用恢复
 
 Pi Durable 把执行进度变成可保存的 Task 状态，再由调度器按 checkpoint 推进。Session 负责一批记录的提交；模型请求和工具效果发生在事务之外。它保存工作位置，模型仍根据上下文选择动作。
+
+从[分册首页的持久化总览](index.md#persistence-overview)先看完整执行顺序；每个阶段的记录变化与 JSONL 去向集中在[执行章的提交明细](loop.md#commit-trace)。本章放大这些提交点共用的事务机制，后面的原尺寸大图保留全部节点与旁路。
 
 ![Harness 接纳用户 Submission；TaskScheduler 用 Registry 执行任务；Session 将 Entry、Task 和 Document 同批提交给 Storage 后发布](../../assets/pico5.svg)
 
@@ -64,9 +66,11 @@ const result = await submission.wait(context);
 
 Models 和 settings 既可传对象，也可传返回当前值的函数。后者使后续取用读到新配置，已经保存进 request checkpoint 的 model/cutoff 等资料仍按本次请求解释。Registry 保存可执行代码，`pi.agent` 保存每个会话选中的名称；更新其中一个不会把其他对象自动替换。[装配与动态读取](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/harness.ts#L192)。
 
+Storage 由调用者显式传入：`createSession(storage, …)` 与 `Harness.open(storage, …)` 都没有省略该参数后的默认后端。Session 内部将传入实例包成 GuardedStorage，scheduler 使用的是这个 Session 及其受保护的存储；选用 JSONL 或 SQLite 取决于应用装配。同一份逻辑提交不会因此自动双写两个后端。[Session 构造与存储包装](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L76)、[Harness 构造 scheduler](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/harness.ts#L201)。
+
 ## 第二步：认领 Task，再进入其保存的阶段
 
-![Task 从 pending 被认领为 running；可等待 Task 进入 waiting，或等待时间进入 sleeping；完成时进入 terminal 或先 completing；重开 running 改回 pending 并统计截断次数，blocked 为检查结果](../../assets/pico5-task-state.svg)
+![任务先取得执行资格；等依赖结果或约定时点时释放本次执行；自己的结果已决定但下属活跃时先等下属收口；重开保留恢复资料重新认领；节点在意图后给出真实状态名，blocked 是检查结果](../../assets/pico5-task-state.svg)
 
 Task record 保存身份、conversationId、kind、version、input、owner 和 state。`status` 是运行内核管理的状态，checkpoint 是任务定义自己的完整恢复资料。比如 `pi.generation` 的 checkpoint 可以指向 request，而 `pi.tool` 可以指向 execute；两者共享调度规则，却不共享业务阶段。
 
@@ -82,6 +86,17 @@ Task record 保存身份、conversationId、kind、version、input、owner 和 s
 status 为 terminal、outcome 为 completed 是不同层的字段：一个表示不再推进，一个表示工作结果。completed 的生成 Task 可能还把用户运行交给 successor；不能据它推断整个 Conversation 已经空闲。[TaskState 完整定义](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/types.ts#L561)、[调度认领](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1470)、[完成与 owned work](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1938)。
 
 ## 第三步：将一次工作变化提交到历史、任务和视图
+
+<details id="commit-map">
+<summary>展开提交顺序大图（原尺寸，可横向和纵向滚动）</summary>
+<div style="overflow: auto; max-height: 75vh;">
+<img src="../../assets/durable-commit-state.svg" width="2200" style="width: 2200px; max-width: none;" alt="原尺寸提交顺序图：按阶段说明接住输入、安排执行、取得观察和继续判断的目的，再给字段、JSONL 去向及恢复边界" />
+</div>
+</details>
+
+![同一输入先被接纳并取得执行资格，再固定请求依据、接收模型判断；直接回答则确认完成，工具分支先记最终动作、执行并保存观察，再交新生成继续；每步先讲目的，再给字段与文件对照，底部展示整批确认和失败恢复](../../assets/durable-commit-state.svg)
+
+图按 JSONL 后端展开，可在上方展开原尺寸图查看字段与文件去向，编号表示阅读顺序；并非一次运行固定产生这些序号。下面先放大所有提交点共用的事务链；执行章再按[请求阶段](loop.md#request-commits)解释模型前后发生的几次提交，存储章解释[各类 write 的文件与表映射](documents.md#storage-writes)。
 
 模型返回读取代码的工具调用时，需要保存 assistant Entry、创建 tool child Task、让 generation 进入 waiting，并更新 `pi.live` 的工具视图。它们表达同一个推进动作。如果只保存 assistant，调度器不知道该执行谁；如果只创建工具 Task，模型历史又缺少它的来源。
 
@@ -99,6 +114,32 @@ await runtime.commit(async tx => {
 
 这段是教学伪代码。实际操作使用 typed Entry/Task/Document；它想说明的是**同一工作变化的历史、调度与视图在一个提交边界对齐**。[工具轮次创建](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L624)、[存储、采用与发布顺序](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L714)。Storage 提交后的耐久性仍取决于所选后端。
 
+### 回调怎样接到任务状态，再进入 Storage
+
+阶段代码需要把业务变化交给会话保存，同时由调度器统一检查任务状态和等待关系。为此，每次认领后的执行都会取得一个绑定本次身份的 TaskRuntime，阶段只调用它提供的 commit 入口。构造关系是 TaskScheduler.#run 创建 runtime 并传给 handler；runtime.commit 的闭包持有 scheduler 和 invocation，再将回调结果交给 #commitState。下面节选包装函数，省略遥测：
+
+```ts
+await this.#gated(
+  invocation,
+  async (tx, current) => {
+    const next = await change(tx, current);
+    // 回调返回下一状态时，才为当前任务暂存状态变化。
+    if (next !== undefined) await this.#commitState(tx, invocation, current, next);
+  },
+  context,
+);
+```
+
+例如请求产生工具动作时，调用来源、工具工作和生成等待关系必须同批生效；请求直接回答时，回答和任务结束也必须共同确认。业务回调准备消息与文档，并返回后续走向；包装函数让调度器校验该走向，再把完整任务候选放入同一事务（answer/startToolRound → next → #commitState → tx.setTask）。只报告进度则不移动当前任务恢复位置（回调返回 undefined），文档变化仍可提交。[阶段调用与 runtime 注入](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1711)、[commit 包装函数](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L2133)、[状态校验与暂存](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1938)。
+
+排队期间，任务可能已被取消或结束；因此要轮到本批修改时再检查资格，阻止失效执行的迟到结果覆盖当前事实。代码由 #gated 经 Session.commitWith 入队，在事务回调里确认 invocation 未结束、Harness 未关闭、Task 仍为 running，普通执行没有持久取消标记，再执行阶段回调。等待关系和文档 schema 等另由后续层校验；取消清理使用 abort invocation，允许执行必要的收尾。[提交资格检查](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L2327)。
+
+### 每次事务的候选从哪里来
+
+每次修改都要与当前已提交值隔离：本批成功才让后续工作采用，准备失败则丢弃候选，原值不被本批覆盖。因此轮到一个提交时，Session 先从最新事实建立独立事务，再执行修改回调（Session.commitWith → #runCommit → new Transaction → change(tx)）。文档通过 tracker.beginChange 得到本次可撤销 Draft，同一事务重复取得同一地址时复用；任务、消息和输入回执也先暂存候选。读取旧记录或分配 ID 并不代表本批已写入后端；模型请求、工具执行和阶段局部缓冲仍在事务外。[串行入队](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L237)、[新建事务](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L716)、[取得 Document 草稿](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/transaction.ts#L536)。
+
+准备完毕后，还要固定这批变化，防止回调外继续写草稿，再校验哪些记录应共同保存；随后才进入持久后端（settleSuccess 封闭草稿并准备文档变化，#assemble 汇总 StorageWrite[]，#runCommit 调用 this.#storage.commit）。本次草稿到此结束，下一次修改从最新已提交值重新开始；不存在各阶段长期共用“最初 Session 的整份备份”。[封闭与准备](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/transaction.ts#L700)、[汇总 writes](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/transaction.ts#L784)、[后端调用](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L750)。
+
 实际 Session 提交的正常路径可以节选为下面几步，省略事务失败处理、空写入和调用者取消的处理。writes 来自阶段回调产生的事务草稿，adopt 将成功提交的结果接入当前进程，publish 再通知观察者：
 
 ```ts
@@ -113,6 +154,18 @@ return result;
 
 这条交接决定观察者什么时候可以看到新事实：存储成功在前，当前状态采用在后，通知最后发生。[Session 提交实现](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L714)。
 
+### 失败发生在哪一步，决定能撤销什么
+
+事务候选的撤销与持久后端的恢复是两层机制；不能把所有 commit 抛错都解释为“文件已回滚”：
+
+| 失败位置 | Session 的动作 | 已提交事实与恢复 |
+|---|---|---|
+| change 回调或 settleSuccess 准备失败 | 中止本次文档变化，丢弃记录候选 | 尚未调用本批 Storage.commit，原已提交值不变 |
+| Storage.commit 抛错 | 丢弃进程中的候选，GuardedStorage 将 Session 标记为失败 | 本批是否已经完成不能一概判断；停止使用该实例，重开后由后端恢复确认 |
+| Storage 已成功，adopt 失败 | 将 Session 标记为失败 | 存储已经向前推进，不能靠丢弃 Draft 撤回；重新打开并加载持久事实 |
+
+外部模型请求、文件修改或 API 操作不在这些候选中，不能随事务撤销。JSONL 的未确认尾部如何处理见[存储恢复边界](documents.md#jsonl-confirmation)；完整处理分支见 [Session 提交实现](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L716)。
+
 ## 第四步：结果解除等待，并沿同一工作继续
 
 第三步提交成功后，scheduler 观察 Task 变化。工具 child 已进入 terminal 时，等待它的 generation 可以重新被认领，读取结果 Entry，决定交给 successor 继续还是收口输入。任务结果已经决定但仍有 owned work 时，Task 先进入 completing，等待下属结束后再变为 terminal。父子工作关系因此参与完成判断。[完成与 owned work](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1938)。
@@ -121,9 +174,9 @@ return result;
 
 ## 工具阶段：先保存调用意图，再执行并提交结果
 
-![工具 Task 正常进入 call，解析与校验后提交 execute intent；事务外运行工具，再提交结果 Entry 和终态；恢复 execute 时检查 replay](../../assets/pico5-tool-flow.svg)
+![工具先确定允许执行的动作，再保存最终参数和重跑约定，成功后才实际读写文件或服务，结束时留下观察并确认完成；中断恢复检查保存与当前定义是否都允许重做](../../assets/pico5-tool-flow.svg)
 
-工具工作先从 assistant Entry 读取调用，找到当前可用定义，准备参数并执行 beforeTool。参数确定后，提交 checkpoint：`phase=execute`、最终 arguments、replay 声明；随后才在事务外调用 `tool.execute`。结束时保存工具结果 Entry、更新视图并提交 outcome。
+工具先确定这次允许执行的最终动作，并把“要做什么、中断后能否重跑”留下，供恢复时判断；保存成功后才产生外部效果，结束时再把观察交给等待方。实现对照：从 assistant Entry 读取调用，查当前定义、准备参数并执行 beforeTool；保存 execute checkpoint 中的 arguments/replay，再在事务外调用 tool.execute；最后同批保存结果 Entry、视图和 outcome。
 
 正常执行的 call handler 会跨过 intent 后直接执行工具并收口；`execute` 阶段 handler 主要用于恢复。这里的 intent 保存“已经决定去做什么”，结果保存“已观察到什么”。一旦提交 intent 后进程消失，外部效果是否发生可能未知，所以恢复只在历史 replay 和当前工具 replay 都为 safe 时重跑。[工具阶段与恢复](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L74)。
 
@@ -155,7 +208,7 @@ run 调用工具并保存结果。若进程在这两步之间消失，execute �
 
 ## 主线补充：重开后按 checkpoint 重新进入
 
-打开 scheduler 会加载活跃 Task，将上次留下的 running 改回 pending，同时保留 checkpoint。这表示上一个进程的认领已经失效，任务可以重新被认领。`open` 本身不派发；`resume` 开启调度，submit/wait 等操作也会请求调度推进。[恢复与启用](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L370)、[Submission 推进入口](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/submissions.ts#L76)。
+重开后，旧进程的执行资格已经失效；应保留最近恢复资料，重新认领，再进入对应阶段，而不是沿用旧占用。scheduler 打开时加载活跃任务，将上次留下的 running 改回 pending 并保留 checkpoint。实际派发另由 resume 开启，submit/wait 等入口也会请求推进；open 只完成加载和准备。[恢复与启用](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L370)、[Submission 推进入口](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/submissions.ts#L76)。
 
 恢复需要当前 Registry 中仍有适用定义。函数不随 Task 存储，因此定义与旧状态的兼容关系也是运行条件；任务定义需要能解释保存的输入与 checkpoint。重开时还会统计被非正常进程终止截断的任务；连续没有状态进展达到 restartLimit 后，任务会暂时阻塞，等待显式重试。这些条件与 sleeping、宿主唤醒一起在[宿主与恢复](hosting.md)展开。
 

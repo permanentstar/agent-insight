@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="1580" viewBox="0 0 1320 1580" role="img" aria-labelledby="title desc">
+<title id="title">Pi Durable 一次运行的持久化总览</title>
+<desc id="desc">正常主线先为输入建立处理责任和执行资格，再固定请求依据并登记生成。事务外持续接收响应、按间隔保存可观察进度；完整响应要么确认回答并完成输入，要么交给工具。工具取得执行资格、记录最终动作和重跑约定后实际执行，结束时保存观察；等待生成处理结果，再交新生成继续负责同一输入。编号连接逐项明细与原大图，底部说明共同提交和 JSONL 确认顺序。</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#334155"/></marker></defs>
+<rect width="1320" height="1580" fill="#ffffff"/>
+<g font-family="system-ui, -apple-system, PingFang SC, sans-serif">
+<text x="32" y="44" font-size="32" fill="#0f172a" font-weight="600">Pi Durable：让同一输入持续推进并完成交接</text>
+<text x="32" y="82" font-size="21" fill="#334155" font-weight="400">数字与提交明细表、原大图一致；蓝框提交，绿框收口或移交，灰框事务外。</text>
+<rect x="32" y="108" width="1256" height="112" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="50" y="142" font-size="24" fill="#1d4ed8" font-weight="600">0  为后续工作建立会话资料（仅首次）</text>
+<text x="50" y="176" font-size="22" fill="#0f172a" font-weight="400">分开保存当前运行、排队、用量与配置，供后续阶段读取；已有会话可省略。</text>
+<text x="50" y="205" font-size="22" fill="#0f172a" font-weight="400">（Conversation；live / inbox / usage / provider / agent 文档；尚无生成任务）</text>
+<rect x="32" y="242" width="600" height="130" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="50" y="276" font-size="24" fill="#1d4ed8" font-weight="600">1  接住输入；2  为生成取得执行资格</text>
+<text x="50" y="310" font-size="22" fill="#0f172a" font-weight="400">首个生成负责完成输入，认领提交后才准备请求。</text>
+<text x="50" y="339" font-size="22" fill="#0f172a" font-weight="400">（1 新建 prepare checkpoint；2 认领沿用）</text>
+<rect x="684" y="242" width="604" height="130" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="702" y="276" font-size="24" fill="#1d4ed8" font-weight="600">3  固定请求依据；4  登记本次开始</text>
+<text x="702" y="310" font-size="22" fill="#0f172a" font-weight="400">保存配置和历史范围，供恢复时重建本次请求。</text>
+<text x="702" y="339" font-size="22" fill="#0f172a" font-weight="400">（3 写 request checkpoint；4 只更新 LiveDoc）</text>
+<path d="M332 220 V232" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M632 306 H674" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1000 372 V385 H452 V388" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="32" y="398" width="840" height="122" rx="12" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+<text x="50" y="432" font-size="24" fill="#64748b" font-weight="600">事务外：持续接收模型响应，不被写盘拖住</text>
+<text x="50" y="466" font-size="22" fill="#0f172a" font-weight="400">持续保留最新累计回答，按间隔交给右侧保存进度。</text>
+<text x="50" y="495" font-size="22" fill="#0f172a" font-weight="400">收齐响应后，决定回答还是执行工具（classify）。</text>
+<rect x="904" y="398" width="384" height="122" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="922" y="432" font-size="24" fill="#1d4ed8" font-weight="600">5  保存界面可见的进度（可省）</text>
+<text x="922" y="466" font-size="21" fill="#0f172a" font-weight="400">按间隔保存累计回答（LiveDoc）。</text>
+<text x="922" y="495" font-size="21" fill="#0f172a" font-weight="400">任务恢复位置不变（request）。</text>
+<path d="M872 457 H894" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="32" y="562" width="600" height="156" rx="12" fill="#f0fdf4" stroke="#166534" stroke-width="2"/>
+<text x="50" y="596" font-size="24" fill="#166534" font-weight="600">6A  回答与完成回执一起生效</text>
+<text x="50" y="630" font-size="22" fill="#0f172a" font-weight="400">保存回答和用量，确认本轮输入已回答。</text>
+<text x="50" y="659" font-size="22" fill="#0f172a" font-weight="400">释放运行归属，无后续工作时恢复空闲。</text>
+<text x="50" y="688" font-size="22" fill="#0f172a" font-weight="400">（assistant / usage；Submission done；G1 terminal）</text>
+<rect x="684" y="562" width="604" height="156" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="702" y="596" font-size="24" fill="#1d4ed8" font-weight="600">6B  动作交给工具，生成等待观察</text>
+<text x="702" y="630" font-size="22" fill="#0f172a" font-weight="400">保存调用来源，创建工具工作；原输入尚待回答。</text>
+<text x="702" y="659" font-size="22" fill="#0f172a" font-weight="400">工具结果就绪后，再让生成处理本轮观察。</text>
+<text x="702" y="688" font-size="22" fill="#0f172a" font-weight="400">（同批写 checkpoint：生成 tools；新工具 call）</text>
+<path d="M332 520 V552" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M750 520 V542 H985 V552" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="684" y="750" width="604" height="145" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="702" y="784" font-size="24" fill="#1d4ed8" font-weight="600">7  取得执行资格；8  记录最终动作</text>
+<text x="702" y="818" font-size="22" fill="#0f172a" font-weight="400">先校验调用，再记住要做什么、能否中断后重跑。</text>
+<text x="702" y="847" font-size="22" fill="#0f172a" font-weight="400">（execute checkpoint：最终 arguments / replay）</text>
+<text x="702" y="876" font-size="22" fill="#0f172a" font-weight="400">本批保存成功后，才调用外部工具并展示开始。</text>
+<rect x="684" y="927" width="604" height="95" rx="12" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+<text x="702" y="961" font-size="24" fill="#64748b" font-weight="600">事务外：实际读写文件或调用服务</text>
+<text x="702" y="995" font-size="22" fill="#0f172a" font-weight="400">已发生的外部效果无法由会话事务撤销。</text>
+<rect x="684" y="1054" width="604" height="130" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="702" y="1088" font-size="24" fill="#1d4ed8" font-weight="600">9  展示运行进度；10  保存最终观察</text>
+<text x="702" y="1122" font-size="22" fill="#0f172a" font-weight="400">运行时让界面看到输出，结束时留下可用结果。</text>
+<text x="702" y="1151" font-size="22" fill="#0f172a" font-weight="400">（LiveDoc 进度；tool-result / 终态；可选 usage）</text>
+<rect x="684" y="1216" width="604" height="145" rx="12" fill="#f0fdf4" stroke="#166534" stroke-width="2"/>
+<text x="702" y="1250" font-size="24" fill="#166534" font-weight="600">11  恢复等待生成；12  交给下一轮判断</text>
+<text x="702" y="1284" font-size="21" fill="#0f172a" font-weight="400">工具满足等待条件后，让生成处理本轮观察。</text>
+<text x="702" y="1313" font-size="21" fill="#0f172a" font-weight="400">新生成接手同一输入，再带着新观察请求模型。</text>
+<text x="702" y="1342" font-size="21" fill="#0f172a" font-weight="400">（11 沿用 tools；12 新建 G2 prepare checkpoint）</text>
+<path d="M985 718 V740" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M985 895 V917" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M985 1022 V1044" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M985 1184 V1206" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M1288 1288 H1304 V226 H620 V232" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="32" y="750" width="600" height="272" rx="12" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+<text x="50" y="784" font-size="24" fill="#64748b" font-weight="600">三种资料分别交给谁</text>
+<text x="50" y="818" font-size="22" fill="#0f172a" font-weight="400">后续模型读已结束的消息（Entry）。</text>
+<text x="50" y="847" font-size="22" fill="#0f172a" font-weight="400">调度器读工作与恢复位置（Task / checkpoint）。</text>
+<text x="50" y="876" font-size="22" fill="#0f172a" font-weight="400">运行控制与界面读当前资料（Document / live 等）。</text>
+<text x="50" y="905" font-size="22" fill="#0f172a" font-weight="400">一次推进涉及的资料可以在同一批生效。</text>
+<text x="50" y="934" font-size="22" fill="#0f172a" font-weight="400">各提交点重新隔离本次修改，成功后才采用。</text>
+<text x="50" y="968" font-size="19" fill="#334155">新写 checkpoint：1、3、6B、8、12。</text>
+<text x="50" y="997" font-size="19" fill="#334155">仅认领沿用：2、7、11；仅进度：4、5、9。</text>
+<rect x="32" y="1054" width="600" height="292" rx="12" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+<text x="50" y="1088" font-size="24" fill="#64748b" font-weight="600">JSONL 文件保存什么</text>
+<text x="50" y="1122" font-size="21" fill="#0f172a" font-weight="400">main.jsonl：Entry、Submission、终态 Task，</text>
+<text x="50" y="1151" font-size="21" fill="#0f172a" font-weight="400">以及整批提交标记与附属文件引用。</text>
+<text x="50" y="1180" font-size="21" fill="#0f172a" font-weight="400">task-&lt;id&gt;.jsonl：非终态的完整 Task。</text>
+<text x="50" y="1209" font-size="21" fill="#0f172a" font-weight="400">doc-&lt;id&gt;.jsonl：各文档的 base/delta。</text>
+<text x="50" y="1238" font-size="21" fill="#0f172a" font-weight="400">工具结束后，生成还要解释它带回的观察。</text>
+<text x="50" y="1267" font-size="21" fill="#0f172a" font-weight="400">下一轮仍负责同一输入，直到回答时才收口。</text>
+<rect x="32" y="1390" width="1256" height="144" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="50" y="1424" font-size="24" fill="#1d4ed8" font-weight="600">所有提交点：依次受理，隔离本次修改，共同保存，随后采用并通知</text>
+<text x="50" y="1458" font-size="23" fill="#0f172a" font-weight="400">（Session 队列：新事务 → change / next → StorageWrite[] → Storage.commit → adopt → publish）</text>
+<text x="50" y="1487" font-size="23" fill="#0f172a" font-weight="400">JSONL 先写任务／文档内容，再由 main 确认整批；确认后才向后续工作发布新状态。</text>
+<text x="32" y="1560" font-size="20" fill="#334155" font-weight="400">范围：正常无排队／嵌套或额外所属工作、工具未要求终止；重试、取消和恢复见原大图。</text>
+</g></svg>

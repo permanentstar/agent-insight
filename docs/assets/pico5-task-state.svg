@@ -1,42 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="825" viewBox="0 0 960 825" role="img" aria-labelledby="title desc">
-<title id="title">Pi Durable Task：调度状态与恢复</title><desc id="desc">六类持久状态含 sleeping；blocked 为检查结果；重开 running 变 pending 并累计截断次数。</desc>
+<title id="title">Pi Durable Task：调度状态与恢复</title><desc id="desc">任务等待认领后开始执行；需要其他工作时记住等待谁，需要时间时记住何时继续，两者都释放本次执行。结果已决定但下属尚未结束时先等下属收口，随后保存完成回执。重开后旧认领失效，保留恢复资料重新认领。blocked 是暂时不能执行的检查结果，不是额外持久状态。</desc>
 <rect width="960" height="825" fill="#ffffff"/>
 <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
 <g font-family="system-ui, sans-serif" fill="#172554">
 <text x="30" y="38" font-size="23" fill="#172554">Pi Durable Task：调度状态与恢复</text>
 <rect x="40" y="100" width="260" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="56" y="128" font-size="18" fill="#172554">pending</text>
-<text x="56" y="153" font-size="16" fill="#172554">等待认领 / 保留 checkpoint</text>
+<text x="56" y="128" font-size="18" fill="#172554">等待认领（pending）</text>
+<text x="56" y="153" font-size="16" fill="#172554">保留接下来要做的事（checkpoint）</text>
 <rect x="420" y="100" width="310" height="100" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="436" y="128" font-size="18" fill="#172554">running</text>
-<text x="436" y="153" font-size="16" fill="#172554">当前 invocation 执行 phase</text>
+<text x="436" y="128" font-size="18" fill="#172554">正在执行（running）</text>
+<text x="436" y="153" font-size="16" fill="#172554">本次认领的执行正在推进（invocation）</text>
 <path d="M300 150 H416" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="325" y="135" font-size="16" fill="#172554">认领</text>
 <path d="M550 100 V66 H170 V96" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="210" y="82" font-size="15" fill="#172554">非正常重开：pending + restarts</text>
+<text x="210" y="82" font-size="15" fill="#172554">重开须重新认领（pending；累计 restarts）</text>
 <rect x="40" y="300" width="310" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="56" y="328" font-size="18" fill="#172554">waiting</text>
-<text x="56" y="353" font-size="16" fill="#172554">等 on 中的任务结果</text>
-<text x="56" y="378" font-size="16" fill="#172554">无 invocation</text>
+<text x="56" y="328" font-size="18" fill="#172554">等待其他工作（waiting）</text>
+<text x="56" y="353" font-size="16" fill="#172554">等依赖任务给出结果（on）</text>
+<text x="56" y="378" font-size="16" fill="#172554">等待时释放本次执行</text>
 <rect x="420" y="300" width="310" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="436" y="328" font-size="18" fill="#172554">sleeping</text>
-<text x="436" y="353" font-size="16" fill="#172554">等 until 到期</text>
-<text x="436" y="378" font-size="16" fill="#172554">无 invocation</text>
+<text x="436" y="328" font-size="18" fill="#172554">等待约定时点（sleeping）</text>
+<text x="436" y="353" font-size="16" fill="#172554">到期再继续（until）</text>
+<text x="436" y="378" font-size="16" fill="#172554">等待时释放本次执行</text>
 <path d="M460 200 V245 H195 V296" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="55" y="243" font-size="15" fill="#172554">提交依赖</text>
+<text x="55" y="243" font-size="15" fill="#172554">记住等待谁</text>
 <path d="M620 200 V296" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
-<text x="641" y="258" font-size="15" fill="#172554">提交时刻</text>
+<text x="641" y="258" font-size="15" fill="#172554">记住何时继续</text>
 <path d="M350 352 H385 V168 H416" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="355" y="283" font-size="15" fill="#172554">满足</text>
 <path d="M730 352 H780 V150 H734" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="794" y="260" font-size="15" fill="#172554">到期认领</text>
 <rect x="40" y="520" width="310" height="110" rx="9" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
-<text x="56" y="548" font-size="18" fill="#172554">completing</text>
-<text x="56" y="573" font-size="16" fill="#172554">outcome 已决定</text>
-<text x="56" y="598" font-size="16" fill="#172554">等待普通 owned work 收口</text>
+<text x="56" y="548" font-size="18" fill="#172554">等下属收口（completing）</text>
+<text x="56" y="573" font-size="16" fill="#172554">自己的结果已决定（outcome）</text>
+<text x="56" y="598" font-size="16" fill="#172554">仍须等普通所属工作结束</text>
 <rect x="420" y="520" width="310" height="110" rx="9" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
-<text x="436" y="548" font-size="18" fill="#172554">terminal</text>
-<text x="436" y="573" font-size="16" fill="#172554">持久 outcome / 不再执行</text>
+<text x="436" y="548" font-size="18" fill="#172554">结果已确定（terminal）</text>
+<text x="436" y="573" font-size="16" fill="#172554">完成回执已保存，不再执行（outcome）</text>
 <path d="M420 183 H20 V575 H36" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="48" y="487" font-size="15" fill="#172554">结束时仍有下属</text>
 <path d="M350 576 H416" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
@@ -44,7 +44,7 @@
 <path d="M730 180 H900 V574 H734" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <text x="758" y="475" font-size="15" fill="#172554">无待收口下属</text>
 <rect x="40" y="695" width="860" height="100" rx="9" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
-<text x="56" y="723" font-size="18" fill="#172554">检查结果 blocked：缺定义 / 迁移失败 / restart_limit</text>
+<text x="56" y="723" font-size="18" fill="#172554">暂时不能安全执行（blocked）：缺定义 / 迁移失败 / restart_limit</text>
 <text x="56" y="748" font-size="16" fill="#172554">它由记录与当前定义推导；不是 TaskState 的另一个状态。</text>
 <text x="56" y="773" font-size="16" fill="#172554">sleeping 可取消；取消与异常终止仍按所有权协议处理。</text>
 </g></svg>

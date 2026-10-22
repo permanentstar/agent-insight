@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="850" viewBox="0 0 1320 850" role="img" aria-labelledby="title desc">
+<title id="title">单次模型流的接收与进度保存</title>
+<desc id="desc">同一模型请求中，接收端持续更新最新累计回答，保存端先复制本次快照，再等待存储。保存 A 时 B 和 C 可继续到达；C 包含此前文字，跳过 B 的持久快照不丢掉中间文字。A 完成后如有新进度且流未结束，再安排下一次保存。流结束则取消未来保存、等待已开始保存，防止旧进度盖过最终结果；完整响应随后交给回答或工具分支。</desc>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#334155"/></marker></defs>
+<rect width="1320" height="850" fill="#ffffff"/>
+<g font-family="system-ui, -apple-system, PingFang SC, sans-serif">
+<text x="36" y="48" font-size="30" fill="#0f172a" font-weight="600">持续接收响应，按保存速度留下最新进度</text>
+<text x="36" y="84" font-size="21" fill="#334155" font-weight="400">同一次请求中，接收与保存可交错推进；向下表示时间，文字为教学样例。</text>
+<rect x="36" y="116" width="565" height="125" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="56" y="151" font-size="24" fill="#1d4ed8" font-weight="600">接收新内容，保留最新累计回答</text>
+<text x="56" y="186" font-size="22" fill="#0f172a" font-weight="400">A 时刻接到“读”，记为下次待保存值。</text>
+<text x="56" y="216" font-size="22" fill="#0f172a" font-weight="400">保存尚未完成，也继续读取（for await）。</text>
+<rect x="715" y="116" width="565" height="125" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="735" y="151" font-size="24" fill="#1d4ed8" font-weight="600">隔离本次要保存的快照</text>
+<text x="735" y="186" font-size="22" fill="#0f172a" font-weight="400">先复制“读”，新内容不能改变本次保存。</text>
+<text x="735" y="216" font-size="22" fill="#0f172a" font-weight="400">完成前不再启动一次保存（inFlight 跟踪）。</text>
+<path d="M601 178 H704" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+<rect x="36" y="292" width="565" height="154" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="56" y="327" font-size="24" fill="#1d4ed8" font-weight="600">保存 A 期间，接收继续</text>
+<text x="56" y="362" font-size="22" fill="#0f172a" font-weight="400">B 时刻已接到“读取”，更新待保存值。</text>
+<text x="56" y="392" font-size="22" fill="#0f172a" font-weight="400">C 时刻接到“读取完成”，替代前一值。</text>
+<text x="56" y="422" font-size="22" fill="#0f172a" font-weight="400">跳过 B 的快照，C 仍含此前生成的文字。</text>
+<rect x="715" y="292" width="565" height="154" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="735" y="327" font-size="24" fill="#1d4ed8" font-weight="600">存储较慢时，接收仍可继续</text>
+<text x="735" y="362" font-size="22" fill="#0f172a" font-weight="400">正在保存 A，不为每个事件排一次写盘。</text>
+<text x="735" y="392" font-size="22" fill="#0f172a" font-weight="400">A 的独立快照保持稳定（copyJson）。</text>
+<text x="735" y="422" font-size="22" fill="#0f172a" font-weight="400">会话中的实际提交仍串行执行。</text>
+<path d="M318 241 V281" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+<path d="M997 241 V281" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+<rect x="715" y="498" width="565" height="125" rx="12" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2"/>
+<text x="735" y="533" font-size="24" fill="#1d4ed8" font-weight="600">本次已保存，还有新进度且流未结束</text>
+<text x="735" y="568" font-size="22" fill="#0f172a" font-weight="400">再安排一次保存（pending → timer）。</text>
+<text x="735" y="598" font-size="22" fill="#0f172a" font-weight="400">到时保存 C，省去 B 的中间快照。</text>
+<path d="M997 446 V487" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+<path d="M601 378 H654 V560 H704" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+<text x="36" y="513" font-size="23" fill="#0f172a" font-weight="600">接收不必等本次进度保存完成；</text>
+<text x="36" y="550" font-size="22" fill="#0f172a" font-weight="400">下一项仍可能等网络（iterator.next）。</text>
+<text x="36" y="587" font-size="21" fill="#334155" font-weight="400">各请求独立持有 pending / timer / inFlight。</text>
+<rect x="36" y="678" width="1244" height="135" rx="12" fill="#f0fdf4" stroke="#166534" stroke-width="2"/>
+<text x="56" y="713" font-size="24" fill="#166534" font-weight="600">流结束：避免旧进度晚于最终结果写入</text>
+<text x="56" y="748" font-size="22" fill="#0f172a" font-weight="400">取消尚未开始的定时保存，等正在写的完成；不必再单独保存待处理进度（finally）。</text>
+<text x="56" y="778" font-size="22" fill="#0f172a" font-weight="400">把完整响应交给后续判断，再提交回答或工具轮次（request → classify → commit）。</text>
+<path d="M997 623 V667" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+<path d="M318 610 V667" fill="none" stroke="#334155" stroke-width="2.5" marker-end="url(#a)"/>
+</g></svg>
