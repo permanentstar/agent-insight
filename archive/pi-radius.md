@@ -29,7 +29,7 @@
 
 # 进程与组件关系
 
-<whiteboard token="QR0Rw6ORvhXVaCbsPzPmyIaZyee"></whiteboard>
+> 图示重建说明（私人画板已移除）：将 Radius Gateway 画为外部节点，RadiusRelayHost 放在 Server 进程内；远程 Client 经 Gateway 接入 Server，本地 Coordinator 路径单独保留。
 
 图中Radius Gateway是外部节点；`RadiusRelayHost`只是Server进程内组件。远程链路不经过本地Coordinator。Coordinator仍服务本地Unix入口和Server generation切换，两者不是对等替代关系。
 
@@ -45,7 +45,7 @@
 
 # 一条host连接如何承载多个Client
 
-<whiteboard token="XuVUwj7ONhEiuFbmoM1mND6kysc"></whiteboard>
+> 图示重建说明（私人画板已移除）：在一条 host WebSocket 上区分文本控制帧和带 connection ID 的二进制帧；每个 connection ID 对应独立 ByteConnection，Client 侧收发原始 Pi 字节。
 
 Host WebSocket上的消息分两类：
 
@@ -68,7 +68,7 @@ Gateway通过connection ID把Client连接复用到host WebSocket；Host再把每
 
 # 断线、重连与恢复到哪里
 
-<whiteboard token="ATMawKqwxhzNSebb162mMW4FyUV"></whiteboard>
+> 图示重建说明（私人画板已移除）：分开 Host 重连与 Client 重新 attach：旧连接关闭后建立新连接、attachment 和订阅 snapshot；旧 request、pending Promise 与请求重放不自动恢复。
 
 ## Host侧
 

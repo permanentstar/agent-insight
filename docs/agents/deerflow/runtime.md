@@ -7,7 +7,7 @@ baselines: ["deerflow-20261009"]
 sources: ["deerflow-runtime", "deerflow-harness"]
 depends_on: ["deerflow-migrated"]
 evidence: ["source"]
-verified_scope: "核验 run 启动/终态资格、独立操作 reservation 与 event store 游标；未实测多 worker、断网或重放交付。"
+verified_scope: "核验 run/event 记录关系、启动/终态资格、独立操作 reservation 与 event store 游标；未实测多 worker、断网或重放交付。"
 ---
 
 # DeerFlow：Run 归属、事件读取与独立写入
@@ -77,7 +77,7 @@ worker 消费具名启动结果；只有 started 路径继续构图。[启动资
 
 ### 第三步：按执行结果和取消顺序收口
 
-成功/错误终态用 set_status_if_not_cancelled，让先赢的持久取消优先；store 无法确认取消/完成先后时，标记归属丢失，不凭本地 status 宣布持久成功。
+成功/错误终态用 set_status_if_not_cancelled，优先保留已经生效的持久取消；store 无法确认取消/完成先后时，标记归属丢失，不凭本地 status 宣布持久成功。
 
 | 竞争/失败 | 控制点 | 结果与不能推出的保证 |
 |---|---|---|
@@ -91,6 +91,35 @@ worker 消费具名启动结果；只有 started 路径继续构图。[启动资
 
 ## 运行旁路：保存事件，供断线后补读
 
+### 样例：同一 thread 为什么要读三套资料 {#storage-model}
+
+![DeerFlow 的 thread 对应多个 run；图恢复点按 thread 与 checkpoint 身份寻址，RunStore 用 run_id 保存运行状态，RunEventStore 的事件同时带 thread_id 和 run_id，并在整个 thread 内递增 seq；三路保存分别服务执行恢复、运行控制和展示补读](../../assets/deerflow-storage-model.svg)
+
+`ThreadState/checkpointer` 保存图内状态，`RunStore` 保存一次产品运行，`RunEventStore` 保存消息与执行事件。它们按共同身份协作，但存储接口、更新时机和消费者不同；配置为内存、文件或数据库后端时，物理布局与耐久性也不同。这里说明应用层关联，不把三套接口画成一份跨库事务或统一 SQL schema。
+
+| 资料 | 代表字段与关联 | 主要读取者 |
+|---|---|---|
+| 图恢复点 | `configurable.thread_id`、checkpoint namespace/id；状态内的 messages 等 | worker 调用的图执行器 |
+| run 记录 | `run_id/thread_id/status`；执行归属 `owner_worker_id/lease_expires_at` 等 | RunManager、运行查询接口 |
+| event 记录 | `thread_id/run_id/seq/event_type/category/content/metadata` | 消息列表、事件补读、调试消费者 |
+
+设 thread 为 `csv`：第一次运行 R1 已结束，用户要求继续验证后产生 R2。下面是字段节选，R1/R2 是教学 ID；状态和事件之间不暗示原子提交，事件正文与图内部字段省略：
+
+```json
+{
+  "runs": [
+    {"run_id":"R1","thread_id":"csv","status":"success"},
+    {"run_id":"R2","thread_id":"csv","status":"running","owner_worker_id":"worker-a"}
+  ],
+  "events": [
+    {"thread_id":"csv","run_id":"R1","seq":101,"category":"message"},
+    {"thread_id":"csv","run_id":"R2","seq":102,"category":"message"}
+  ]
+}
+```
+
+`seq` 在同一 thread 内递增，进入 R2 后继续到 102，不从 1 重置。客户端从 `after_seq=101` 补读可得到后者；查询 R2 状态则沿 `run_id` 读 RunStore；图执行器继续工作要从 thread 的 checkpoint 读状态。这三次读取分别回答“漏看了什么”“这次工作结束了吗”“图现在有哪些资料”。某条消息在摘要后从 checkpoint 的 messages 中移除，展示 feed 仍可能保存它；event 的 seq 也不是 checkpoint_id。[run 字段的保存](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/runtime/runs/store/memory.py#L54)、[event 信封与序号](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/runtime/events/store/memory.py#L39)。
+
 worker 将 graph 输出转为产品事件，event store 以 seq 保存可分页资料。list_messages/list_events 的 after_seq 返回较新的记录，before_seq 可向历史回读；一些端点只允许向后游标，不能给所有 endpoint 一个通用 cursor 参数。`put_if_absent` 允许按身份幂等补终态事件，但不是数据库与模型调用的统一事务。
 
 子 Agent 事件 buffer 的 put_batch 是旁路持久化，错误处理有 best-effort 分支。UI 看到 token、store 读到事件、checkpoint 写完、Run 终态成功是四个观察点；缺一个不能由另一个代证。断线后分页/补读只恢复已保存事件，不能保证重放所有曾被客户端看见的临时 delta。
@@ -99,7 +128,7 @@ worker 将 graph 输出转为产品事件，event store 以 seq 保存可分页�
 
 ## 独立写入：在同一 thread 上取得修改资格
 
-手工 compact 入口权限检查后，在 reserve_checkpoint_write 中读/压缩/更新 checkpoint。内部 reserve_thread_operation 建立短期 pending row，和普通 run 共享活跃 thread 的持久唯一约束；退出删除 row，删除失败留下具名孤儿协调。reservation 附着调用任务，lease 丢失取消该写入并转成 ConflictError。
+手工 compact 入口权限检查后，在 reserve_checkpoint_write 中读/压缩/更新 checkpoint。内部 reserve_thread_operation 建立短期 pending row，和普通 run 共享活跃 thread 的持久唯一约束；退出时删除 row，删除失败留下具名孤儿协调。reservation 附着调用任务，lease 丢失取消该写入并转成 ConflictError。
 
 持久 reservation 协调跨 worker 准入，Python keyed lock 协调进程内调用。非 heartbeat 多 worker 不能因有 reservation 代码就称完全安全；具体 store、部署与故障注入还需测试。
 

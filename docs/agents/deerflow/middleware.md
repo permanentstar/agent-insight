@@ -184,7 +184,7 @@ return self._filter_tool_search_result(request, handler(request), allowed=allowe
 | `view_image_middleware.py` | `wrap_model_call` | [源码](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/view_image_middleware.py#L539) |
 
 
-需要区分“默认启用四维”：配置默认是否开、依赖能力是否满足、本次构造是否选择、hook 是否有实际输入。标题/记忆/图片/子 Agent 等 conditional 逻辑不能由是否在列表中推出发生效果。实例生命周期按 Gateway run 与 Client graph cache 分开，state/Runtime.context 的 user/thread/run 才是当前身份；共享 `self` 缓存与 recorder 要核验 key 及清理边界。
+判断默认是否生效，要分别检查：配置默认是否开、依赖能力是否满足、本次构造是否选择、hook 是否有实际输入。标题/记忆/图片/子 Agent 等 conditional 逻辑是否产生效果，不能仅凭它们是否在列表中判断。实例生命周期按 Gateway run 与 Client graph cache 分开，state/Runtime.context 的 user/thread/run 才是当前身份；共享 `self` 缓存与 recorder 要核验 key 及清理边界。
 
 新增 middleware 的检查问题固定为：参与哪些 hook，读写哪个 owner 的字段，排序依赖是什么，短路后是否还执行 handler，恢复后是否会重复副作用。日志/审计/trace 属观察，除非在真实效果点阻断，否则不称权限边界。
 

@@ -12,7 +12,7 @@ verified_scope: "九对象固定基线的静态机制比较；Claude 的源码�
 
 # 比较：Prompt、压缩与长期记忆
 
-上下文预算应先区分持久原始历史、发送给模型的投影和独立长期记忆。压缩摘要是否生效，取决于覆盖范围与提交 owner；模型返回摘要只是中间状态。
+讨论上下文预算时，应先区分持久原始历史、发送给模型的投影和独立长期记忆。压缩摘要是否生效，取决于覆盖范围与提交 owner；模型返回摘要只是中间状态。
 
 ![历史、规则和记忆共同形成模型视图；摘要先保存候选及覆盖范围，经 owner 和边界检查提交后才影响后续投影，审计历史可以保留](../assets/comparison-context.svg)
 
@@ -29,11 +29,11 @@ verified_scope: "九对象固定基线的静态机制比较；Claude 的源码�
 |---|---|---|
 | 目标与约束 | “处理引号和换行，运行已有验证” | 用户提出的要求与后来补充的条件 |
 | 行为规则 | 工作区约定、工具描述、技能知识 | 规则所属层和适用范围；工具说明不授予权限 |
-| 外部资料 | 需求文档、导出源码 | 来源、路径及读入时的观察；正文是资料而非新的授权 |
+| 外部资料 | 需求文档、导出源码 | 保留来源、路径和读入时的观察；执行授权由工具路径检查 |
 | 执行反馈 | 修改结果、验证输出 | 哪次调用产生，结果是否成功，后续模型是否可见 |
 | 长期记忆 | 跨会话保存的项目偏好或知识 | 独立存储与检索；需要时进入当前请求 |
 
-第一次请求尚无代码，模型可以先决定读取；第二次多了读取结果，模型形成修改；修改结果和验证输出又进入后续请求。控制骨架保持不变，语义资料逐次增长，动作选择也随资料变化。这就是“非结构化信息组织”与“非固定模型决策”共同工作的主线。[AgentSession 输入和反馈](../agents/pi/loop.md)、[LangChain 消息变化](../frameworks/langchain/architecture.md)。
+第一次请求尚无代码，模型可以先决定读取；第二次请求多了读取结果，模型据此提出修改；修改结果和验证输出又进入后续请求。控制骨架保持不变，语义资料逐次增长，动作选择也随资料变化。这就是“非结构化信息组织”与“非固定模型决策”共同工作的主线。[AgentSession 输入和反馈](../agents/pi/loop.md)、[LangChain 消息变化](../frameworks/langchain/architecture.md)。
 
 ## 第二步：由历史与当前状态构造模型视图
 
@@ -50,7 +50,7 @@ Pi 保存历史树，沿当前 leaf 的 parent 链选择分支，再解释 compa
 | 修改当前可见结果 | 保存编辑记录或更新特定消息 | 采用新视图；原始审计是否保留由实现决定 |
 | 检索长期记忆 | 从独立存储读入所需内容 | 只加入本次相关材料，无需加载全部记忆库 |
 
-摘要文字质量由模型决定，覆盖边界和采用条件由程序管理。不要把“LLM 已返回摘要”误解为“当前请求已采用摘要”；Pi Durable 的背景 write submission、Hermes 的提交许可、DeerFlow 的 checkpoint reservation 都是在管理这两者之间的边界。下面再逐对象对照。
+摘要文字质量由模型决定，覆盖边界和采用条件由程序管理。不要把“LLM 已返回摘要”误解为“当前请求已采用摘要”；Pi Durable 的后台 write submission、Hermes 的提交许可、DeerFlow 的 checkpoint reservation 都是在管理这两者之间的边界。后文按对象逐一对照。
 
 
 ## 第三步：生成候选，再提交覆盖关系
@@ -66,7 +66,7 @@ session.append('user/message', checkpointMessage, {
 })
 ```
 
-这里替换模型贡献并保留审计来源。Pi 则让 CompactionEntry 与保留起点参与分支投影，Pi Durable 用持久摘要结果与 admission 管采用，DeerFlow 通过受预约保护的 checkpoint 更新覆盖 messages。共同职责是“明确谁能采用哪段摘要”，而不是共享一种数据格式。[查看 DeepSeek surface 提交](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/compaction/compaction-basic/src/region.ts#L491)。
+这里替换模型贡献并保留审计来源。Pi 则让 CompactionEntry 与保留起点参与分支投影，Pi Durable 用持久摘要结果与 admission 管采用，DeerFlow 通过受预约保护的 checkpoint 更新覆盖 messages。这些实现都在指定的采用位置选择摘要范围，各自保留对应的数据格式。[查看 DeepSeek surface 提交](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/compaction/compaction-basic/src/region.ts#L491)。
 
 ## 第四步：从已采用资料准备下一请求
 
@@ -85,6 +85,24 @@ session.append('user/message', checkpointMessage, {
 | LangChain，构图 | 应用 messages/checkpointer/store | middleware 决定 state mutation 或 request override | Agent hooks、Retrieval/Tool 等组件组合 | RAG、知识、临时请求与持久 state 可以分开 | 框架不自动保证检索质量或长期记忆正确 | [协议](../frameworks/langchain/components.md)、[检索](../frameworks/langchain/retrieval.md) |
 | LangGraph，执行 | channels/checkpoint/pending writes | reducers 由 schema 绑定；saver 保历史 | add_messages、Overwrite、Delta 重建 | 更新/覆盖规则明确，snapshot 与祖先 writes 有职责 | Overwrite 非跨 worker 锁；Delta 后端要求不能省略 | [通道](../frameworks/langgraph/advanced.md) |
 | DeepSeek，preview | event log、surface、CompactionEngine | manual idle maintenance；auto pre-step | start → summarize → assertStable → summary + surfaceOp → end → flush | 审计与模型可见区间分离，选中覆盖需稳定 | append/flush 不提供任意外部事务回滚；provider 未全测 | [surface](../agents/deepseek/context.md) |
+
+## Pi：长期记忆与会话摘要的入口 {#pi-memory}
+
+memory 摘要用于提炼后续可复用的知识、偏好或决定，保存范围可以是某次会话、某个项目，也可以跨会话或项目。compact 则缩短当前模型上下文，让正在进行的工作继续。是否落盘、是否在同一个 Session 内，都不足以区分两者；还要看摘要的用途、保存范围和后续读取方式。
+
+在本书核验的默认 AgentSession 与 Durable 路径中，未发现独立的长期记忆提炼、存储和召回管线。已有入口应分别理解：
+
+| 入口 | 实际作用 | 与 memory 摘要的区别 |
+|---|---|---|
+| AgentSession 的 `loadProjectContextFiles` | 上下文文件启用时，读取全局 agentDir 及 cwd 祖先目录中的指令文件；默认全局目录为 `~/.pi/agent/` | 可供多次会话复用，但内容由人或扩展维护，加载器不从对话自动提炼记忆 |
+| `AgentSession.compact` | 生成 CompactionEntry，再用摘要与保留段重建当前模型上下文 | 保存的是当前会话的续跑资料，不自动建立独立知识库 |
+| `navigateTree(targetId, { summarize: true })` | 总结离开的分支，在目标位置追加当前 Session 的 branch_summary | 保留这次分支探索，不是跨会话记忆检索 |
+| 可选扩展示例 `/summarize` | 读取当前分支，单独请求模型，随后用临时 UI 展示摘要 | 示例没有将摘要写入记忆文件或存储，也没有后续召回逻辑 |
+| Durable 的 CompactionTask | 总结指定 Conversation 的较早上下文，并将结果放回该 Conversation | 后台运行改变等待方式，不会因此变成长期记忆任务 |
+
+指令读取从 `DefaultResourceLoader.reload` 进入 `loadProjectContextFiles`，随后 `AgentSession._rebuildSystemPrompt` 取 `getAgentsFiles()` 的结果，`buildSystemPromptSections` 将内容放入 `project_context`。默认候选文件是 AGENTS.override.md、AGENTS.md／AGENTS.MD、CLAUDE.md／CLAUDE.MD，每个目录选首个可读文件；MEMORY.md 不在这份候选清单中。全局目录可配置，SDK 也可通过 agentsFilesOverride 提供其他内容。[文件选择与读取](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/resource-loader.ts#L184)、[请求资料交接](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L1700)、[System Prompt 采用位置](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/system-prompt.ts#L173)。
+
+分支摘要的实际交接是 `navigateTree` 调用 `generateBranchSummary`，再经 `branchWithSummary` 保存；扩展示例则在模型调用后直接 `showSummaryUi`。Durable 默认 Registry 只登记 GenerationTask、ToolTask 和 CompactionTask。若应用需要自动提炼和召回 memory，还需通过扩展或宿主实现；仅保存自定义 Entry／Document 不会自动增加这一过程。[分支摘要入口](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L3964)、[仅展示摘要的示例](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/examples/extensions/summarize.ts#L146)、[Durable 内置任务](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/registry.ts#L10)。这一结论限于已核验的默认路径，不覆盖外部安装的插件。
 
 ## 同一故障：后台摘要生成期间，前台追加新消息
 

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="title desc">
+  <title id="title">DeepSeek Harness：事件日志与 surface</title>
+  <desc id="desc">事件 seq 是逻辑身份；文件位置、事件时间与模型排列次序分别解释。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0 0L10 4L0 8Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="560" fill="#ffffff"/>
+  <g font-family="system-ui, sans-serif" fill="#0f172a">
+    <text x="35" y="38" font-size="24" font-weight="700">DeepSeek Harness：事件日志与 surface</text>
+    <text x="35" y="68" font-size="16">事件 seq 是逻辑身份；文件位置、事件时间与模型排列次序分别解释。</text>
+    <path d="M345 165H395" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="314.0" y="131" width="110" height="23" fill="#ffffff"/>
+    <text x="369" y="148" font-size="15" text-anchor="middle">同属 Session</text>
+    <path d="M705 165H755" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M550 225V280H190V355" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M910 225V280H550V355" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="667.0" y="254" width="126" height="23" fill="#ffffff"/>
+    <text x="730" y="271" font-size="15" text-anchor="middle">解释 surfaceOp</text>
+    <path d="M705 410H755" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="35" y="105" width="310" height="120" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="134" font-size="19" font-weight="650">SessionHeader</text>
+    <text x="50" y="161" font-size="16">id / parentSession 等</text>
+    <text x="50" y="185" font-size="16">存储元数据位于事件日志之外</text>
+    <text x="50" y="209" font-size="16">不作为普通消息发送</text>
+    <rect x="395" y="105" width="310" height="120" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="410" y="134" font-size="19" font-weight="650">SessionEvent 联合</text>
+    <text x="410" y="161" font-size="16">seq / time / type / data</text>
+    <text x="410" y="185" font-size="16">type 决定 data 形状</text>
+    <text x="410" y="209" font-size="16">包含消息与 log-only 控制事件</text>
+    <rect x="755" y="105" width="310" height="120" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="770" y="134" font-size="19" font-weight="650">消息事件的投影资料</text>
+    <text x="770" y="161" font-size="16">surfaceOp=append 或 replace</text>
+    <text x="770" y="185" font-size="16">sourceEventSeqs → 来源事件</text>
+    <text x="770" y="209" font-size="16">仅适用消息生产类别</text>
+    <rect x="35" y="355" width="310" height="110" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="384" font-size="19" font-weight="650">完整事件日志</text>
+    <text x="50" y="411" font-size="16">保留旧消息与 compaction/*</text>
+    <text x="50" y="435" font-size="16">seq 22 可追溯 20、21、2、5、8</text>
+    <rect x="395" y="355" width="310" height="110" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="410" y="384" font-size="19" font-weight="650">当前 surface</text>
+    <text x="410" y="411" font-size="16">替换前 [2,5,8,12]</text>
+    <text x="410" y="435" font-size="16">替换后 [22,12]</text>
+    <rect x="755" y="355" width="310" height="110" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="770" y="384" font-size="19" font-weight="650">deriveMessages → 请求</text>
+    <text x="770" y="411" font-size="16">消费新的模型投影</text>
+    <text x="770" y="435" font-size="16">不按全部 seq 排序直接发送</text>
+    <text x="35" y="520" font-size="16">seq=22 替换 2 至 8 的完整消息区间；原审计记录继续存在，flush 另确认保存边界。</text>
+  </g>
+</svg>

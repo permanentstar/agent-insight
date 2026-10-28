@@ -17,7 +17,7 @@ DeerFlow 的 Tools、Skills、MCP、ACP 和 Subagents 扩展不同边界：动�
 ![产品装配生成工具与技能目录，模型提出 task，task_tool 构造子 executor 与独立图，结果经 Command 回到父；父子可共享 Sandbox 但持有不同 lease](../../assets/deerflow-capabilities.svg)
 
 
-沿“让子 Agent 读取用例并返回建议”的任务看三步：产品先准备可发现能力，模型发出 task 请求，子 executor 运行后把结果交回父图。Sandbox 提供期间的文件环境，其 lease 在各次运行中分别管理。
+沿“让子 Agent 读取用例并返回建议”的任务看三步：产品先准备可发现能力，模型发出 task 请求，子 executor 运行后把结果交回父图。Sandbox 提供执行期间的文件环境，其 lease 在各次运行中分别管理。
 
 | 步骤 | 输入 | 输出与消费者 |
 |---|---|---|
@@ -38,7 +38,7 @@ DeerFlow 的 Tools、Skills、MCP、ACP 和 Subagents 扩展不同边界：动�
 
 ## 第一步：准备模型可发现、可调用的能力
 
-能力目录先按产品配置、agent 范围和授权结果装配，模型看到 direct schema 或 deferred 发现入口。tool_search 促进 schema 进入后续请求；Skill discovery 展示知识而非凭此授予写权限。lazy/eager/deferred 必须说明目标是连接、schema 还是环境，不能互相替代。
+能力目录先按产品配置、agent 范围和授权结果装配，模型看到 direct schema 或 deferred 发现入口。tool_search 促进 schema 进入后续请求；Skill discovery 展示知识，写权限由工具执行路径受理。lazy/eager/deferred 必须说明目标是连接、schema 还是环境，不能互相替代。
 
 SkillActivation 为显式 Skill 输入解析正文与需求，SkillToolPolicy 过滤模型侧和效果点，Sandbox projection 约束真实文件可见范围。它们分别控制请求可见性、实际调用和文件范围。实际阻断见 [middleware](middleware.md)。
 
@@ -74,7 +74,7 @@ task_tool 把完成结果转换为 ToolMessage，必要时通过 Command 更新�
 
 ## Sandbox、审计与文件并发
 
-SandboxMiddleware 默认 lazy 首次工具调用 acquire，eager 才在 before_agent acquire。并发 lead/subagent 持有独立进程内 lease，最后 release 可把远端环境 park 回 warm pool；provider shutdown 才是终态清理。远端环境可继续留在 warm pool，终态清理由 provider shutdown 管理。
+SandboxMiddleware 默认 lazy 首次工具调用 acquire，eager 才在 before_agent acquire。并发 lead/subagent 持有独立进程内 lease，最后 release 可把远端环境 park 回 warm pool；provider shutdown 才是终态清理。
 
 lead 拥有物理 Skill projection，subagent 的 discovery/activation 范围不允许重建共享 projection，否则会改变其他运行的文件视图。provider 不支持要求的 agent Skill filesystem isolation 时拒绝，不悄悄降级为目录过滤。
 

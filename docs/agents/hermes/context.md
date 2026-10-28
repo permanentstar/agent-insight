@@ -7,12 +7,12 @@ baselines: ["hermes-20261009"]
 sources: ["hermes"]
 depends_on: ["hermes-migrated"]
 evidence: ["source"]
-verified_scope: "核验 memory provider 调用、CompressionCommitFence 与候选提交主线；未验证所有 provider 或崩溃/超时组合。"
+verified_scope: "核验 sessions/messages 关联及双视图读取、memory provider 调用、CompressionCommitFence 与候选提交主线；未验证所有 provider 或崩溃/超时组合。"
 ---
 
 # Hermes：记忆、压缩与提交许可
 
-Hermes 把“形成摘要”和“允许修改当前会话”分开。背景压缩可继续计算，但宿主取消/超时后必须失去提交资格；记忆提供长期资料，摘要管理本次上下文，会话 ID 定位宿主保存的记录。
+Hermes 把“形成摘要”和“允许修改当前会话”分开。后台压缩可继续计算，但宿主取消/超时后必须失去提交资格；记忆提供长期资料，摘要管理本次上下文，会话 ID 定位宿主保存的记录。
 
 ![宿主读取会话快照，后台压缩形成候选，提交 fence 检查后进入数据库压缩或会话轮换，再采用结果；取消阻止未来提交](../../assets/hermes-context.svg)
 
@@ -30,12 +30,43 @@ Hermes 把“形成摘要”和“允许修改当前会话”分开。背景压�
 |---|---|---|---|
 | 原始消息 / SessionDB | 会话存储 | AIAgent 与宿主共享会话身份 | 数据库行及 active/归档状态是持久事实 |
 | ContextCompressor | 上下文算法 | AIAgent 持有，压缩 worker 使用 | 形成摘要、保护尾部、处理预算；不是持久事务 |
-| 压缩候选 / attempt | 背景工作 | worker 使用受控快照与 generation | 未提交结果可以丢弃；不是已生效 state |
+| 压缩候选 / attempt | 后台工作 | worker 使用受控快照与 generation | 未提交结果可以丢弃；不是已生效 state |
 | CompressionCommitFence | 提交控制 | 宿主撤销，worker 在提交前认领 | 线程同步与取消资格，防迟到结果修改会话 |
 | MemoryManager | 外部记忆编排 | AIAgent 调 provider hooks | turn start、上下文预取、sync、压缩前检查点；provider 各自持久化 |
 | 内置 memory / Skills | 长期资料与操作知识 | memory/skills 工具维护，prompt builder 展示 | 不等同本轮对话历史 |
 
 ## 第一步：准备当前请求资料和压缩起点
+
+### 从会话行到消息行，再到两个读取视图 {#storage-model}
+
+![Hermes 的 sessions 通过 parent_session_id 关联会话来历，每个 session 关联多条 messages；消息按 active 和 compacted 区分模型有效资料与压缩归档，工具交换另有调用身份；模型恢复与展示恢复选择不同记录，长期 memory provider 独立保存](../../assets/hermes-storage-model.svg)
+
+原生 SessionDB 用 SQLite 保存会话与消息。主要关联是 `messages.session_id → sessions.id`，`sessions.parent_session_id → sessions.id` 记录会话来历；消息内还保存文本或 JSON 形态的工具、推理及展示资料。不能把数据库一行简单等同于发给模型的一条纯文本。
+
+| 字段组 | 保存什么 | 消费时的区别 |
+|---|---|---|
+| 会话 `id/parent_session_id/end_reason` | 身份、来历和上一段结束原因 | 压缩轮换要识别真正的 continuation，普通 fork/reset 不能只凭 parent 就串成同一历史 |
+| 消息 `id/session_id/role/content` | 行身份与消息内容 | 数据库行 ID 用于定位记录，不等于工具调用 ID |
+| `tool_calls/tool_call_id` 与 `tool_call_uids/tool_call_uid` | provider 调用资料及内部稳定配对身份 | provider ID 可重复；不能跨用户 turn 仅按同名 call_id 误配结果 |
+| `active/compacted` | 是否仍参与有效历史、是否因压缩归档 | 模型恢复与展示历史采用不同过滤规则 |
+| `api_content/display_*` 等 | 模型与展示的专用内容或定位资料 | 同一行可产生不同消费视图，不假定 content 是唯一负载 |
+
+这些是读取和写入路径的字段节选，不是完整 DDL。模型恢复从当前段的 active 行组织请求，展示可包括经验证的压缩祖先和压缩归档行，再做去重。`get_resume_conversations` 明确返回两份历史；长期 memory provider 另有自己的存储，不能从 SessionDB 表名推定其 schema。[消息写入列与归档规则](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/hermes_state_messages.py#L30)、[模型与展示恢复](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/hermes_state_messages.py#L1655)。
+
+### 样例：压缩留在同一个会话 ID 内
+
+设 session 为 S1，原有三行是目标、读取调用和读取结果。候选已生成且通过提交许可后，选取最简单的“覆盖全部三行，无并发尾部”条件；真实实现还处理尾部保护，后文再解释：
+
+| 行 `id` | `session_id` | 内容节选 | 压缩前 `active/compacted` | 提交后 `active/compacted` |
+|---|---|---|---|---|
+| 7 | S1 | user：修复 CSV | 1 / 0 | 0 / 1 |
+| 8 | S1 | assistant：read 调用 r1 | 1 / 0 | 0 / 1 |
+| 9 | S1 | tool：r1 的源码结果 | 1 / 0 | 0 / 1 |
+| 10 | S1 | 合格候选中的摘要消息 | 尚不存在 | 1 / 0 |
+
+`archive_and_compact` 在同一事务中归档旧 active 行并插入候选。因此模型恢复采用新摘要，展示仍能查询 7/8/9 的原始资料；不是把旧三行的正文原地改成同一句摘要。还要区分 `active=0, compacted=0`：撤回或被替代的行不具有同样的展示语义，不能把所有 inactive 行一概视作压缩历史。[归档与插入的事务入口](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/hermes_state_messages.py#L984)。
+
+若选择轮换模式，则新候选进入 S2，`S2.parent_session_id=S1`，旧段按 compression 结束；宿主采用 S2 的内部身份，展示再沿合法压缩链找回旧段。后文的 fence 控制“能否开始提交”，这里的行关系解释“提交后读到什么”，两层需要一起理解。
 
 固定身份/内置记忆/用户画像/Skill 索引/项目上下文由 prompt builder 构造。MemoryManager 对外部 provider 派发 turn-start 与上下文 hooks，API 调用前的临时上下文按专用边界包裹并附到请求副本。这些附加资料在请求副本中保留其来源和作用范围。
 
@@ -51,12 +82,12 @@ commit_fence 是宿主与后台 worker 之间的提交资格控制。宿主撤�
 
 | 状态/条件 | 提交动作 | 失败结果与边界 |
 |---|---|---|
-| 背景生成中，宿主取消 | 撤销未来提交许可 | 迟到 worker 返回候选不代表可以写回 |
+| 后台生成中，宿主取消 | 撤销未来提交许可 | 迟到 worker 返回候选不代表可以写回 |
 | begin_commit 未通过 | 恢复压缩器与输入快照 | reason=commit_fence_cancelled；会话不 split |
 | 已进入提交 | fence 标记 in-flight，finish_commit 结束 | 宿主撤销不能声称已经回滚正在进行的事务 |
 | in-place | 同 ID soft-archive 旧 rows 并原子插入 compressed | 旧内容仍可搜索；不是物理删除全部历史 |
 | rotated | 建立压缩后的子会话与 parent 关系 | 宿主需采用新 internal session_id；稳定外部 ACP handle 可不变 |
-| Codex app-server 路由 | 调 Codex 所有线程的原生 compact | Hermes 本地 transcript 不重写，避免压了错误 owner |
+| Codex app-server 路由 | 调 Codex 所有线程的原生 compact | Hermes 本地 transcript 不重写，避免压缩错误对象 |
 
 压缩锁、turn lease、attempt generation、commit fence 分别控制持久竞争、当前宿主、旧 worker 和迟到提交，不能用一个“加锁”概念替代。holder-qualified 释放防止旧 worker 删除新锁；内存 append 的 persisted markers 只在数据库成功后采用。[fence](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_compression.py#L451)、[实际提交许可与采用](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_compression.py#L4200)、[数据库边界](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_compression.py#L3688)、[Codex 路由](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_compression.py#L4314)、[会话批量写入](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/session_persistence.py#L290)。
 

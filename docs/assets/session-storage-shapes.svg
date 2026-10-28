@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="title desc">
+  <title id="title">Pi AgentSession：文件记录、树与模型视图</title>
+  <desc id="desc">JSONL 是物理行；parentId、工具调用 ID、投影引用承担不同关系。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0 0L10 4L0 8Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="560" fill="#ffffff"/>
+  <g font-family="system-ui, sans-serif" fill="#0f172a">
+    <text x="35" y="38" font-size="24" font-weight="700">Pi AgentSession：文件记录、树与模型视图</text>
+    <text x="35" y="68" font-size="16">JSONL 是物理行；parentId、工具调用 ID、投影引用承担不同关系。</text>
+    <path d="M345 150H400" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="334.0" y="122" width="76" height="23" fill="#ffffff"/>
+    <text x="372" y="139" font-size="15" text-anchor="middle">同一文件</text>
+    <path d="M710 150H760" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M555 200V320" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M555 240H190V320" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="114.5" y="243" width="151" height="23" fill="#ffffff"/>
+    <text x="190" y="260" font-size="15" text-anchor="middle">负载内的另一种关系</text>
+    <path d="M915 200V320" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="922.0" y="248" width="76" height="23" fill="#ffffff"/>
+    <text x="960" y="265" font-size="15" text-anchor="middle">当前路径</text>
+    <path d="M710 382H760" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="35" y="100" width="310" height="100" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="129" font-size="19" font-weight="650">SessionHeader</text>
+    <text x="50" y="156" font-size="16">type=session；id / version</text>
+    <text x="50" y="180" font-size="16">独立会话头，不作为树节点</text>
+    <rect x="400" y="100" width="310" height="100" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="415" y="129" font-size="19" font-weight="650">SessionEntry 联合</text>
+    <text x="415" y="156" font-size="16">id / parentId / type</text>
+    <text x="415" y="180" font-size="16">message、配置、摘要、编辑等</text>
+    <rect x="760" y="100" width="305" height="100" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="775" y="129" font-size="19" font-weight="650">历史树 A → B → C</text>
+    <text x="775" y="156" font-size="16">parentId 指向祖先</text>
+    <text x="775" y="180" font-size="16">leaf 决定本次路径</text>
+    <rect x="35" y="320" width="310" height="125" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="349" font-size="19" font-weight="650">message 的工具交换</text>
+    <text x="50" y="376" font-size="16">assistant 的调用 ID=r1</text>
+    <text x="50" y="400" font-size="16">toolResult.toolCallId=r1</text>
+    <text x="50" y="424" font-size="16">与 Entry.id 分开配对</text>
+    <rect x="400" y="320" width="310" height="125" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="415" y="349" font-size="19" font-weight="650">投影引用</text>
+    <text x="415" y="376" font-size="16">compaction.firstKeptEntryId</text>
+    <text x="415" y="400" font-size="16">context_edit.targetId</text>
+    <text x="415" y="424" font-size="16">指向既有 Entry</text>
+    <rect x="760" y="320" width="305" height="125" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="775" y="349" font-size="19" font-weight="650">SessionProjection</text>
+    <text x="775" y="376" font-size="16">选择路径，解释摘要与编辑</text>
+    <text x="775" y="400" font-size="16">配置记录不直接成为消息</text>
+    <text x="775" y="424" font-size="16">messages → 活动 Agent → 请求</text>
+    <text x="35" y="510" font-size="16">文件保留旧分支与原文；模型读取由路径及贡献规则得到的视图。</text>
+  </g>
+</svg>

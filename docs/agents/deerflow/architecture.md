@@ -43,7 +43,7 @@ DeerFlow 是带 Gateway、嵌入式 Client 与产品策略的 Agent 系统。它
 
 ## 第二步：按当前配置装配 Lead 图
 
-Gateway worker 取得执行所有权后，组合 RunContext 与 Runtime，调用 agent_factory 构图并绑定存储，随后 astream。Client 不通过 Gateway：_ensure_agent 根据包含用户存储身份等因素的 key 复用或重建图；同步 stream 直接调用图的 stream。两条入口都会用产品 build_middlewares，但因此两条入口的 middleware 实例复用范围分别判断。
+Gateway worker 取得执行所有权后，组合 RunContext 与 Runtime，调用 agent_factory 构图并绑定存储，随后 astream。Client 不通过 Gateway：_ensure_agent 根据包含用户存储身份等因素的 key 复用或重建图；同步 stream 直接调用图的 stream。两条入口都会用产品 build_middlewares，但 middleware 实例的复用范围仍需按入口分别判断。
 
 | 当前位置 | 上层 → 下层 | 状态与结果 |
 |---|---|---|
@@ -91,7 +91,7 @@ graph = create_agent(
 | todos、sandbox 等结构字段 | ThreadState | 保存可解释的业务状态 |
 | pending/运行归属/终态 | RunManager 和 RunStore | 管理这一次平台执行 |
 
-System Prompt 的基底由产品模板形成。产品先形成基底，middleware 再按自身职责改变请求或状态；工具反馈作为观察进入请求消息。详细顺序与作用域见[中间件](middleware.md)和[Prompt 专题](context-prompt.md)。
+产品模板提供 System Prompt 的基底；middleware 再按自身职责改变请求或状态，工具反馈则作为观察进入请求消息。详细顺序与作用域见[中间件](middleware.md)和[Prompt 专题](context-prompt.md)。
 
 worker 在取得归属、绑定 checkpointer 与准备调用环境后，才调用 graph。多 stream_mode 的实际入口节选如下，省略流转换及取消检查：
 
@@ -151,7 +151,7 @@ Todo 的结构化状态同样要放在图内理解。pending/in_progress/complet
 
 产品 `apply_prompt_template` 负责 system prompt 的基底，包含角色、SOUL、skills、子 Agent 等按配置组合的内容。DynamicContext 等 middleware 再按生命周期加入记忆、时间或请求事实；DurableContext 用可恢复业务状态生成当次请求内容。它们在原基底上补充各自负责的请求材料。
 
-Tool 是动作，Skill 是任务知识及策略，MCP 是发现和调用外部工具的协议，subagent 是另一份执行拓扑。SkillToolPolicy 同时过滤模型 tools 并在 wrap_tool_call 再判断，阻断时不调用 handler；只隐藏 schema 不能替代执行门禁。依据：[prompt 基底](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/prompt.py#L1135)、[Skill 门禁](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/skill_tool_policy_middleware.py#L484)。完整有序链见[中间件专题](middleware.md)。
+Tool 是动作，Skill 是任务知识及策略，MCP 是发现和调用外部工具的协议，subagent 对应另一种执行拓扑。SkillToolPolicy 同时过滤模型 tools 并在 wrap_tool_call 再判断，阻断时不调用 handler；只隐藏 schema 不能替代执行门禁。依据：[prompt 基底](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/lead_agent/prompt.py#L1135)、[Skill 门禁](https://github.com/bytedance/deer-flow/blob/b842e06be19f04280a9e5e12f90da04d0c6f09a5/backend/packages/harness/deerflow/agents/middlewares/skill_tool_policy_middleware.py#L484)。完整有序链见[中间件专题](middleware.md)。
 
 ## 状态与故障
 

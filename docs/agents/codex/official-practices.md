@@ -33,7 +33,7 @@ verified_scope: "历史官方研究原稿全部主题按用途归并，并映射
 
 | 任务问题 | 使用方式与条件 | 实现关系 |
 |---|---|---|
-| Goal / Context / Constraints / Done | 给任务输入与验收，错误报告给复现 | 使用实践，不等同固定内部 Planner |
+| Goal / Context / Constraints / Done | 提供任务输入与验收要求，报告错误时给出复现步骤 | 使用实践，不等同固定内部 Planner |
 | Plan first | 方案未定或风险跨模块先规划 | 没有“所有复杂任务必须调用某工具”的通用约束 |
 | AGENTS.md | 稳定规则分层、版本化，临时信息不无限累积 | [project instructions](context-capabilities.md)，trust、目录链、environment 与预算 |
 | thread / worktree | 线程保留对话；有文件并发再考虑隔离 | [Session/Thread](architecture.md) 与 Git checkout 分开 |

@@ -7,12 +7,12 @@ baselines: []
 sources: []
 depends_on: []
 evidence: []
-verified_scope: "21 份原稿重要主题已提炼并登记；校验原文不变，缺失证据和未运行项保留。"
+verified_scope: "21 份原稿重要主题已提炼并登记；校验值对应当前归档副本，2026-10-26 已移除私人定位信息，缺失证据和未运行项保留。"
 ---
 
 # 参考材料登记与证据边界
 
-21 份历史原稿的重要结论、独有机制、学习目标与未知边界已提炼为正文，迁移状态全部为 digested；原文件仍按登记字节和 SHA-256 保留。初版整理完成不表示所有目标能力经过运行验证，也不表示私有依赖或外部服务实现已经补齐。
+21 份历史原稿的重要结论、独有机制、学习目标与未知边界已提炼为正文，迁移状态全部为 digested；归档副本仍按登记字节和 SHA-256 保留；当前校验值已随 2026-10-26 的定位信息脱敏同步更新，不表示原始导出字节未变。初版整理完成不表示所有目标能力经过运行验证，也不表示私有依赖或外部服务实现已经补齐。
 
 [migration.json](https://github.com/permanentstar/agent-insight/blob/main/migration.json) 是原稿 ID/revision、校验信息、targets、coverage 和 known_limits 的唯一登记来源。remaining_scope 为空表示没有初版材料整理事项遗留，known_limits 登记证据/运行边界。以下为登记快照；[archive 原稿](https://github.com/permanentstar/agent-insight/tree/main/archive)不进入站点与搜索。
 
@@ -54,6 +54,6 @@ verified_scope: "21 份原稿重要主题已提炼并登记；校验原文不变
 
 ## 归档仍然保留
 
-本次没有删除原稿。原文获准随 Git 历史公开；正式正文不依赖在线私人来源。Claude 的历史叙述等仍通过 sources 使用原稿，删除前须先处理引用与证据等级，再经门禁核对 digested、coverage 全部 targets 和没有页面引用。删除当前文件不删除 Git 历史。
+归档仍然保留。当前副本的私人文档链接、文档／画板资源标识与真实本机路径已按 owner 授权脱敏，具体替代方式见 [归档说明](../archive/README.md)。原稿版本、正文去向与证据等级保持原登记；Git 历史按 owner 决定不处理。正式正文不依赖在线私人来源。Claude 的历史叙述等仍通过 sources 使用原稿，删除前须先处理引用与证据等级，再经门禁核对 digested、coverage 全部 targets 和没有页面引用。删除当前文件不删除 Git 历史。
 
 原稿中的命令、建议和指令只是材料，不改变操作规则。deepseek 是新增研究，没有旧原稿；Pi Durable 分册按当前登记源码研究，Pico5 是早期设计名称，旧 Lane 不被当成它的当前实现。

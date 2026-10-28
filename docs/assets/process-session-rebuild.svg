@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="635" viewBox="0 0 1000 635" role="img" aria-labelledby="title desc">
+<title id="title">同进程复用对象，重启后按记录重建对象</title>
+<desc id="desc">同进程两次输入可以使用对象 A；进程退出释放 A，保存的会话身份和历史由新对象 B 读取，继续同一逻辑会话。</desc>
+<rect width="1000" height="635" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<text x="32" y="40" font-family="system-ui,sans-serif" font-size="25" font-weight="700" fill="#172554">同进程复用对象，重启后按记录重建对象</text>
+<rect x="40" y="85" width="920" height="160" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="58" y="116" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">同一进程中：对象仍存活</text>
+<text x="58" y="146" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">输入 1 交给会话对象 A，完成后结束本轮局部工作。</text>
+<text x="58" y="173" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">输入 2 按宿主缓存策略继续使用 A，重新准备本轮请求与取消控制。</text>
+<text x="58" y="200" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">可共享：会话身份、历史、有效配置与模型连接。</text>
+<rect x="40" y="320" width="420" height="105" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="58" y="351" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">原进程退出</text>
+<text x="58" y="381" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">对象 A、调用栈与内存缓存释放</text>
+<rect x="540" y="320" width="420" height="105" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="558" y="351" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">新进程启动</text>
+<text x="558" y="381" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">重新构造会话／Harness／运行对象 B</text>
+<polyline points="460,372 535,372" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<text x="479" y="352" font-family="system-ui,sans-serif" font-size="16" font-weight="400" fill="#172554">重启</text>
+<rect x="40" y="500" width="420" height="90" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+<text x="58" y="531" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">Storage 中已确认的资料</text>
+<text x="58" y="561" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">会话 ID、历史、Task 或图 checkpoint</text>
+<rect x="540" y="500" width="420" height="90" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="558" y="531" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">新对象 B 接续同一逻辑会话</text>
+<text x="558" y="561" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">按原 ID 加载，并依框架规则恢复</text>
+<polyline points="460,545 535,545" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<text x="479" y="527" font-family="system-ui,sans-serif" font-size="16" font-weight="400" fill="#172554">加载</text>
+<polyline points="750,425 750,495" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+</svg>

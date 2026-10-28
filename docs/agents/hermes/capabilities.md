@@ -12,12 +12,12 @@ verified_scope: "核验 ACP 转换与单会话认领、子 Agent 构造与 cron 
 
 # Hermes：ACP、平台、Skills、委派与定时宿主
 
-CLI、Gateway、ACP、cron 都可宿主持有 AIAgent，但输入身份、队列、审批回传和收尾不同。扩展要先判断改变的是入口、模型协议、知识、工具还是运行拓扑。
+CLI、Gateway、ACP、cron 都可作为宿主持有 AIAgent，但输入身份、队列、审批回传和收尾不同。扩展要先判断改变的是入口、模型协议、知识、工具还是运行拓扑。
 
 ![CLI、Gateway、ACP 和 cron 各自控制输入与会话，进入 AIAgent；工具注册、记忆和子 Agent 由不同 owner 扩展](../../assets/hermes-capabilities.svg)
 
 
-先按 ACP 的一份输入看宿主如何接入原生循环，再看工具和知识怎样进入请求；需要更多执行者时，delegate 构造独立 child。cron 在另一宿主生命周期触发同一门面，放在委派之后分别解释。
+先按 ACP 的一份输入看宿主如何接入原生循环，再看工具和知识怎样进入请求；需要更多执行者时，delegate 构造独立 child。cron 在另一个宿主生命周期中触发同一门面，放在委派之后分别解释。
 
 | 阅读位置 | 接入职责 | 交给原生循环或调用方 |
 |---|---|---|

@@ -12,12 +12,12 @@ verified_scope: "旧 Chord 状态序列/Radius 接入及当时 Host/Document 接
 
 # Chord 与 Radius：组合、复制与远程传输
 
-Chord 负责应用组合和 Service 状态语义，Radius relay 负责可选远程字节运输。Chord 是进程内运行库，不是监听服务；Radius 模型网关与 Session relay 是两个用途，不能把它们都叫 Agent 执行器。
+Chord 负责应用组合和 Service 状态语义，Radius relay 负责可选的远程字节传输。Chord 是进程内运行库，不是监听服务；Radius 模型网关与 Session relay 是两个用途，不能把它们都叫 Agent 执行器。
 
 ![FacetHost 声明依赖后激活 Service，Provider 发布 snapshot/update；Consumer 用连续序列复制，Radius 只在 transport 层复用连接](../../assets/chord-radius.svg)
 
 
-从运行层往外看，可以走完四次交接：Facet 声明服务依赖，Host 激活实现，Provider 发布状态，Consumer 接收 snapshot 后连续应用 update。Radius 位于运输支路，只负责把这类协议资料送到远端；它不参与模型或 Operation 的决策。下面先解释服务组合，再用同一份状态演算复制，最后讲断线后怎样重建接入。
+从运行层往外看，可以走完四次交接：Facet 声明服务依赖，Host 激活实现，Provider 发布状态，Consumer 接收 snapshot 后连续应用 update。Radius 位于传输支路，只负责把这类协议资料送到远端；它不参与模型或 Operation 的决策。下面先解释服务组合，再用同一份状态演算复制，最后讲断线后怎样重建接入。
 
 | 概念 | 层次 / owner | 创建与生命周期 |
 |---|---|---|
@@ -46,9 +46,9 @@ setup 内实际调用 use/observe/provide/provideMany，Host 据此记录依赖�
 | Tracker baseline | 生成差异的内部参照 | flush 推进，不是额外持久快照 |
 | Consumer replica.value | 客户端完整不可变 revision | snapshot hydrate，随后连续 update；断线/序列缺口回 unready |
 
-publish 无实际差异不推送；有差异则 sequence 加一。订阅先拿包含根替换的 base ops，再激活后续 updates，防 snapshot 与更新超车。Consumer 要求 sequence 连续，缺口不是“跳过一帧继续”，必须重新 hydrate。
+publish 无实际差异不推送；有差异则 sequence 加一。订阅先拿包含根替换的 base ops，再激活后续 updates，防止 snapshot 与后续更新顺序错乱。Consumer 要求 sequence 连续，缺口不是“跳过一帧继续”，必须重新 hydrate。
 
-路径 ops 表达从旧发布值到新值：r 替根、s 设字段、d 删除、a 追加字符串、t 裁字符串前部、p 数组 splice。decoded paths 与压缩 wire paths 是两层，codec 绑定具体订阅/实例/state member，replacement 与断线重建。对脏子树的 diff 仍可能昂贵，不能笼统承诺每次常数时间。
+路径 ops 表达从旧发布值到新值：r 替根、s 设字段、d 删除、a 追加字符串、t 裁字符串前部、p 数组 splice。decoded paths 与压缩 wire paths 是两层，codec 绑定具体订阅/实例/state member，并在 replacement 与断线时重建。对脏子树的 diff 仍可能昂贵，不能笼统承诺每次常数时间。
 
 [历史 Provider/Replica 序列](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/state.ts#L6)、[订阅与传输](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/provider.ts)、[该版 Delta tracker](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/chord/src/delta/tracker.ts)。Pico5 [DocumentState](../../agents/pi-durable/documents.md) 直接从已提交 Document 建观察源；旧 Harness event→transcript bridge 是产品投影，事件原文不是 Chord delta。
 
@@ -79,7 +79,7 @@ this.#value = value;
 this.#deliverAll(context, { kind: "update", sequence });
 ```
 
-于是界面采用“读取完成”。若收到 sequence=2 而缺了1，Consumer 清空就绪状态并等待重新 hydrate；业务工作是否完成仍从 Worker 的运行事实查询。四份状态表因此解释了两个边界：工作修改到发布，以及发布到远端采用。[查看发布与 replica 的完整实现](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/state.ts#L41)。
+于是界面采用“读取完成”。若收到 sequence=2 而缺少 1，Consumer 清空就绪状态并等待重新 hydrate；业务工作是否完成仍从 Worker 的运行事实查询。四份状态表因此解释了两个边界：工作修改到发布，以及发布到远端采用。[查看发布与 replica 的完整实现](https://github.com/earendil-works/pi/blob/6671c604766b3670ed95f405aa7856835d0ca702/packages/chord/src/services/state.ts#L41)。
 
 ## 运输支路：Radius 连接与重新订阅
 

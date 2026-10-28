@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="590" viewBox="0 0 1000 590" role="img" aria-labelledby="title desc">
+<title id="title">依赖等待：B 怎样在 A、C 结束后继续</title>
+<desc id="desc">B 保存 on=[A,C] 与 tools checkpoint；A 先结束时仍等 C，C 结束后重新认领 B。终态提交通过 waiters 反向索引唤回 B。</desc>
+<rect width="1000" height="590" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<text x="32" y="40" font-family="system-ui,sans-serif" font-size="25" font-weight="700" fill="#172554">依赖等待：B 怎样在 A、C 结束后继续</text>
+<rect x="40" y="82" width="920" height="90" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="58" y="113" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">先记住要等谁，再结束 B 当前这次执行</text>
+<text x="58" y="143" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">B：waiting；on=[A,C]；policy=allSettled；checkpoint.phase=tools</text>
+<rect x="40" y="235" width="420" height="115" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="58" y="266" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">A 的终态提交发布</text>
+<text x="58" y="296" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">waiters[A] 找到 B，放回候选</text>
+<text x="58" y="323" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">检查 C 仍在 live：B 继续等待</text>
+<rect x="540" y="235" width="420" height="115" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="558" y="266" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">C 的终态提交发布</text>
+<text x="558" y="296" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">waiters[C] 找到 B，放回候选</text>
+<text x="558" y="323" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">A、C 均已终态：依赖满足</text>
+<polyline points="250,172 250,230" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<polyline points="460,292 535,292" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<text x="479" y="275" font-family="system-ui,sans-serif" font-size="16" font-weight="400" fill="#172554">随后</text>
+<rect x="540" y="415" width="420" height="115" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="558" y="446" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">提交认领，再处理工具结果</text>
+<text x="558" y="476" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">B：running；checkpoint.phase=tools</text>
+<text x="558" y="503" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">新 invocation 执行 B 的 tools 阶段</text>
+<polyline points="750,350 750,410" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<text x="40" y="403" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">依赖关系：B.state.on 保存 A、C 的 ID。</text>
+<text x="40" y="435" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">唤回关系：waiters 记录谁在等 A、C。</text>
+<text x="40" y="467" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">allSettled：成功或失败的终态都算结束。</text>
+</svg>

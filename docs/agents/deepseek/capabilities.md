@@ -25,7 +25,7 @@ DeepSeek Harness 将能力定义、provider 和 consumer 插件分开，Profile 
 | seam / Service Definition | 能力接口 | 定义 ctx 服务与共享类型；本书称“能力接口” |
 | provider / consumer | 插件实现/使用 | provider 落实能力，consumer 如工具/命令使用接口 |
 | scope / patch | Cordis 上下文 | 插件作用范围与局部贡献，不能当 OS sandbox |
-| approval request | 交互控制 | 精确一次操作问题；独立 ApprovalRequestId |
+| approval request | 交互控制 | 针对一次具体操作的询问；独立 ApprovalRequestId |
 | local child / activation | 子执行 | child Session 可持久，activation 是一次在线执行期 |
 | external run | 外部后端 | 句柄持有一次执行，不自动拥有本地多轮 Session |
 
@@ -44,9 +44,9 @@ ApprovalService.request 要求 session 在 open turn 内，追加 approval/asked
 | allowed-once | 允许被询问的那个具体操作 | 不授予工具今后所有调用 |
 | rejected | 拒绝 | 包含 never 政策 |
 | cancelled | 拒绝 | signal 先到达时迟到回答被丢弃 |
-| unavailable | 拒绝 | 无 responder、抛异常或词汇外返回值 |
+| unavailable | 拒绝 | 无 responder、抛异常或返回约定以外的值 |
 
-审计 pair 仅日志，模型看到的是调用方生成的工具反馈与运行 context snapshot。实际工具必须消费 outcome；光发出审计事件不构成效果阻断。[request 与 decide](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/interaction/user-approval/src/index.ts#L215)、[闭合结果定义](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/interaction/user-approval/src/types.ts)。
+审计 pair 仅写入日志，模型看到的是调用方生成的工具反馈与运行 context snapshot。实际工具必须消费 outcome；光发出审计事件不构成效果阻断。[request 与 decide](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/interaction/user-approval/src/index.ts#L215)、[闭合结果定义](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/interaction/user-approval/src/types.ts)。
 
 审批策略的生效点位于 `ApprovalService.decide` 内部。下面节选分派前的路径；signal 与 responder 结果归一化的后续处理省略。
 
@@ -65,9 +65,9 @@ const answer: Promise<ApprovalOutcome> = Promise.resolve().then(
 
 ## 第三步：把受限命令交给实际执行器
 
-进程 SandboxMode 定义文件系统效果：read-only、workspace-write 和 danger-full-access。网络与进程可见性不由这项模式保证。工具每次调用从 Session cwd 与当前 policy 解析 root/mode；受限执行经 ctx.sandbox.confine 返回实际 argv，再由子进程 provider 执行；danger-full-access consumer 直接原 argv。
+进程 SandboxMode 定义文件系统效果：read-only、workspace-write 和 danger-full-access。网络与进程可见性不由这项模式保证。工具每次调用从 Session cwd 与当前 policy 解析 root/mode；受限执行经 ctx.sandbox.confine 返回实际 argv，再由子进程 provider 执行；danger-full-access 的 consumer 直接使用原 argv。
 
-后端报告 full/partial enforcement，restricted 无可用后端应 SANDBOX_UNAVAILABLE；runner 启动失败和命令被 sandbox 拒绝用不同分类。Windows ACL / 较旧 Landlock 等局限属于后端事实，不把接口名写成全平台等价安全。
+后端报告 full/partial enforcement，restricted 无可用后端时应返回 SANDBOX_UNAVAILABLE；runner 启动失败和命令被 sandbox 拒绝用不同分类。Windows ACL / 较旧 Landlock 等局限属于后端事实，不能仅凭接口名推定全平台具有同等安全保证。
 
 [bash 实际 confine](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/shell/bash-sandbox/src/index.ts#L98)、[共享 Sandbox 接口](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/sandbox/sandbox/src/index.ts)、[官方范围与后端限制](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/docs/subsystems/sandbox.zh.md)。后端的约束强度需要按平台与 enforcement 结果判断。
 

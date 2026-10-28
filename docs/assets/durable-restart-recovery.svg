@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660" role="img" aria-labelledby="title desc">
+<title id="title">重开恢复：正常关闭和进程中断留下什么</title>
+<desc id="desc">正常关闭成功写回 pending，下一次 open 不增加 restarts；中断留下 running，open 改成 pending 并加一。达到 restartLimit 的任务因 restart_limit 阻塞，retryTask 清除后再认领。</desc>
+<rect width="1000" height="660" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<text x="32" y="40" font-family="system-ui,sans-serif" font-size="25" font-weight="700" fill="#172554">重开恢复：正常关闭和进程中断留下什么</text>
+<rect x="40" y="85" width="420" height="115" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="58" y="116" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">正常关闭，写回成功</text>
+<text x="58" y="146" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">等待当前执行退出</text>
+<text x="58" y="173" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">把停止的 running 保存成 pending</text>
+<rect x="540" y="85" width="420" height="115" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="558" y="116" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">进程中断或关闭写回失败</text>
+<text x="558" y="146" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">最后确认记录仍为 running</text>
+<text x="558" y="173" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">checkpoint 保留在已提交记录里</text>
+<rect x="40" y="265" width="420" height="100" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="58" y="296" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">下一次 open 读到 pending</text>
+<text x="58" y="326" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">保留 checkpoint；restarts 不增加</text>
+<rect x="540" y="265" width="420" height="100" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="558" y="296" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">下一次 open 读到 running</text>
+<text x="558" y="326" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">改回 pending；restarts 加一</text>
+<polyline points="250,200 250,260" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<polyline points="750,200 750,260" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<rect x="40" y="440" width="420" height="110" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="58" y="471" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">认领后恢复执行</text>
+<text x="58" y="501" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">检查定义、依赖、到期与重启次数</text>
+<text x="58" y="528" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">提交新的推进状态后重新计数</text>
+<rect x="540" y="440" width="420" height="110" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="558" y="471" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">达到 restartLimit，默认 5</text>
+<text x="558" y="501" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">检查结果 blocked / restart_limit</text>
+<text x="558" y="528" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">报告 task_parked，等待 retryTask</text>
+<polyline points="250,365 250,435" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<polyline points="750,365 750,435" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<text x="768" y="403" font-family="system-ui,sans-serif" font-size="16" font-weight="400" fill="#172554">达到限制</text>
+<polyline points="540,493 465,493" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<text x="462" y="418" font-family="system-ui,sans-serif" font-size="16" font-weight="400" fill="#172554">retryTask</text>
+<text x="40" y="602" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">blocked 是检查结果；记录仍保留 Task 状态与 checkpoint。</text>
+<text x="40" y="630" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">未到限制的中断任务，也进入左侧认领路径。</text>
+</svg>

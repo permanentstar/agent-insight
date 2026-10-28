@@ -23,7 +23,7 @@ Lane Harness 不是一个独立服务，也不是把原来的 AgentSession 换�
 
 **物理连接总览：**本地数据路径是 `Client ↔ Coordinator public socket ↔ Server private Unix listener`；私有控制面是 Server 和每个 Worker 分别连接 Coordinator 的 control socket，Server→Worker 消息实际经 Coordinator 透明转发。远程数据路径是 `Client ↔ Radius Gateway ↔ RadiusRelayHost`，随后进入同一个 Server。下图按 OS 进程分区；进程内组件不会画成独立网络节点。
 
-<whiteboard token="FxuIwqwaghFiLNbUlFLmhEJoyAe"></whiteboard>
+> 图示重建说明（私人画板已移除）：按 OS 进程划分 Client、Coordinator、Server 与 Worker；本地连接经 Coordinator，远程连接经 Radius Gateway 和 Server 内的 RadiusRelayHost，控制面另行标注。
 
 ## 先分清进程、组件和模块
 
@@ -71,7 +71,7 @@ Drive 位于 Session Worker 内，是某条 Lane 当前 Operation 的唯一推�
 
 下面两张图分别回答两个层次的问题：本节开头的状态机图展示 Run 在 Worker内如何围绕 durable checkpoint推进；3.1 的时序图展示 Presentation命令如何进入 Lane，以及执行进度如何持续返回界面。后续小节再逐段解释 accept、Drive、模型、Tool与Transcript。
 
-<whiteboard token="KM4awrtj7hsK0wbIH8emmLI0y9b"></whiteboard>
+> 图示重建说明（私人画板已移除）：从接纳输入进入 checkpoint 判断，再请求模型、保存响应并执行工具；工具结果回到后续模型请求，没有工具且满足结束条件时收口。按后文区分持久 checkpoint 与 Worker 内的 Drive。
 
 **先沿图看一条普通 run：**接纳输入 → 检查是否还要继续 → 请求模型 → 写入模型结果 → 如有工具则执行工具并再次请求模型，否则检查能否结束。图中的 `checkpoint`是已写入 Session 的“下次从这里判断”位置；前一步提交这个状态及 `continuation`、`triggerEntryId`，Drive 随后才处理 inbox、压缩或结束判断。一次 run 可以多次回到这里。见 `drive/checkpoint.ts:25-175`、`drive/boundary.ts:163-261`。
 
@@ -1358,7 +1358,7 @@ flowchart TD
 
 # 本地和远程请求在哪里汇合
 
-<whiteboard token="N6rJw5KkPh7VJ2bG0C1mfhReyDd"></whiteboard>
+> 图示重建说明（私人画板已移除）：把本地 Coordinator 路径与远程 Radius Gateway、RadiusRelayHost 路径汇合到 Server.accept()；汇合后复用 attachment、Pi envelope、Chord payload 和 Worker 路由。
 
 两条链路只在 Server 入口前不同。本地 Coordinator 不等价于远程 Radius Gateway：Coordinator 同时承担稳定本机入口和 Server generation 切换；Radius Gateway 只在 Pi 可见契约中提供远程 WebSocket 配对和中继。远程流量进入 `RadiusRelayHost`后，调用同一个 `Server.accept()`，后续 attachment、Pi envelope、Chord payload 和 Worker 路由完全复用。
 

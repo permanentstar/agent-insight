@@ -1,30 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1460" viewBox="0 0 1200 1460" role="img" aria-labelledby="title desc">
 <title id="title">Pi Harness 的四层驱动与两类业务定时</title>
-<desc id="desc">宿主接口调用 resume，事件触发 kick 和微任务 drain，无需延迟定时器，认领后由 start 创建任务执行。run 根据 step 返回的 Task 继续阶段或 undefined 退出，阶段内模型流、工具回调和 Promise 提供进展。waiting 后等依赖终态提交重新认领，sleeping 后用 until 定时器或宿主 alarm 重新认领。阶段内进度 timer 只保存进度。Session 串行提交并发布，Task 变化唤起调度，Submission 结束兑现等待。取消收口和缓存到期是旁路。</desc>
+<desc id="desc">宿主接口调用 resume，事件触发 kick 和微任务 drain，认领后由 start 创建任务执行。run 根据 step 返回的 Task 继续阶段或 undefined 退出，阶段内模型流、工具回调和 Promise 提供进展。waiting 后等依赖终态提交重新认领，sleeping 后用 until 定时器或宿主 alarm 重新认领。阶段内进度 timer 只保存进度。Session 串行提交并发布，Task 变化唤起调度，Submission 结束兑现等待。取消收口和缓存到期是旁路。</desc>
 <rect width="1200" height="1460" fill="#ffffff"/>
 <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
 <g font-family="system-ui, sans-serif" fill="#172554">
 <text x="40" y="42" font-size="26" font-weight="700">Pi Harness：谁提供运行机会，谁持续推进，谁等下一次触发</text>
-<text x="40" y="72" font-size="18">按职责分四层，共用 JS 异步运行环境；这些层不等于四个线程或四个常驻循环。</text>
+<text x="40" y="72" font-size="18">四层共用 JS 异步运行环境，通过调用、I/O 完成与提交通知接续。</text>
 
 <rect x="40" y="100" width="690" height="155" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
 <text x="60" y="135" font-size="22" font-weight="700">第一层 · 宿主唤起：主动接口或平台回调给一次运行机会</text>
 <text x="60" y="171" font-size="19">submit / wait / 显式 resume → Scheduler.resume() → #kick()</text>
 <text x="60" y="204" font-size="18">open 恢复 Task；resume 启用调度。启用后，后续变化可以直接 kick。</text>
-<text x="60" y="237" font-size="18">宿主 CLI 可有输入事件循环，submit / wait 内没有另一套任务轮询。</text>
+<text x="60" y="237" font-size="18">宿主接收输入；submit 接纳工作，wait 登记结果等待者。</text>
 <rect x="790" y="100" width="370" height="155" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
-<text x="810" y="135" font-size="21" font-weight="700">wait 等结果，不消费任务</text>
+<text x="810" y="135" font-size="21" font-weight="700">wait 登记本次输入的结果等待者</text>
 <text x="810" y="171" font-size="18">读一次状态；未结束则登记 Promise</text>
 <text x="810" y="204" font-size="18">Submission 结束提交发布时 resolve</text>
-<text x="810" y="237" font-size="18">无需反复调用 wait / resume</text>
+<text x="810" y="237" font-size="18">后续 Task 提交继续唤起调度</text>
 <path d="M385,255 V285" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 
 <rect x="40" y="290" width="690" height="205" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
 <text x="60" y="325" font-size="22" font-weight="700">第二层 · 任务调度：本次把能运行的 Task 认领出来</text>
-<text x="60" y="361" font-size="19">事件 #kick → 微任务 #drain → #reserve（不设延迟）</text>
+<text x="60" y="361" font-size="19">事件 #kick → 微任务 #drain → #reserve</text>
 <text x="60" y="394" font-size="18">检查依赖 / 到期 / 定义等 → 提交认领 → #start；各任务可交叠执行</text>
 <text x="60" y="427" font-size="18">B 自带 on=[A,C]；任何依赖未结束就暂不认领 B</text>
-<text x="60" y="460" font-size="18">dirty=false 就结束 drain；没有消费者线程阻塞等事件</text>
+<text x="60" y="460" font-size="18">dirty=false 时 drain 返回；后续事件再触发 kick</text>
 <path d="M385,495 V530" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 
 <rect x="40" y="535" width="690" height="215" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
@@ -45,11 +45,11 @@
 <text x="60" y="886" font-size="19">模型流到来 → for await 继续；请求结束 → classify → 提交</text>
 <text x="60" y="919" font-size="19">工具 execute 的进度回调与返回值 → 保存进度 / 结果</text>
 <text x="60" y="952" font-size="18">await 暂停当前函数，JS 线程可以执行其他回调</text>
-<text x="60" y="985" font-size="18">没有一个通用的阶段内总循环；具体 handler 决定怎样工作</text>
+<text x="60" y="985" font-size="18">handler 按对应的模型／工具协议推进当前工作</text>
 
 <rect x="790" y="290" width="370" height="460" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
 <text x="810" y="325" font-size="21" font-weight="700">有休眠期限才安排定时唤醒</text>
-<text x="810" y="361" font-size="18">无 sleeping 时不设这个定时器</text>
+<text x="810" y="361" font-size="18">存在未来 until 时，安排最近的一项</text>
 <text x="810" y="405" font-size="20" font-weight="700">默认：进程内定时回调</text>
 <text x="810" y="438" font-size="18">#scheduleWake 选择最早 until</text>
 <text x="810" y="471" font-size="18">#armTimer → foreground / setTimeout</text>
@@ -59,31 +59,31 @@
 <text x="810" y="597" font-size="18">报告 Wake → 宿主安排平台 alarm</text>
 <text x="810" y="630" font-size="18">alarm → 重开或沿用 Harness → resume</text>
 <text x="810" y="674" font-size="18">重试 / poll 各有默认，见正文时间表</text>
-<text x="810" y="707" font-size="18">无固定周期扫描；无期限则不设闹钟</text>
+<text x="810" y="707" font-size="18">下一期限来自当前 Task 的 until</text>
 <path d="M790,389 H735" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <path d="M730,728 H785" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 
 <rect x="790" y="815" width="370" height="190" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
-<text x="810" y="850" font-size="21" font-weight="700">正常流程也可有进度定时</text>
+<text x="810" y="850" font-size="21" font-weight="700">进度节流：保存本阶段的展示资料</text>
 <text x="810" y="886" font-size="18">partial / 工具输出 → runtime.setTimer</text>
 <text x="810" y="919" font-size="18">回调保存进度；新进度再延迟保存</text>
 <text x="810" y="952" font-size="18">只活在本次 invocation，结束即清理</text>
-<text x="810" y="985" font-size="18">进度采样 timer 不驱动 Task 派发</text>
+<text x="810" y="985" font-size="18">Task 派发由任务状态变化触发</text>
 <path d="M730,910 H785" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 
 <path d="M385,1005 V1050" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <path d="M975,1005 V1050" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 <rect x="40" y="1055" width="1120" height="170" rx="10" fill="#f5f3ff" stroke="#475569" stroke-width="2"/>
 <text x="60" y="1090" font-size="22" font-weight="700">共用提交通道 · Session：各层按需提交，持久化后发布变化</text>
-<text x="60" y="1126" font-size="19">Promise 队列串行 commit → Storage 确认 → adopt / publish；没有固定时钟凑批提交</text>
+<text x="60" y="1126" font-size="19">Promise 队列串行 commit → Storage 确认 → adopt / publish → 处理下一提交</text>
 <text x="60" y="1159" font-size="18">Task 变化 → Scheduler 更新索引并 kick；已在执行的 Task 不重复认领（#invocations 检查）</text>
-<text x="60" y="1192" font-size="18">仅 Doc 进度变化：不因此派发 Task；Submission 终态：兑现第一层 wait 的 Promise</text>
+<text x="60" y="1192" font-size="18">Doc 进度交文档观察者；Submission 终态兑现第一层 wait 的 Promise</text>
 <path d="M40,1155 H15 V390 H35" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
 
 <rect x="40" y="1265" width="1120" height="155" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
-<text x="60" y="1300" font-size="21" font-weight="700">旁路：状态收口与缓存维护，不再另算一层业务消费</text>
+<text x="60" y="1300" font-size="21" font-weight="700">旁路：取消收口与缓存维护</text>
 <text x="60" y="1336" font-size="18">取消传播 / failFast / completing 收口：状态事件 → 微任务 #reconcile → Session 提交 → 发布</text>
 <text x="60" y="1369" font-size="18">Document / 上下文空闲到期：background 定时回调回收内存；按需再设下一次，不领取业务 Task</text>
-<text x="60" y="1402" font-size="18">源码静态图；默认计时与宿主 alarm 是两种接线方式，不表示同一等待同时使用两套定时器。</text>
+<text x="60" y="1402" font-size="18">常驻宿主选择内核定时器；按需宿主用 onWake 连接平台 alarm。</text>
 </g>
 </svg>

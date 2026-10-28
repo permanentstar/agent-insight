@@ -20,7 +20,7 @@ verified_scope: "静态核验扩展装配、自定义任务接续、工具集合
 
 ## 先看 Extension 怎样接到内置任务
 
-Extension 是宿主安装的一包能力，Task 是调度器推进的一件工作。Registry 保存定义，Harness 为自己的 Session 建立 TaskScheduler；内置和自定义 Task 都交给这个调度器执行。本文说的是 Durable 的 Extension；Pi AgentSession 扩展使用的 pi.registerTool / pi.on 是另一套接口，不能直接套用本节的装配方式。[Harness 装配](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/harness.ts#L213)。
+Extension 是宿主安装的一组能力，Task 是调度器推进的一件工作。Registry 保存定义，Harness 为自己的 Session 建立 TaskScheduler；内置和自定义 Task 都交给这个调度器执行。本文说的是 Durable 的 Extension；Pi AgentSession 扩展使用的 pi.registerTool / pi.on 是另一套接口，不能直接套用本节的装配方式。[Harness 装配](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/harness.ts#L213)。
 
 ![扩展把工具、钩子、提示词和自定义任务装入 Registry；Conversation 选择工具与钩子，TaskScheduler 统一驱动内置和自定义任务。模型选择工具名，GenerationTask 创建 ToolTask，ToolTask 调用扩展工具；工具显式提交 Reporter，Scheduler 再驱动它，完成后向主对话送回后续输入。](../../assets/durable-extension-tasks.svg)
 
@@ -38,7 +38,7 @@ Extension 是宿主安装的一包能力，Task 是调度器推进的一件工�
 
 ### 能力展开以后，谁决定执行哪一个
 
-Extension 是安装和会话启用的组织单位，框架没有“执行整个 Extension”的入口。它在运行时仍决定哪些工具、提示词、hooks 和 wraps 被采用，也保留错误归属；但它没有一个把这些成员依次全跑完的执行顺序。
+Extension 把工具、提示词、hooks、wraps 和 Task 定义打包安装；Conversation 选择启用项以后，运行代码分别消费这些成员。工具按名称执行，提示词在准备请求时渲染，hooks 在对应入口调用，自定义 Task 按 checkpoint.phase 推进。
 
 准备请求时，GenerationTask 通过 runtime.agent 获取本阶段解析的 Agent。resolveAgent 先选择 Conversation 启用的扩展，再分别合并工具与提示词、应用 wraps，最后按工具配置过滤出模型可见集合。GenerationTask 渲染有效的 sections（render 返回 undefined 可省略），并把工具声明送给模型；此时不会调用这些工具的 execute。模型之后只按工具名选择动作，hooks 则由任务在相应入口主动调用。[能力展开与过滤](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/agent.ts#L229)、[准备提示词与工具声明](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L135)。
 
@@ -76,7 +76,7 @@ registry.install(SubagentTools);
 | 5. 开始执行新建的 Reporter | Session 提交发布 + TaskScheduler | 新 Task 保存为 pending，checkpoint 来自 initial；提交成功后 Scheduler 观察 Task 变更，认领条件满足且调度启用时，从 deliver 阶段执行 |
 | 6. 把后台结果送回主对话 | Reporter 自己的 deliver / report 阶段 | 向子对话提交输入并等待答案，子对话复用内置生成和工具循环；得到答案后先保存 report checkpoint，再向主对话提交 followUp，最后结束 Reporter |
 
-这条路径没有一个“GenerationTask 下一步执行某 Extension”的通用分支。第一次决定是模型选择工具名；第二次决定是工具代码创建自定义 Task；调度器随后处理已经提交的工作。宿主或 hook 代码也可按业务需要创建 Task，但触发逻辑仍须由代码显式实现。[响应分派](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L532)、[工具轮次提交](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L648)、[实际执行工具](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L427)。
+执行交接落在展开后的成员上：模型选工具名，ToolTask 找到对应 execute；工具代码再按需要创建自定义 Task，Scheduler 认领这个实例。Extension 保留安装、会话启用与成员归属：resolveAgent 的结果仍含 extensions，hooks 按已启用扩展查找。宿主和 hook 也能显式创建 Task。[响应分派](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L532)、[工具轮次提交](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L648)、[实际执行工具](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L427)。
 
 提交成功怎样触发下一段，可以沿通用调用链核对：Session 发布提交结果 → Scheduler.#observe 跟踪 Task 变化并调用 #kick → #drain / #reserve 认领可执行任务 → #run 按 checkpoint.phase 调用 handler。采用 JSONL 后端时，创建 ToolTask 或 Reporter 的 commit 都先保存任务内容，再由 main 确认批次，之后才发布给 Scheduler；不会在 tx.createTask 尚未提交时执行新任务。[创建时保存 initial 与 pending](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/transaction.ts#L424)、[提交观察](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L624)、[调度认领](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1437)。
 
@@ -92,7 +92,7 @@ Conversation 选择启用哪些扩展，用于解析它的工具、提示词、h
 
 ## 第一步：区分已启用、模型可见与程序可调用
 
-Registry 装入扩展定义，Conversation 的 `pi.agent` 选择启用项。resolveAgent 再根据工具的 callers、deferred 与 modelTools 配置形成三个消费集合：
+Registry 装入扩展定义，Conversation 的 `pi.agent` 选择启用项。resolveAgent 再根据工具的 callers、deferred 与 modelTools 配置形成三个供不同调用方使用的集合：
 
 | 集合 | 消费者 | 用途 |
 |---|---|---|
@@ -106,16 +106,33 @@ Registry 装入扩展定义，Conversation 的 `pi.agent` 选择启用项。reso
 
 ## 第二步：让一次嵌套调用成为独立工作
 
-假设应用注册了 replay=safe 的 `collect_sources` 工具，准备批量读取两个文件。下面是教学调用方式，省略定义与错误分支：
+模型先调用外层工具 collect_sources，这个工具的 execute 再读取实现文件和测试文件。两个 read 按 await 顺序执行；父子关系来自它们发生在 collect_sources 的执行内部，并通过该工具收到的 api 发起：
 
 ```ts
-const implementation = await api.executeTool("read", {
-  path: "src/export.ts",
-}, context, { key: "implementation" });
-const tests = await api.executeTool("read", {
-  path: "test/export.test.ts",
-}, context, { key: "tests" });
+const collectSources = defineTool({
+  name: "collect_sources",
+  description: "读取导出实现与测试文件",
+  parameters: Type.Object({}),
+  replay: "safe",
+  execute: async (_args, api, context) => {
+    const implementation = await api.executeTool("read", {
+      path: "src/export.ts",
+    }, context, { key: "implementation" });
+    const tests = await api.executeTool("read", {
+      path: "test/export.test.ts",
+    }, context, { key: "tests" });
+    return {
+      output: [{ type: "text", text: JSON.stringify({
+        implementation: implementation.structuredOutput,
+        tests: tests.structuredOutput,
+      }) }],
+      isError: implementation.isError || tests.isError,
+    };
+  },
+});
 ```
+
+模型历史里有一次 collect_sources 调用；它的 ToolTask 是父工作，内部两个 read 各有自己的子 ToolTask。父工具等第一个 read 返回后才发起第二个，最后把汇总结果交回模型。若模型直接先后调用两次 read，则对应两个模型调用层的工具，父工作也随之不同。
 
 executeTool 创建自己的 `pi.tool` 子任务，owner 指向 collect_sources 的 Task，并在调用者的 task scope 下建立 `NestedCallDoc(key)`。同一事务还把子调用加入 `pi.live.nestedTools`，界面因此能看到局部层次。[嵌套调用接纳](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L725)。
 
@@ -140,9 +157,19 @@ executeTool 创建自己的 `pi.tool` 子任务，owner 指向 collect_sources �
 
 ## 第四步：用交付日志重建 codemode 脚本
 
-codemode 是安装到 Registry 的扩展，模型提交 JavaScript，QuickJS 沙箱运行它。脚本可以通过 `tools.*` 组合已允许的工具，并使用 searchTools、模型辅助接口及 store/load。宿主需要提供沙箱和执行环境；安装了 Durable 库并不会自动启用这些能力。[扩展构造](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/codemode/codemode.ts#L231)。
+这里的 **codemode 是一个扩展及其同名工具**。宿主通过 createCodemodeExtension 安装它，并提供 QuickJS 沙箱。模型选择 codemode 后，在 code 参数里提交 JavaScript；该工具启动沙箱运行脚本，脚本通过 tools.* 调用会话允许的工具。[扩展与工具定义](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/codemode/codemode.ts#L231)。
 
-脚本的 JS 栈在进程内，重启后不能直接取回。实现先保存启动资料，包括源码相关的启动数据、时钟、种子、工具清单和沙箱指纹，再对每次交给 VM 的结果记日志。下一次运行从相同启动资料开始，将已有结果按原交付顺序送回 VM；嵌套工具按 `c<VM call id>` 重接已有任务，追上日志后才接收新的结果。[重放契约及执行入口](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/codemode/codemode.ts#L1)。
+例如模型把下面的 JavaScript 作为 codemode 的 code 内容提交，沙箱会并行发起两个嵌套 read：
+
+```js
+const [implementation, tests] = await Promise.all([
+  tools.read({ path: "src/export.ts" }),
+  tools.read({ path: "test/export.test.ts" }),
+]);
+console.log({ implementation, tests });
+```
+
+假设两个 read 已启动，测试文件先返回，脚本还在等实现文件，这时进程退出。磁盘上可以保留工具 Task 和测试结果，原 QuickJS 实例中的变量、Promise 与执行位置则随进程释放。恢复时需要让新的沙箱重新走到原来的等待点：先读取保存的启动数据，以相同源码、时钟、种子、工具清单和沙箱指纹启动脚本，再按日志顺序交回已有结果。嵌套 read 用 `c<VM call id>` 找回对应 Task；追上日志以后，脚本继续接收新结果。[启动资料与重放流程](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/codemode/codemode.ts#L1)。
 
 | 保存资料 | 解决的问题 |
 |---|---|
@@ -151,9 +178,9 @@ codemode 是安装到 Registry 的扩展，模型提交 JavaScript，QuickJS 沙
 | NestedCallDoc，父工具 task scope | 各个工具调用对应谁、已有结果是什么 |
 | CodemodeStoreDoc，conversation scope | 脚本通过 store 保存的资料；按 fork 点复制 |
 
-例如脚本并行读两个文件，先收到测试文件，再收到实现文件。恢复重放保留这个交付顺序，即使新进程更早读到了另一份已存结果，也不能任意交换它们。调用计数与参数检查用于发现偏离；版本、沙箱指纹、期限或执行轨迹不相容时，以错误结果停止当前脚本，而非静默执行新路径。
+例如脚本并行读两个文件，先收到测试文件，再收到实现文件。恢复重放保留这个交付顺序，即使新进程更早读到了另一份已存结果，也不能任意交换它们。调用计数与参数检查用于发现偏离；版本、沙箱指纹、期限或执行轨迹不相容时，以错误结果停止当前脚本。
 
-它提供的是有条件的脚本重建和工具结果复用。工具的外部副作用仍受自身 replay 契约约束；任务自己的普通 await、持久 sleeping 和 VM 日志重放是三个层次。批量程序还增加日志提交成本，不能仅凭减少模型轮次推定总体更快。
+脚本重建复用已保存的调用结果；中断时仍缺结果的工具按自身 replay 策略处理。codemode 每次交付结果还要保存日志与调用计数，因此一次脚本的成本包括模型请求、工具执行和这些日志提交。
 
 ## 把组合方式放回模型执行模式
 

@@ -33,6 +33,23 @@ verified_scope: "比较历史、工作、效果三个层次及代表提交点；
 
 各对象不必声明相同枚举。Pi Durable 的 pending/running/waiting/sleeping 是调度状态，prepare/request/tools 是 generation 的私有阶段；DeepSeek 的 idle/running/maintenance 表示进程是否有活跃工作。Codex 和 Hermes 可以从控制函数解释主线，不需要为了表格齐整虚构一份统一状态机。[Pi Durable 分层状态](../agents/pi-durable/architecture.md)、[DeepSeek 驱动状态](../agents/deepseek/architecture.md)。
 
+### 先按关联方式认识存储模型 {#storage-models}
+
+状态层次确定后，还要知道底层保存哪些记录、靠什么关联。SQLite 和 JSONL 描述物理形式，无法独自说明这些问题：同一个 JSONL 可以保存历史树，也可以保存带投影操作的事件流；同一个 SQLite 可以同时保存关系索引和 JSON 工作记录。各分册使用同一 CSV 修复任务给出关系图及记录样例，再按自己的读取规则推导消费结果。
+
+| 对象与关系样例 | 需要推导的结果 |
+|---|---|
+| [Pi：header、异构 Entry 与 parent 树](../agents/pi/context.md#storage-model) | 当前 leaf 选哪些记录；摘要与编辑怎样改变消息贡献 |
+| [Durable：Conversation、Submission、Task、Entry、Document 及修订](../agents/pi-durable/documents.md#storage-model) | 从等待任务找到工具结果；同批提交怎样服务调度、模型和界面 |
+| [DeerFlow：checkpoint、run 与 event](../agents/deerflow/runtime.md#storage-model) | thread/run/seq 分别定位图状态、工作状态和补读事件 |
+| [Claude 冻结源码：transcript 与压缩边界](../agents/claude/context.md#storage-model) | 消息父链、工具配对和 logicalParentUuid 为何是不同关联 |
+| [Codex：rollout 类型与活动 history](../agents/codex/context-capabilities.md#storage-model) | 压缩记录怎样替换活动历史；为何不能发送全部日志行 |
+| [Hermes：sessions/messages 与归档标志](../agents/hermes/context.md#storage-model) | 相同数据库怎样读出模型历史和展示历史 |
+| [LangGraph：checkpoint、blobs 与 writes](../frameworks/langgraph/architecture.md#storage-example) | 按通道版本找值，按任务身份采用未合并结果；LangChain 的图状态由此执行 |
+| [DeepSeek：事件身份、来源与 surfaceOp](../agents/deepseek/context.md#storage-model) | 后追加的摘要事件如何替换旧区间，原审计日志为何仍存在 |
+
+这些是不同形状的数据模型，不能压成同一份 messages 表。历史 Lane 的 Session/Lane/Operation 则按[冻结运行模型](../history/pi-lane/runtime.md)阅读，不把它的状态结构代入当前 Durable。
+
 ## 第二步：确定需要重建什么
 
 一次修复结束后，下一次提问“刚才修改了哪里”，只要有历史和请求重建就可以接着交流。如果程序在工具过程中停止，问题则变成“同一工作下一步从哪里推进”。这时除了对话内容，还需要描述当前工作和执行阶段的资料。
@@ -91,7 +108,7 @@ while loop.tick():
     # 完整实现随后只执行没有 writes 的任务，再合并超步输出。
 ```
 
-已有输出先被采用，再执行仍缺结果的任务。它说明“恢复”需要执行器理解资料，而不只是读回一份字典。节点内的外部写操作另有幂等条件；缓存写入也不能证明未保存的效果没发生。[查看恢复资料参与超步的入口](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3510)。
+恢复时先采用已保存输出，再执行仍缺结果的任务。若节点内的外部写操作已发生、结果尚未保存，节点重跑仍需依靠幂等键或结果查询确认该效果。[查看恢复资料参与超步的入口](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3510)。
 
 下表据此比较历史、工作与效果三种边界。
 
@@ -127,4 +144,4 @@ Durable 的 waiting 保存依赖 Task，sleeping 保存 until 与下一阶段 ch
 
 需要延续同一工作状态时，Pi Durable 的 Task 和 LangGraph 的节点/超步恢复更直接；需要保留中断事实并启动后续工作时，DeepSeek 的 repair 明确区分未开始与未知结果。这是语义差异，不是可靠性排名。三者都要额外处理外部副作用与后端耐久性。
 
-上下文成本比较先统一度量：本地历史、发送消息、provider 有效上下文、后台摘要和长期 memory 是不同对象。Claude 的 cached microcompact 在历史材料中不改本地消息；Pi 用历史树投影；DeepSeek 用 surface；Codex 有 ContextManager；DeerFlow/Hermes 的压缩提交机制见[Prompt 与压缩比较](context-compaction.md)。这些路径的覆盖范围与提交规则不同，不能折成一个“压缩率”，也不能按物理日志时间推定逻辑覆盖。
+上下文成本比较先统一度量：本地历史、发送消息、provider 有效上下文、后台摘要和长期 memory 是不同对象。Claude 的 cached microcompact 在历史材料中不改本地消息；Pi 用历史树投影；DeepSeek 用 surface；Codex 有 ContextManager；DeerFlow/Hermes 的压缩提交机制见[Prompt 与压缩比较](context-compaction.md)。这些路径的覆盖范围与提交规则不同，不能合并成一个“压缩率”，也不能按物理日志时间推定逻辑覆盖。

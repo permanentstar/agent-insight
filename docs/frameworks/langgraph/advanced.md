@@ -31,7 +31,7 @@ StateGraph 的 state 是受 schema 与通道规则约束的共享数据；它不
 
 | 通道/操作 | 单步写入规则 | 恢复要求 |
 |---|---|---|
-| LastValue | 零值不变，一值替换；多值抛 InvalidUpdateError | 不能靠线程完成时间选择最后一方 |
+| LastValue | 没有写入则不变，一条写入则替换；多条写入抛 InvalidUpdateError | 不能靠线程完成时间选择最后一方 |
 | BinaryOperatorAggregate | 把写入经二元 reducer 合并 | reducer 决定顺序/去重；list add 不自动按消息 ID 更新 |
 | add_messages | 按消息 ID 更新、追加及处理 RemoveMessage | 保留 ID，不能用列表尾位置代替逻辑身份 |
 | Overwrite | 绕过 reducer 写包装值；同一步多个 Overwrite 拒绝 | 与普通写混合的语义取决于通道实现，不能泛称“最后覆盖” |
@@ -39,7 +39,7 @@ StateGraph 的 state 是受 schema 与通道规则约束的共享数据；它不
 
 [LastValue](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/channels/last_value.py#L56)、[聚合与 Overwrite](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/channels/binop.py#L123)、[消息 reducer](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/graph/message.py)、[DeltaChannel](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/channels/delta.py#L25)。
 
-Delta 的 reducer 必须确定且批次合并一致：分批应用和把两批连起来应用要产生同一值。snapshot 由更新计数或总超步计数触发；不能只按“每几步存一次”理解。DeltaChannel.checkpoint 返回 MISSING，实际 snapshot 在 create_checkpoint 时生成，其余恢复依赖 saver 的 get_delta_channel_history。缩小 checkpoint blob 不表示可丢弃祖先 writes。
+Delta 的 reducer 必须具有确定性，且批次合并结果一致：分批应用和把两批连起来应用要产生同一值。snapshot 由更新计数或总超步计数触发；不能只按“每几步存一次”理解。DeltaChannel.checkpoint 返回 MISSING，实际 snapshot 在 create_checkpoint 时生成，其余恢复依赖 saver 的 get_delta_channel_history。缩小 checkpoint blob 不表示可丢弃祖先 writes。
 
 BinaryOperatorAggregate 的一个 Overwrite 会替换本步累积值，并按当前实现跳过本步其他普通写；DeltaChannel 找到 Overwrite 后直接采用其包装值。应用做整体压缩时，必须协调与并行 messages 写入的关系；这个字段控制不是跨进程互斥锁。
 

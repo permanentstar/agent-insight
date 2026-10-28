@@ -42,7 +42,7 @@ Task 的 checkpoint 是任务代码保存的恢复资料；status 是调度器�
 | 事务内核 | TaskRuntime.commit → Session.commit → Storage.commit | Entry、Task、Document 等同批变化 | 不包含任意外部工具效果 |
 | 观察 | 已采用的记录／Document → 订阅与复制视图 | 向产品展示已提交进度 | 不接管模型或工具调度 |
 
-应用门面与 session 的装配见[Harness](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/harness.ts)。这里的“一个 Session”是一条状态修改线；Conversation 可以有多个，Task 可以形成所有权树。要理解具体生成工作，接下来分别看 Task 调度状态和任务自身阶段。
+应用门面与 session 的装配见[Harness](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/harness.ts)。这里的“一个 Session”按顺序处理状态修改；Conversation 可以有多个，Task 可以形成所有权树。要理解具体生成工作，接下来分别看 Task 调度状态和任务自身阶段。
 
 ### 从应用最外层进入
 
@@ -100,7 +100,7 @@ status 为 terminal、outcome 为 completed 是不同层的字段：一个表示
 
 模型返回读取代码的工具调用时，需要保存 assistant Entry、创建 tool child Task、让 generation 进入 waiting，并更新 `pi.live` 的工具视图。它们表达同一个推进动作。如果只保存 assistant，调度器不知道该执行谁；如果只创建工具 Task，模型历史又缺少它的来源。
 
-Pi Durable 在一次事务中组织这些修改。TaskRuntime.commit 进入 Session 的 mutation line，读取当前事实并准备写入；Storage 接收一批 writes，成功后 Session 采用新的状态，再发布变化。概念性顺序如下：
+Pi Durable 在一次事务中组织这些修改。TaskRuntime.commit 进入 Session 的串行修改队列（mutation line），读取当前事实并准备写入；Storage 接收一批 writes，成功后 Session 采用新的状态，再发布变化。概念性顺序如下：
 
 ```ts
 await runtime.commit(async tx => {
@@ -112,7 +112,7 @@ await runtime.commit(async tx => {
 })
 ```
 
-这段是教学伪代码。实际操作使用 typed Entry/Task/Document；它想说明的是**同一工作变化的历史、调度与视图在一个提交边界对齐**。[工具轮次创建](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L624)、[存储、采用与发布顺序](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L714)。Storage 提交后的耐久性仍取决于所选后端。
+实际操作使用 typed Entry/Task/Document，让**同一工作变化的历史、调度与视图在一个提交边界对齐**。[工具轮次创建](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L624)、[存储、采用与发布顺序](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L714)。Storage 提交后的耐久性仍取决于所选后端。
 
 ### 回调怎样接到任务状态，再进入 Storage
 
@@ -170,7 +170,7 @@ return result;
 
 第三步提交成功后，scheduler 观察 Task 变化。工具 child 已进入 terminal 时，等待它的 generation 可以重新被认领，读取结果 Entry，决定交给 successor 继续还是收口输入。任务结果已经决定但仍有 owned work 时，Task 先进入 completing，等待下属结束后再变为 terminal。父子工作关系因此参与完成判断。[完成与 owned work](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1938)。
 
-下一章按一份 CSV 输入展开这条交接。先把其中的工具阶段放大，说明第三步的持久记录如何围住一次实际调用。
+下一章按一份 CSV 输入展开这条交接。先把其中的工具阶段放大，说明第三步的持久记录如何在实际调用前后保存。
 
 ## 工具阶段：先保存调用意图，再执行并提交结果
 
@@ -178,7 +178,7 @@ return result;
 
 工具先确定这次允许执行的最终动作，并把“要做什么、中断后能否重跑”留下，供恢复时判断；保存成功后才产生外部效果，结束时再把观察交给等待方。实现对照：从 assistant Entry 读取调用，查当前定义、准备参数并执行 beforeTool；保存 execute checkpoint 中的 arguments/replay，再在事务外调用 tool.execute；最后同批保存结果 Entry、视图和 outcome。
 
-正常执行的 call handler 会跨过 intent 后直接执行工具并收口；`execute` 阶段 handler 主要用于恢复。这里的 intent 保存“已经决定去做什么”，结果保存“已观察到什么”。一旦提交 intent 后进程消失，外部效果是否发生可能未知，所以恢复只在历史 replay 和当前工具 replay 都为 safe 时重跑。[工具阶段与恢复](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L74)。
+正常执行的 call handler 会在保存 intent 后直接执行工具并收口；`execute` 阶段 handler 主要用于恢复。这里的 intent 保存“已经决定去做什么”，结果保存“已观察到什么”。一旦提交 intent 后进程消失，外部效果是否发生可能未知，所以恢复只在历史 replay 和当前工具 replay 都为 safe 时重跑。[工具阶段与恢复](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L74)。
 
 | 中断位置 | 读者应怎样理解 |
 |---|---|
@@ -208,7 +208,7 @@ run 调用工具并保存结果。若进程在这两步之间消失，execute �
 
 ## 主线补充：重开后按 checkpoint 重新进入
 
-重开后，旧进程的执行资格已经失效；应保留最近恢复资料，重新认领，再进入对应阶段，而不是沿用旧占用。scheduler 打开时加载活跃任务，将上次留下的 running 改回 pending 并保留 checkpoint。实际派发另由 resume 开启，submit/wait 等入口也会请求推进；open 只完成加载和准备。[恢复与启用](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L370)、[Submission 推进入口](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/submissions.ts#L76)。
+重开后加载最近的恢复资料，重新提交认领，再进入对应阶段。scheduler 打开时加载活跃任务，将上次留下的 running 改回 pending 并保留 checkpoint。实际派发另由 resume 开启，submit/wait 等入口也会请求推进；open 只完成加载和准备。[恢复与启用](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L370)、[Submission 推进入口](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/submissions.ts#L76)。
 
 恢复需要当前 Registry 中仍有适用定义。函数不随 Task 存储，因此定义与旧状态的兼容关系也是运行条件；任务定义需要能解释保存的输入与 checkpoint。重开时还会统计被非正常进程终止截断的任务；连续没有状态进展达到 restartLimit 后，任务会暂时阻塞，等待显式重试。这些条件与 sleeping、宿主唤醒一起在[宿主与恢复](hosting.md)展开。
 

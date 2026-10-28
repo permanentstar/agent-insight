@@ -25,7 +25,7 @@ Pi Durable 的用户工作经过 Submission 接纳，在 Conversation 中由一�
 | ToolTask | call | 确认工具和最终参数，保存意图，执行并保存单次调用结果 |
 | CompactionTask | select | 选择要概括的历史范围，按需生成并放置摘要 |
 
-图中压缩是可选分支。阻塞压缩归当前生成所有，它完成后同一生成重新 prepare；自动后台与手工压缩归 Conversation 所有，摘要通过 write submission 接纳，不接管 run。自动者为后台任务，手工者为非后台任务。[三类内置任务](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/registry.ts#L10)、[压缩初始阶段](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/compaction.ts#L112)、[压缩的创建与归属](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/compaction.ts#L246)。
+图中压缩是可选分支。阻塞压缩归当前生成所有，它完成后同一生成重新 prepare；自动后台与手工压缩归 Conversation 所有，摘要通过 write submission 接纳，不接管 run。自动压缩是后台任务，手工压缩是非后台任务。[三类内置任务](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/registry.ts#L10)、[压缩初始阶段](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/compaction.ts#L112)、[压缩的创建与归属](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/compaction.ts#L246)。
 
 本章以同一 Submission 为线索走五步：接纳输入、准备请求、创建并等待工具、移交下一生成、收口输入。G1 到 G4 是教学轨迹里的生成任务 ID；一个 generation 结束时，用户输入仍可能由下一 generation 继续负责。
 
@@ -64,7 +64,7 @@ Pi Durable 的用户工作经过 Submission 接纳，在 Conversation 中由一�
 
 ### checkpoint 保存于哪个操作前后 {#checkpoint-timing}
 
-这里的 checkpoint 是“下次从哪里继续、需要什么资料”。按大图的正常生成与工具路径，有五个创建或更新它的提交位置；不是每次 commit 都产生新的恢复位置。6B 同批写两份不同任务的 checkpoint，12 创建下一轮生成后还会重复前面的准备过程，因此五个位置也不等于一次用户工作总共只写五次。
+checkpoint 保存下次执行的阶段和所需资料。一次 runtime.commit 可以同时保存消息、Task 和 Document；回调的返回值决定是否更新当前 Task。正常生成与工具路径有下列五个创建或推进 checkpoint 的位置。6B 同批保存两件任务的 checkpoint，12 创建新生成后会再次经过准备过程。
 
 | 提交位置 | 先说明用途 | 在哪个操作之前／之后 | 保存的 checkpoint |
 |---|---|---|---|
@@ -75,6 +75,16 @@ Pi Durable 的用户工作经过 Submission 接纳，在 Conversation 中由一�
 | 12 交给下一轮判断 | 新生成接手同一输入，带着工具观察重新准备 | 工具结果已保存、G1 处理本轮观察之后；新 G2 执行 prepare 之前 | 新 G2 的 prepare；G1 保存结果并结束 |
 
 新任务的初始 checkpoint 在创建事务中保存：tx.createTask 调用任务定义的 initial，并写入 pending 状态。上表 1 与 12 因而是同一种初始 prepare，属于不同生成任务。[创建任务执行点](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/transaction.ts#L425)、[生成初始位置](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L125)、[工具初始位置](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L126)。其余三处分别见[请求前准备](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L190)、[响应后的工具交接](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L648)、[工具实际调用前](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L166)。
+
+一次 commit 的实际效果可以按回调返回值核对：
+
+| 回调怎样返回 | 当前 Task 怎样保存 | 同批还可以保存什么 |
+|---|---|---|
+| 返回 undefined | 保持当前 Task 状态及 checkpoint | 已修改的 LiveDoc、用量或其他记录仍正常提交，例如生成进度 |
+| 返回 running／waiting／sleeping 及 checkpoint | 保存指定状态与恢复资料 | 请求依据、等待关系、工具任务和相关文档 |
+| 返回 terminal 及 outcome | 保存最终结果，当前 Task 不再携带 checkpoint | 最终回答、工具结果、Submission 与文档收口 |
+
+因此，进度提交成功时也确实落盘，只是恢复仍从原 request／execute 阶段进入。实际分支是先执行 change(tx)，有返回状态才调用 #commitState；事务中已登记的其他变化随后统一交给 Session 持久化。[回调与状态更新](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L2133)。
 
 认领只是在确认“这一次由谁执行”：2、7、11 随完整 Task 保存原 checkpoint，并不新建或推进它（pending/waiting → running）。4、5、9 则只更新观察进度。6A 回答和 10 工具完成保存的是 outcome，原任务不再携带 checkpoint；12 也只有新 G2 需要初始 checkpoint。[认领时沿用](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/scheduler.ts#L1540)、[状态结构](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/types.ts#L598)。
 
@@ -89,7 +99,7 @@ Pi Durable 的用户工作经过 Submission 接纳，在 Conversation 中由一�
 
 这些分支分别见[重试等待与到期继续](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L238)、[失败后的 retry](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L568)、[延后查询](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L517)、[压缩前等待](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L183)、[溢出后的压缩等待](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L548)、[串行工具派发](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L269)。压缩任务自身还有选择范围、请求摘要和重试的恢复位置，不计入上面的正常主线五处，详见[摘要生成与采用](documents.md#第四步-生成摘要-并在允许边界放置)。
 
-checkpoint 的 phase 常用于下一次重新进入的阶段，但不能据此推断当前函数已经返回。尤其工具 call handler 在保存 execute 意图后，会在同一个 handler 内直接调用工具；execute handler 主要处理意图保存之后的恢复。[意图与直接执行的相邻代码](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L173)。
+checkpoint.phase 指定重新进入的位置。工具 call handler 保存 execute 意图后，继续在同一个 handler 内调用工具；若此后中断，重开时才进入 execute handler 检查恢复条件。[意图与直接执行的相邻代码](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/tool.ts#L173)。
 
 ## 第一步：接纳输入，建立持久身份
 
@@ -130,7 +140,7 @@ checkpoint 的 phase 常用于下一次重新进入的阶段，但不能据此�
 
 重试与延后查询都要记住“何时能继续”，让当前执行返回，等待期间不占运行中的执行实例（invocation）。调度器到期后再按保存的阶段认领：重试重新准备请求，延后查询取回同一份服务端工作（status=sleeping，phase=retry/poll）。宿主若提前唤醒且时点未到，则继续等待；工具阶段则按依赖结果是否满足来恢复（status=waiting）。[重试与轮询阶段](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L238)。
 
-例如服务端已接受工作、但结果还未准备好，本地需要记住取回凭据与查询时点，而不是立即重发请求。下面节选这次等待的提交：查询时间按 Harness 时钟计算（pollAt），其余资料供后续查询重建原请求范围。保存后当前执行即可返回。
+例如服务端已接受工作、但结果还未准备好，本地保存取回凭据与查询时点，后续查询同一份服务端工作。下面节选这次等待的提交：查询时间按 Harness 时钟计算（pollAt），其余资料供后续查询重建原请求范围。保存后当前执行即可返回。
 
 ```ts
 const checkpoint = {
@@ -172,7 +182,7 @@ classify 在下一步把响应分类为回答、工具轮次或相应旁路。[r
 | 普通最终回答 | 让调用者取得有持久记录的回答，同时确认本轮输入已完成并释放运行归属；有边界后续工作时先按相应政策继续（appendAssistant 保存消息与用量，endRun 保存 done/answer 并清理 live） | terminal/completed，结果引用回答 Entry |
 | 含工具调用 | 给模型动作安排执行者，留下调用来源与用量，让本轮生成等新观察；原输入仍由它负责（创建 tool child，生成视图改为工具 slots） | waiting，checkpoint.phase=tools，保存 assistant、tools、pending 和等待条件 |
 
-next 由 [runtime.commit 包装函数](architecture.md#回调怎样接到任务状态-再进入-storage)交给 #commitState，再进入 Session 的 writes。因而请求结束的状态变化确实与消息一起持久化；普通回答可以直接保存终态，无需再造一个 request 之后的 checkpoint。若选用 JSONL，assistant 与 terminal Task 在 main.jsonl 中，waiting Task 在自己的 task 文件中，文档变化在各自 doc 文件中，并由同一 main commit marker 确认；这里不存在专门的 `model.jsonl`。[响应分类](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L505)、[回答提交](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L597)、[工具轮次提交](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L648)。
+next 由 [runtime.commit 包装函数](architecture.md#回调怎样接到任务状态-再进入-storage)交给 #commitState，再进入 Session 的 writes。因而请求结束的状态变化与消息一起持久化；普通回答可以直接保存终态，无需再造一个 request 之后的 checkpoint。若选用 JSONL，assistant 与 terminal Task 在 main.jsonl 中，waiting Task 在自己的 task 文件中，文档变化在各自 doc 文件中，并由同一 main commit marker 确认；这里不存在专门的 `model.jsonl`。[响应分类](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L505)、[回答提交](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L597)、[工具轮次提交](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L648)。
 
 ### 流中保存的是累计进度，怎样采样 {#partial-sampling}
 
@@ -210,7 +220,7 @@ next 由 [runtime.commit 包装函数](architecture.md#回调怎样接到任务�
 
 **G2 作出修改。** 工具带回了新事实，需要让模型据此选择下一步，同时保持对原输入的处理责任。因此程序结束旧生成、创建新生成并移交运行归属（G1 terminal/completed；创建 G2，pi.live.run.taskId 换到 G2）。G2 的请求包含读工具结果，模型据此选择修改方式；也可能继续查文件，再形成一个工具轮次。
 
-创建并移交下一代生成的决定位于 GenerationTask 的 tools 收尾代码；TaskScheduler 随后认领新任务并按 checkpoint 调用处理器。这里对应表中 12：旧 G1 的终态、新 G2 的 pending/prepare 以及 LiveDoc 的运行归属在同一批生效。JSONL 因而同时写 main 中的旧任务终态、新任务的 task 文件和 LiveDoc 文件；G1 的附属文件可回收。输入 Submission 仍为 placed，G2 必须先被认领，再准备含新工具结果的请求。[创建并移交下一生成](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L732)。
+创建并移交下一轮生成的决定位于 GenerationTask 的 tools 收尾代码；TaskScheduler 随后认领新任务并按 checkpoint 调用处理器。这里对应表中 12：旧 G1 的终态、新 G2 的 pending/prepare 以及 LiveDoc 的运行归属在同一批生效。JSONL 因而同时写 main 中的旧任务终态、新任务的 task 文件和 LiveDoc 文件；G1 的附属文件可回收。输入 Submission 仍为 placed，G2 必须先被认领，再准备含新工具结果的请求。[创建并移交下一生成](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L732)。
 
 **G3 验证并可能调整。** 新生成读到修改结果，选择运行验证。工具给出失败时，下一生成可以据失败内容继续修改。它遵循同一个反馈循环；失败观察进入下一请求，由模型决定修复动作。
 
@@ -218,7 +228,7 @@ next 由 [runtime.commit 包装函数](architecture.md#回调怎样接到任务�
 
 **G4 收口输入。** 模型产生正常最终回答。answer 路径保存 assistant Entry，在最终边界处理队列，并由 endRun 收口 run.inputs 中的 Submission。若存在 onYield 的继续要求，满足相应条件时也可以把同一 run 再交给 successor，此时继续由 successor 负责输入收口。[创建工具轮次](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L624)、[工具后移交](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L677)、[最终回答与继续钩子](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L592)。
 
-表中 6A 在这一刻把用户工作收口：appendAssistant 同批累计 UsageDoc，endRun 保存输入的 done/answer，并清理 live.run、generation 和工具视图；回调返回 G4 的 terminal/completed。普通无额外所属工作时，main.jsonl 保存回答 Entry、Submission 和任务终态，相关 doc 文件保存本批文档变化。观察者随后看到空闲，Submission.wait 才能消费已提交结果；有排队输入或继续要求时按前述边界建立下一工作。[模型用量与消息](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L743)、[最终回答事务](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L597)。
+表中 6A 在这一刻把用户工作收口：appendAssistant 同批累计 UsageDoc，endRun 保存输入的 done/answer，并清理 live.run、generation 和工具视图；回调返回 G4 的 terminal/completed。没有额外所属工作的普通路径中，main.jsonl 保存回答 Entry、Submission 和任务终态，相关 doc 文件保存本批文档变化。观察者随后看到空闲，Submission.wait 才能消费已提交结果；有排队输入或继续要求时按前述边界建立下一工作。[模型用量与消息](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L743)、[最终回答事务](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L597)。
 
 ## 用工具等待时刻核对前面的五步
 
@@ -265,7 +275,7 @@ Pi Durable 默认提供的是反馈循环。应用可用 Registry、任务定义
 
 ## 模型失败后，排队输入怎样继续
 
-假设 S1 正在修复 CSV，用户又排入 S2“完成后解释测试覆盖”，这时模型请求因 model_error 结束。S1 的失败和 S2 的处理是两份决定：`settings.afterFailedRun` 默认为 keep，保留尚未消费的输入；continue 在失败收口后尝试按队列边界启动下一运行；withdraw 将排队输入收为 unanswered，reason 为 run_failed。缺少模型的 no_model 也走这项政策。[失败与队列交接](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L411)。
+假设 S1 正在修复 CSV，用户又排入 S2“完成后解释测试覆盖”，这时模型请求因 model_error 结束。S1 的失败和 S2 的处理是两个决定：`settings.afterFailedRun` 默认为 keep，保留尚未消费的输入；continue 在失败收口后尝试按队列边界启动下一运行；withdraw 将排队输入收为 unanswered，reason 为 run_failed。缺少模型的 no_model 也走这项政策。[失败与队列交接](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/harness/generation.ts#L411)。
 
 因此，产品不能只观察一个 Task 失败就清空全部输入，也不能把留在队列中的 S2 当成已回答。应读取各 Submission 的终态；当前运行、队列和后续接纳按明确政策交接。
 

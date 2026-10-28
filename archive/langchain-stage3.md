@@ -6,7 +6,7 @@
 </callout>
 
 <callout emoji="💡">
-**代码定位说明：**源码引用格式 `[仓库标签] 仓内完整相对路径:行号`，三仓根（本地平级 clone）：**[langchain]**=`/Users/bytedance/WorkSpace/Project/Community/langchain`；**[deerflow]**=`/Users/bytedance/WorkSpace/Project/Community/deer-flow`。
+**代码定位说明：**源码引用格式 `[仓库标签] 仓内完整相对路径:行号`，三仓根（`<source-root>` 代表自行选择的源码目录）：**[langchain]**=`<source-root>/langchain`；**[deerflow]**=`<source-root>/deer-flow`。
 </callout>
 
 # 零、RAG 到底解决什么，和 Stage 1/2 什么关系

@@ -7,7 +7,7 @@ baselines: ["pi-20261009"]
 sources: ["pi-session"]
 depends_on: ["comparison-reference", "pi-architecture"]
 evidence: ["source"]
-verified_scope: "路径、投影、压缩切点、编辑与活动消息采用静态核验；案例是教学演算，未运行真实模型或故障实验。"
+verified_scope: "文件头与异构 Entry、路径、投影、压缩切点、编辑与活动消息采用静态核验；案例是教学演算，未运行真实模型或故障实验。"
 ---
 
 # AgentSession：会话记录、上下文压缩与请求构建
@@ -39,7 +39,25 @@ verified_scope: "路径、投影、压缩切点、编辑与活动消息采用静
 | 当前分支 | 本次工作基于哪段过去？ | 当前 leaf 的祖先路径 |
 | 当前模型上下文 | 本次请求采用哪些内容？ | 压缩与编辑后的 SessionProjection.messages |
 
-下面使用教学 ID A到G，省略时间等字段。r1 和 e1 是工具调用的独立 ID，分别将动作与结果关联起来。
+下面使用教学 ID A 到 G，省略时间等字段。r1 和 e1 是工具调用的独立 ID，分别将动作与结果关联起来。
+
+### 文件里的异构记录怎样组成一棵树 {#storage-model}
+
+![Pi 会话文件的 session header 保存会话身份，SessionEntry 按 id 与 parentId 组成树；message 内的工具调用与结果另按调用 ID 配对，compaction 和 context_edit 引用既有 Entry；当前 leaf 的路径经投影变成模型消息](../../assets/session-storage-shapes.svg)
+
+持久文件采用 JSONL，每行一个 JSON 对象。第一类是 `type=session` 的 SessionHeader，保存会话 `id/version/timestamp/cwd`，可选 `parentSession` 表示另一份会话文件的来历；其余是共享 `id/parentId/timestamp` 的 SessionEntry。这里的 `parentId` 才构成文件内的历史树，header 不充当树中的父节点。
+
+| `type` 与负载 | 关联字段 | 读回后怎样采用 |
+|---|---|---|
+| `message`：`message.role/content` 等 | Entry 的 `parentId`；消息内的工具调用 ID | 选择当前路径后形成消息贡献；工具结果与动作按调用 ID 配对 |
+| `compaction`：`summary` | `firstKeptEntryId` 指向保留段起点 | 用摘要与保留段构造较短模型视图 |
+| `context_edit`：`replacement` | `targetId` 指向较早 Entry | 改变目标对模型的内容贡献，原记录保留 |
+| `model_change`、`thinking_level_change` | 各自仍有 Entry 身份与父关系 | 更新配置；不会各自变成一条对话消息 |
+| `custom`、`custom_message` | 扩展 `customType` | 前者保存扩展资料；后者可贡献模型内容，两者不可混用 |
+
+这些是类型联合中的代表分支，并非完整字段清单。SessionManager 写入和加载这些记录，在内存维护索引与当前 leaf；JSONL 本身没有数据库外键。下面的 A/B/C/D/E/F/G 表是这份文件的字段节选，随后 S、H 等沿用同一数据集。[header、各 Entry 类型与投影结构](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/session-manager.ts#L45)。
+
+### 用 A 到 G 区分三种关联
 
 | Entry | parentId | 内容 | 对任务的意义 |
 |---|---|---|---|

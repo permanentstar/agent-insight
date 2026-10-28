@@ -12,7 +12,7 @@ verified_scope: "冻结提交核验 Drive 分派与 Radius 接入口；进程协
 
 # Lane 历史：状态分派、进程链与恢复边界
 
-旧 Lane 的持久状态由 Session/Lane/Operation 所有，Drive 只拥有本进程的推进权。远程 Client 不能把 JavaScript Harness 对象搬到自己进程；它通过服务命令和复制视图观察 Worker。
+旧 Lane 的持久状态归 Session/Lane/Operation 管理，Drive 只拥有本进程的推进权。远程 Client 不能把 JavaScript Harness 对象搬到自己进程；它通过服务命令和复制视图观察 Worker。
 
 ![Presentation 连接 Coordinator 或 Radius 后进入 Server，attachment 路由到 Worker；Worker 内 Drive 根据持久 Operation 状态推进模型与工具](../../assets/lane-runtime.svg)
 
@@ -48,7 +48,7 @@ starting 的 startRun 读取输入条目、调用 before_run，将注入消息�
 
 ## 第二步：每次分派前重读持久位置
 
-`driveOperation` 先核验 Drive 对应当前 Operation，运行 before_drive，循环 reread 已提交状态，再分派。每次 handler 返回后重新检查，不能拿第一次读出的 operation 一直推进。
+`driveOperation` 先核验 Drive 对应当前 Operation，运行 before_drive，在循环中 reread 已提交状态，再分派。每次 handler 返回后重新检查，不能拿第一次读出的 operation 一直推进。
 
 | Operation state | 实际处理器 | 解释 |
 |---|---|---|

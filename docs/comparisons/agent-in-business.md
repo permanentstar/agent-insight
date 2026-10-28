@@ -82,7 +82,7 @@ async def apply_patch_tool(args, call_context):
 
 这是职责区分，不要求使用三套数据库。应用可以在 durable 的 Document 或图状态中保存业务数据，也可以把外部服务作为事实源；选择后要明确谁有权修改，谁依据它推进。如果消息中说“r1 测试通过”，而业务验证记录只覆盖 r0，验收应按实际记录判断。
 
-durable 提供了一个有解释力的例子：Entry 表达历史贡献，Task 保存工作推进资料，Document 承载结构化状态；同一事务可共同修改这些记录。它让运行与应用数据有机会在一个提交边界对齐。[Session 提交实现](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L714)的主要顺序可以概括为：
+以 durable 为例：Entry 表达历史贡献，Task 保存工作推进资料，Document 承载结构化状态；同一事务可共同修改这些记录。它让运行与应用数据有机会在一个提交边界对齐。[Session 提交实现](https://github.com/earendil-works/pi/blob/2ec55d808d455b1a64a2bf7888198207a096120a/packages/durable/src/session/session.ts#L714)的主要顺序可以概括为：
 
 ```typescript
 // 按源码整理的流程骨架；省略事务构造、失败处理与类型细节。
@@ -109,7 +109,7 @@ if (verification.revision == artifact.revision
     await works.complete("W1", artifact.id, verification.id)
 ```
 
-模型回答作为说明与结果一起提供给用户；它能解释改动与验证，却不承担覆盖事实记录的权力。如果模型正常结束时缺少匹配记录，宿主按产品规则保留未完成状态，并决定补做验证、重新请求 Agent 或交给人工。本例无需把这些旁路全部展开，主线已经说明“运行结束”如何交接到“业务完成”。
+模型回答作为说明与结果一起提供给用户；它能解释改动与验证，但无权覆盖事实记录。如果模型正常结束时缺少匹配记录，宿主按产品规则保留未完成状态，并决定补做验证、重新请求 Agent 或交给人工。本例无需把这些旁路全部展开，主线已经说明“运行结束”如何交接到“业务完成”。
 
 这里的验收也有适用范围。通过规定测试只表示满足这项服务定义的完成条件，不能推导任意输入都正确。业务若要求人工审查，再把审查结果接到验收；无需为了展示架构预先添加没有实际需求的阶段。
 

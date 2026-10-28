@@ -30,7 +30,7 @@ verified_scope: "已静态核验资源加载、注册/激活、prompt 输入 hoo
 
 ## 第一步：加载资料并登记扩展定义
 
-ResourceLoader 先发现启用的资源路径，运行扩展工厂，并保存 skill、模板等内容。DefaultResourceLoader 的 reload 分类采用加载结果，下面省略路径发现、信任筛选和诊断的展开：
+ResourceLoader 先发现启用的资源路径，运行扩展工厂，并保存 skill、模板等内容。DefaultResourceLoader 的 reload 分别采用各类资源的加载结果，下面省略路径发现、信任筛选和诊断的展开：
 
 ```ts
 const extensionsResult = await this.loadFinalExtensionSet(extensionPaths, preTrustExtensions);

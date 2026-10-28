@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="title desc">
+  <title id="title">DeerFlow：同一 thread 的三套存储职责</title>
+  <desc id="desc">共同身份连接读取；三个接口的写入与确认分别发生。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0 0L10 4L0 8Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="560" fill="#ffffff"/>
+  <g font-family="system-ui, sans-serif" fill="#0f172a">
+    <text x="35" y="38" font-size="24" font-weight="700">DeerFlow：同一 thread 的三套存储职责</text>
+    <text x="35" y="68" font-size="16">共同身份连接读取；三个接口的写入与确认分别发生。</text>
+    <path d="M390 150H190V310" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="149.5" y="221" width="91" height="23" fill="#ffffff"/>
+    <text x="195" y="238" font-size="15" text-anchor="middle">多个恢复点</text>
+    <path d="M550 195V310" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="556.0" y="233" width="88" height="23" fill="#ffffff"/>
+    <text x="600" y="250" font-size="15" text-anchor="middle">1 : N run</text>
+    <path d="M710 150H910V310" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="868.0" y="221" width="104" height="23" fill="#ffffff"/>
+    <text x="920" y="238" font-size="15" text-anchor="middle">1 : N event</text>
+    <path d="M705 380H755" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="698.0" y="350" width="64" height="23" fill="#ffffff"/>
+    <text x="730" y="367" font-size="15" text-anchor="middle">run_id</text>
+    <rect x="390" y="105" width="320" height="90" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="405" y="134" font-size="19" font-weight="650">thread_id = csv</text>
+    <text x="405" y="161" font-size="16">一次会话可先后产生 R1、R2</text>
+    <rect x="35" y="310" width="310" height="130" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="339" font-size="19" font-weight="650">checkpointer</text>
+    <text x="50" y="366" font-size="16">thread / namespace / checkpoint</text>
+    <text x="50" y="390" font-size="16">保存图状态与恢复资料</text>
+    <text x="50" y="414" font-size="16">消费者：图执行器</text>
+    <rect x="395" y="310" width="310" height="130" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="410" y="339" font-size="19" font-weight="650">RunStore</text>
+    <text x="410" y="366" font-size="16">run_id / thread_id / status</text>
+    <text x="410" y="390" font-size="16">worker 归属与 lease 等</text>
+    <text x="410" y="414" font-size="16">消费者：RunManager</text>
+    <rect x="755" y="310" width="310" height="130" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="770" y="339" font-size="19" font-weight="650">RunEventStore</text>
+    <text x="770" y="366" font-size="16">thread_id / run_id / seq</text>
+    <text x="770" y="390" font-size="16">category / content / metadata</text>
+    <text x="770" y="414" font-size="16">消费者：展示与事件补读</text>
+    <text x="35" y="505" font-size="16">seq 在 thread 内递增；展示事件存在、run 结束与 checkpoint 保存是不同事实。</text>
+  </g>
+</svg>

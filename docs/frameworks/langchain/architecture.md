@@ -5,7 +5,7 @@ subject: "langchain"
 status: "verified-source"
 baselines: ["langchain-20261009"]
 sources: ["langchain-overview", "langchain-stage1", "langchain-stage2", "langchain-stage3", "langchain-stage5", "langchain-stage6"]
-depends_on: []
+depends_on: ["langgraph-migrated"]
 evidence: ["source", "historical-document"]
 verified_scope: "Runnable 接口、create_agent 图结构与 hook 顺序、模型/工具协议边界已静态核验；教程练习、partner 网络请求和观测后端未执行。"
 ---
@@ -38,12 +38,14 @@ LangChain 是应用组合框架。Runnable 统一调用形态，messages/model/t
 
 create_agent 收集工具、middleware 的额外工具与 schema，形成 ToolNode、model 节点和 hook 节点，添加条件边，注入 checkpointer/store/cache 后 compile。调用 compiled graph 才开始执行；是否跨调用保留状态取决于应用是否配置存储和 thread 寻址。
 
+存储模型也在这里分工：`AgentState.messages` 及 middleware 加入的字段是图状态，由 channels 和 checkpointer 保存及恢复；应用注入的 `store` 承担另外的跨调用资料访问，工具或 middleware 决定其内容；cache 用于复用计算结果。三者不能仅因都能保存 JSON 就合并成一个“会话数据库”。同一 CSV 任务的 messages 如何与通道版本、任务 writes 拼回，请接着读 [LangGraph 存储样例](../langgraph/architecture.md#storage-example)。该样例属于书中独立登记的 LangGraph 基线，不代表每个应用锁定版本的物理 schema。
+
 | 当前位置 | 调用 / 产物 | 控制关系 |
 |---|---|---|
 | 构图 | create_agent → StateGraph → compile | 不触发模型采样 |
 | 输入 | graph.invoke / ainvoke / stream | LangGraph 将输入和恢复状态送给节点 |
 | 模型节点 | model_node / amodel_node → ModelRequest | 从 state.messages 取消息，加当次 model/tools/system 信息 |
-| 模型包裹 | wrap_model_call 链 → _execute_model_* | 可以改请求、重试、短路；进入终端 handler 才调模型 |
+| 模型包裹 | wrap_model_call 链 → _execute_model_* | 可以改请求、重试、短路；进入最终的 handler 才调用模型 |
 | 模型执行 | bind model → invoke / ainvoke | system_message 在此与 messages 组合 |
 | 工具与继续 | ToolNode → 包裹调用 → BaseTool | ToolMessage 回填；有工具则通常回 loop_entry_node |
 | 结束 | 无工具、结构化响应、return_direct 或跳转 | 不把任何成功 node 等同整个 agent 已结束 |
@@ -54,7 +56,7 @@ create_agent 收集工具、middleware 的额外工具与 schema，形成 ToolNo
 
 ![用户消息进入模型节点；AIMessage 的待执行 tool_calls 路由到工具；ToolMessage 按 call ID 回填，模型再决策；没有待续工作时走结束](../../assets/langchain-loop-flow.svg)
 
-用“修复 CSV 导出”说明默认 Agent 图。调用者把用户要求交给 compiled graph，模型节点从 AgentState.messages 读取消息，构造当次 ModelRequest。system_message、工具定义和调用环境也在这一层绑定；运行进入模型终端 handler 后才调用 provider。
+用“修复 CSV 导出”说明默认 Agent 图。调用者把用户要求交给 compiled graph，模型节点从 AgentState.messages 读取消息，构造当次 ModelRequest。system_message、工具定义和调用环境也在这一层绑定；运行进入模型的最终 handler 后才调用 provider。
 
 第一轮可以产生读取文件的 AIMessage。它的自然语言 content 解释动作，tool_calls 则承载程序可处理的调用。例如下面的节选表达一个调用，省略其他消息属性：
 
@@ -87,7 +89,7 @@ ToolMessage(content="exportCsv 直接拼接字段，已有验证覆盖普通字�
 
 ### 从 ModelRequest 到实际模型调用
 
-请求先经过 wrapper，抵达 `_execute_model_sync` 后才进入真实模型。下面节选终端 handler 的主要路径，省略响应命名及结构化结果包装；异步路径采用相同交接并调用 `ainvoke`。
+请求先经过 wrapper，抵达 `_execute_model_sync` 后才进入真实模型。下面节选最终 handler 的主要路径，省略响应命名及结构化结果包装；异步路径采用相同交接并调用 `ainvoke`。
 
 ```python
 model_, effective_response_format = _get_bound_model(request)
@@ -98,7 +100,7 @@ output = model_.invoke(messages)
 handled_output = _handle_model_output(output, effective_response_format)
 ```
 
-`_get_bound_model` 将有效工具和输出约束绑定到模型；`system_message` 在终端调用前才与普通消息组合。输出经 `_handle_model_output` 转成后续状态更新所需的消息与结构化结果，再由 `_build_commands` 交给图执行。这解释了为什么“改当次 request”与“更新 state”需要两个不同入口。[查看模型节点、wrapper 和终端 handler 的交接](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1493)。
+`_get_bound_model` 将有效工具和输出约束绑定到模型；`system_message` 在最终调用前才与普通消息组合。输出经 `_handle_model_output` 转成后续状态更新所需的消息与结构化结果，再由 `_build_commands` 交给图执行。这解释了为什么“改当次 request”与“更新 state”需要两个不同入口。[查看模型节点、wrapper 和最终 handler 的交接](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1493)。
 
 ## 第三步：执行工具并把观察交回模型
 
@@ -199,16 +201,16 @@ U 是用户目标。本例 middleware 的三项职责都由应用定义，不是
 |---|---|---|---|
 | before_agent | 入口图节点 | A → B，仅本次 graph 调用入口 | State 更新或允许的跳转 |
 | before_model | 每次模型节点前的图节点 | A → B | 可变更下个节点读取的 State |
-| wrap_model_call | 模型终端调用包裹 | A 进入 → B 进入 → 模型 → B 返回 → A 返回 | 当次 request / response；并非独立图节点 |
+| wrap_model_call | 包裹最终的模型调用 | A 进入 → B 进入 → 模型 → B 返回 → A 返回 | 当次 request / response；并非独立图节点 |
 | after_model | 模型后的图节点 | B → A | State、跳转，决定进 tools 或结束 |
 | wrap_tool_call | 工具 handler 包裹 | 首项最外层 | 可短路、重试或规范化工具结果 |
 | after_agent | 收尾图节点 | B → A | 在 END 前收口；不是所有工具各跑一次 |
 
-源码通过边直接表达 after 的反序，而不是简单对每个方法调用一遍。hook 的 dict 是状态写入，不是立即修改所有对象；request.override 只改变指定请求。依据：[wrap 合成](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L281)、[前后节点边](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1715)、[after 反序与 compile](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1855)。
+图边决定 after hooks 的反序。hook 返回的 dict 进入状态更新，request.override 则只改变指定请求。依据：[wrap 合成](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L281)、[前后节点边](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1715)、[after 反序与 compile](https://github.com/langchain-ai/langchain/blob/34489d61433cbf5044a630de2e7797e361672900/libs/langchain_v1/langchain/agents/factory.py#L1855)。
 
 ## 用框架组织 Plan & Execute
 
-如果应用要把规划和执行分开，可以定义 Planner 的结构化输出、Executor 接受的步骤，以及 Replanner 消费的完成结果。Planner 本身可以是一份模型调用；Executor 可以是一份 create_agent；外层再用 StateGraph 连接它们。这是框架的组合方式，不是 create_agent 默认主线自动拥有的三份模块。
+如果应用要把规划和执行分开，可以定义 Planner 的结构化输出、Executor 接受的步骤，以及 Replanner 消费的完成结果。Planner 本身可以是一次模型调用；Executor 可以是一个 create_agent；外层再用 StateGraph 连接它们。这是框架的组合方式，不是 create_agent 默认主线自动拥有的三个模块。
 
 在本案例中，外层计划可以保存“实现转义”这一项，而 Executor 内部独立读取、修改、测试多次。外层计划项与内层 tool call 是不同粒度。只有将输入输出契约和状态位置写清楚，组合后才不会出现两层都以为对方负责推进的情况。
 

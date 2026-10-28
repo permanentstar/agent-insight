@@ -7,7 +7,7 @@ baselines: ["langgraph-20261009"]
 sources: ["langchain-stage4"]
 depends_on: []
 evidence: ["source", "historical-document"]
-verified_scope: "StateGraph compile、Pregel 超步、pending writes、checkpoint 字段与 interrupt 重跑语义已静态核验；未测崩溃、后端耐久性和 delta-channel 全链路。"
+verified_scope: "StateGraph compile、Pregel 超步、pending writes、checkpoint 字段、InMemorySaver 重组与 interrupt 重跑语义已静态核验；未测崩溃、后端耐久性和 delta-channel 全链路。"
 ---
 
 # LangGraph：超步、通道、checkpoint 与恢复
@@ -47,7 +47,7 @@ LangGraph 负责把图定义变成可执行的状态计算。StateGraph 是构�
 | 合并 | loop.after_tick | 应用写入到 channels，形成下一超步状态 |
 | 持久 | checkpointer 的 writes 与 put | sync 模式等待 checkpoint future 后继续 |
 
-依据：[异步执行主线](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3426)、[超步与 sync 等待](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3504)、[任务选择](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/_loop.py#L623)。同一超步内节点读稳定通道值；一个节点完成不表示同行节点立刻读到它的更新。
+依据：[异步执行主线](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3426)、[超步与 sync 等待](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/main.py#L3504)、[任务选择](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/pregel/_loop.py#L623)。同一超步内节点读稳定通道值；一个节点完成不表示同一超步的其他节点立刻读到它的更新。
 
 异步执行主线可以从 `Pregel.astream` 的循环直接读出。下面保留真实方法及顺序，省略流事件的逐项产出与 finally 中的等待者清理。
 
@@ -93,7 +93,7 @@ class WorkState(TypedDict):
 | 时点 | 可读状态 | 新产生的资料 | 谁可以看到 |
 |---|---|---|---|
 | 超步 N 开始 | request、旧 observations | 尚无本步写入 | 两个读取节点共享稳定起点 |
-| 节点 A 完成 | 仍是 S_N | 需求观察 writes | 流可以报告更新，同行节点读视图不变 |
+| 节点 A 完成 | 仍是 S_N | 需求观察 writes | 流可以报告更新，同一超步的其他节点读视图不变 |
 | 节点 B 完成 | 仍是 S_N | 代码观察 writes | 同上 |
 | after_tick 合并 | 形成 S_N+1 | reducer 应用两份写入 | 后续超步读取新值 |
 | 超步 N+1 | 两份观察都可用 | decision 节点产出行动 | 再按图边推进 |
@@ -124,7 +124,7 @@ S_next = {
 }
 ```
 
-这里展示的列表次序用于演算，不从网络完成先后推定一般合并次序。共同事实是两份观察都进入下一超步。随后 decision 节点读取 S_next，调用模型或确定程序，再输出本例定义的 decision="modify" 或 "done"。
+这里展示的列表次序用于演算，不从网络完成先后推定一般合并次序。共同事实是两份观察都进入下一超步。随后 decision 节点读取 S_next，调用模型或确定性程序，再输出本例定义的 decision="modify" 或 "done"。
 
 应用给出明确映射：
 
@@ -154,11 +154,15 @@ LangChain 的 create_agent 为标准工具循环生成另一份具体路由：�
 
 checkpoint 不只是保存一个 messages 数组。channel_values 让运行重建数据，channel_versions 与 versions_seen 帮助判断哪些节点已经消费哪些更新，pending writes 保存已经产生的节点输出。图对象保存定义，checkpoint 保存恢复资料，PregelLoop 在一次调用中将二者结合。
 
-例如，一个超步中需求节点成功、代码节点失败，已经保存的 pending writes 可以让恢复区分“已经有结果”和“仍需执行”。这不同于恢复 Python 栈；节点 interrupt 后恢复同样可能从节点开头重跑。副作用的幂等和保存时机因此属于应用设计，而非 checkpoint 字段自动解决。
+例如，一个超步中需求节点成功、代码节点失败，已经保存的 pending writes 可以让恢复区分“已经有结果”和“仍需执行”。这不同于恢复 Python 栈；节点 interrupt 后恢复同样可能从节点开头重跑。节点可能重新执行，应用因此要为外部写操作定义幂等方式与保存时机。
 
-学习自检：同一超步的节点为何不能立即读取同行输出？自然语言观察与 reducer 的职责各是什么？从 checkpoint 恢复时，程序凭什么知道下一批可执行任务，而不只看状态字段是否非空？
+学习自检：同一超步的节点为何不能立即读取其他节点的输出？自然语言观察与 reducer 的职责各是什么？从 checkpoint 恢复时，程序凭什么知道下一批可执行任务，而不只看状态字段是否非空？
 
 ## 状态 schema 与持久单元
+
+![LangGraph 以 thread_id、checkpoint_ns、checkpoint_id 定位恢复点；checkpoint 保存通道版本与已见版本，InMemorySaver 另以通道和版本索引 blobs，以恢复点和 task_id 索引 writes，读取后拼成 CheckpointTuple](../../assets/langgraph-storage-model.svg)
+
+先把逻辑恢复单元与某个后端的保存方式分开。运行层取回的 `CheckpointTuple` 包含 `config/checkpoint/metadata/parent_config/pending_writes`；`pending_writes` 并非 Checkpoint 字典中的普通状态字段。身份由 `config.configurable` 中的 `thread_id + checkpoint_ns + checkpoint_id` 定位，同一 thread 可有多个恢复点，各 namespace 各自保存历史。parent_config 连接上一个恢复点；namespace 区分根图与嵌套图的恢复空间。[Checkpoint 与 CheckpointTuple 定义](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/checkpoint/langgraph/checkpoint/base/__init__.py#L93)。
 
 | 字段 / 资料 | 含义 | 使用者 |
 |---|---|---|
@@ -170,6 +174,23 @@ checkpoint 不只是保存一个 messages 数组。channel_values 让运行重�
 | checkpoint_ns / id | 子图命名空间及具体恢复点 | 多层图与历史寻址 |
 
 messages 若使用 add_messages reducer，会有 ID 替换/删除等语义；不能将所有 channel 都看作 append-only list。Overwrite、DeltaChannel 等又有额外替换和稀疏历史规则，本章先定位，[进阶章](advanced.md)再解释合并与恢复边界。依据：[checkpoint 类型](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/checkpoint/langgraph/checkpoint/base/__init__.py)、[消息 reducer](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/langgraph/langgraph/graph/message.py)。
+
+### 样例：同一恢复点的三份数据怎样拼回 {#storage-example}
+
+用 `InMemorySaver` 看得最直接：它的 `storage` 按 thread、namespace、checkpoint 分层；每份值保存序列化 checkpoint、metadata 和父 checkpoint ID。通道内容另存 `blobs[(thread_id, checkpoint_ns, channel, version)]`，中途写入另存 `writes[(thread_id, checkpoint_ns, checkpoint_id)]`，后者再以 `(task_id, write_idx)` 区分多条写入。图中是这个后端的映射，不代表所有 saver 都有同名 SQL 表；默认 InMemorySaver 只在内存保存，不能用它证明跨进程耐久性。[三个映射与读取重组](https://github.com/langchain-ai/langgraph/blob/bfcfea554ed5c7f7be562cebf8825e911b493ab1/libs/checkpoint/langgraph/checkpoint/memory/__init__.py#L73)。
+
+假设 CSV 任务在根 namespace 中，恢复点 K2 的前一个恢复点是 K1。K1/K2、版本 v3/v4 和任务名是教学别名；以下表格展示解码后的字段，省略 metadata、内部触发通道、序列化类型标签及写入排序资料：
+
+| 保存位置／键 | 内容节选 | 恢复时的用途 |
+|---|---|---|
+| storage：`("csv", "", "K2")` | `id=K2`，`channel_versions={messages:v3, observations:v4}`，父 ID=K1 | 定位这一次快照及其祖先 |
+| blobs：`("csv", "", "messages", "v3")` | 用户目标及已完成的工具交换 | 重建 `channel_values.messages` |
+| blobs：`("csv", "", "observations", "v4")` | `[]` | 重建本超步开始前的观察 |
+| writes：`("csv", "", "K2")`，任务 read_rules 的第 0 条写入 | channel=`observations`，value=`["字段需转义"]` | 表示该任务在 K2 之后已经产出结果，尚未作为整个超步结果合并 |
+
+读取 K2 时，saver 按版本取出 blobs，拼成含 `channel_values` 的 checkpoint，并把最后一行解码成 `pending_writes`。执行器可采用 read_rules 的已存输出，执行仍缺结果的同超步任务；全部输出再按 observations 的 reducer 合并并形成后续恢复点。因而“blobs 中 observations 仍是空数组”与“read_rules 已有结果”可以同时成立。版本用于找到值，task 身份用于匹配已完成的写入，两者不能互换。
+
+这个例子只展示数据装配；真实任务选择还依赖 `versions_seen`、触发通道和图定义，不能仅从 messages 的版本号推断下一节点。DeltaChannel 又可能依赖祖先写入重建，不适用“每个版本都是完整值”的简化，见[进阶章的稀疏历史规则](advanced.md)。
 
 ## 同一个故障案例：节点发请求后暂停或崩溃
 

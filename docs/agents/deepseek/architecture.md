@@ -27,7 +27,7 @@ DeepSeek Harness 是以 Cordis 插件树装配的 Agent 运行环境。AgentLoop
 |---|---|---|---|
 | profile / bundle | 启动组合；profile 选择要叠加的配置包 | launcher 按有序 patch 装配 | 配置和分发物，不是会话 |
 | Cordis Context / fiber | 服务注入、事件和可撤销资源的作用域 | 插件装载时建立，卸载时回收 effect | 进程内注册关系 |
-| AgentLoop | 具体 Agent 工厂与生命周期 owner | 注入 agents、sessions、llm、tools 等服务 | 管理活实例及尚未完成的启动工作 |
+| AgentLoop | 具体 Agent 工厂与生命周期 owner | 注入 agents、sessions、llm、tools 等服务 | 管理运行实例及尚未完成的启动工作 |
 | ReactLoopAgent | 一个 Session 的运行驱动器 | 工厂构造；有独立 scope、inbox、phase | idle / maintenance / running 在内存 |
 | turn / step | turn 是接纳输入到结束的工作轮；step 是其中一次模型及工具推进 | 驱动器创建，记录 start/end | 边界进入 Session 事件 |
 | Session / seq | 按连续序号追加的事件历史 | sessions 服务准备、发布、释放 | 不是模型消息数组 |
@@ -40,14 +40,14 @@ DeepSeek Harness 是以 Cordis 插件树装配的 Agent 运行环境。AgentLoop
 
 `AgentLoop.createAgent` 准备 Session 与 Agent scope，取得可选 persistence 的写句柄，完成 setup 后才发布到 registries。`resumeWith` 先 open(write)，读出物理有效日志，追加中断修复事件，再用 seed 准备会话。这样同一后端实例内不能同时取得两个活跃写 owner。
 
-工厂的 FactoryOwnership 跟踪活实例 teardown 和启动任务；卸载先停止接纳、发出 abort，再等待收口。运行 Agent 的 scope 与工厂 scope 分开，插件资源不会成为存储中的函数。JSONL 后端通过 lease 增加跨进程排他；这项能力属于该后端，不能推广到所有自定义 persistence。依据：[createAgent](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/index.ts#L750)、[resumeWith](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/index.ts#L852)、[lease](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/session/session-persistence-jsonl/src/lease.ts)。
+工厂的 FactoryOwnership 跟踪运行实例的 teardown 和启动任务；卸载先停止接纳、发出 abort，再等待收口。运行 Agent 的 scope 与工厂 scope 分开，插件资源不会成为存储中的函数。JSONL 后端通过 lease 增加跨进程排他；这项能力属于该后端，不能推广到所有自定义 persistence。依据：[createAgent](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/index.ts#L750)、[resumeWith](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/index.ts#L852)、[lease](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/session/session-persistence-jsonl/src/lease.ts)。
 
 ## 第二步：把输入接纳为 turn
 
 | 当前位置 | 上层调用者 → 执行者 | 输入输出与状态变化 |
 |---|---|---|
 | 接纳输入 | followup / steer / inject → send | followup 进 next-turn；steer 进 next-step 并唤醒；inject 不主动唤醒 |
-| 工作驱动 | kick → turn → preStep | 记录 turn/start；pre-step 可拒绝，无需花一次模型请求 |
+| 工作驱动 | kick → turn → preStep | 记录 turn/start；pre-step 可拒绝，无需发起一次模型请求 |
 | 单步请求 | step → prepareRequest → buildRequest | 组合 system/context/tool 定义；记 request/header/context；冻结消息快照 |
 | 模型效果 | preparedCall.stream 或 llm.stream | assistant-stream 提供临时帧；结束后另记 assistant/message 或 assistant/attempt |
 | 工具效果 | executeToolCalls → ctx.tools | 顶层调用记 tool/call；通过执行门面做效果；另记 tool/result |
@@ -134,7 +134,7 @@ session.append('tool/result', { turn, step, message }, {
 | 修改、验证与回答 | 后续 step 的同类事件 | 随新观察继续推进，最终形成回答 |
 | 收口 | step/end、turn/end 与 reason | 标明工作边界；不是把全部事件都发给模型 |
 
-这里同时存在两个次序：事件日志保留发生过的运行事实，surface 选择模型要看到的贡献。request/header、工作边界、临时流帧和最终 assistant 不能统称为“聊天消息”。请求通过 deriveMessages 从 surface 投影，并冻结当次消息快照；压缩改变可见贡献而不是将审计历史与消息数组视为同一份资料。[单步消息与模型响应](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/agent.ts#L400)、[调用和结果记录](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/tool-calls.ts#L264)。
+这里同时存在两个次序：事件日志保留发生过的运行事实，surface 选择模型要看到的贡献。request/header、工作边界、临时流帧和最终 assistant 不能统称为“聊天消息”。请求通过 deriveMessages 从 surface 投影，并冻结当次消息快照；压缩更新 surface 的可见贡献，事件日志继续保留原记录。[单步消息与模型响应](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/agent.ts#L400)、[调用和结果记录](https://github.com/deepseek-ai/deepseek-harness/blob/d743267388641bc76f17c45ce8b4c231aed1d32c/packages/core/agent-loop/src/tool-calls.ts#L264)。
 
 工具内容与用户目标保持开放的语义表达；event type、seq、call 关系和 surfaceOp 为程序提供明确接口。一个插件可以在 pre-step 改变准备或受理条件，另一个插件提供具体工具，但插件层次本身不意味着存在独立计划执行器。显式 P&E 需要在这些扩展口上另外组织计划消费关系。
 

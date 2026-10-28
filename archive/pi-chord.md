@@ -12,7 +12,7 @@ Chord是一个**应用组合运行时**：它让一个功能拆成运行在不�
 
 Chord不是插件市场，不负责安装依赖；不是网络服务，不监听端口；也不是完整分布式通信框架，不规定socket、WebSocket、CBOR、request ID、server路由或认证。应用必须提供这些外层能力。
 
-<whiteboard token="QudDwaB40hPjMabwHJGmO4Zqyq4"></whiteboard>
+> 图示重建说明（私人画板已移除）：按 Host 划分进程内边界，把 Facet、Service 的提供方与消费方放入对应 Host；跨 Host 的通信由应用 Adapter 和 transport 连接。
 
 # 为什么需要 Facet，而不是一个大插件对象
 
@@ -55,7 +55,7 @@ interface Facet {
 
 TypeScript interface运行时已擦除，Chord不会反射类型。相反，Facet在setup期间实际调用 `use`、`observe`、`provide`和 `provideMany`，Host据此记录generation-scoped ledger。所有Facet声明完成后，Host再一次性解析provider，检查缺失、重复、模式不一致和依赖环。
 
-<whiteboard token="SEGzwVTnBhBZAdbDzlmmppC1yng"></whiteboard>
+> 图示重建说明（私人画板已移除）：从 Facet 的 use、observe、provide 和 provideMany 声明生成依赖图；标明 provider 先激活、consumer 后激活，释放顺序相反。
 
 生命周期排序来自真实Service依赖边，而不是插件列表顺序。Provider先激活，consumer后激活；释放时反过来。Facet用 `own()`交给Host的资源也按逆序释放，因此setup失败不会把已经创建的局部资源泄漏出去。
 
@@ -67,7 +67,7 @@ keyed Service实例用 `{key, generation}`寻址。同一个key关闭后重新sp
 
 # 远程Service主线
 
-<whiteboard token="QZTQwQXQahlxNkbAwzDmIj0AyCc"></whiteboard>
+> 图示重建说明（私人画板已移除）：连接 Service consumer、应用 Adapter、transport 与 provider；沿调用和订阅分别标出 catalogue、control call、snapshot 与 update 的交接。
 
 Chord只拥有图中的Service语义：catalogue、control call、方法调用、订阅、snapshot/update和错误码。应用Adapter决定这些JSON值放进什么外层信封、发往哪个进程、如何关联response、是否认证和使用哪种transport。
 

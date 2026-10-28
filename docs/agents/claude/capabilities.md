@@ -34,7 +34,7 @@ verified_scope: "固定源码的 query、工具权限、压缩及相关宿主路
 
 调用链是 tools.ts 构造工具池 → feature/config/permissions/MCP/agent 范围过滤 → query 交 orchestration/execution → 参数验证、pre hook 与权限 → Tool.call → result budget / post hook → tool_result → 下一轮模型。FileRead/FileEdit/Bash/Agent/Skill 是不同 handler，不把某个工具的 checkpoint/安全检查概括成全工具能力。
 
-ToolSearch 使用 keyword/select:name 检索与 deferred schema 披露；Skill Discovery 是知识入口。两者按需提供定义或知识，减少初始请求需要携带的内容；具体收益取决于目录规模和使用方式。工具输出过大写文件和预览由具体结果预算实现，路径不是模型自动可靠引用的证明。
+ToolSearch 使用 keyword/select:name 检索与 deferred schema 披露；Skill Discovery 是知识入口。两者按需提供定义或知识，减少初始请求需要携带的内容；具体收益取决于目录规模和使用方式。工具结果预算把超大输出写入文件并返回预览；后续工具可按该路径继续读取。
 
 ## 第二步：执行前消费权限决定
 
@@ -44,7 +44,7 @@ Bash classifier 做分类判断，readOnly/concurrencySafe 是工具声明，二
 
 ## 第三步：执行 handler，再回填结果
 
-允许执行后，`Tool.call` 处理实际文件、命令或外部操作。返回值经过预算治理与后处理，包装为 tool_result，再由 query 采用。拒绝时也需要形成对应反馈，模型才知道这项动作没有发生，而不是凭原计划继续假定已经成功。
+允许执行后，`Tool.call` 处理实际文件、命令或外部操作。返回值经过预算治理与后处理，包装为 tool_result，再由 query 采用。拒绝时形成对应反馈，下一次 query 据此处理这项未执行的动作。
 
 以读取文件后修改为例：Read 的反馈提供当前实现，后续 Edit 提供修改结果，Bash 的验证反馈说明检查事实。三个结果可以在同一 query 中先后出现，也可以受并发安全规则分批执行。执行器组织这些调用的受理与反馈，具体后续动作仍由模型结合观察决定。
 

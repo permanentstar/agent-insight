@@ -151,7 +151,7 @@ if (lastCompletedTurn) {
 
 ### 2.2 接纳消息，同步工具声明
 
-准备回调采用上下文后，程序先接纳消息并同步工具声明。context.tools 包含可执行函数，模型使用名称、说明和参数 schema；Pi 将工具声明变化写入 system 消息，随后随 transcript 进入模型适配。请求前的消息追加路径如下，这是内层循环的源码节选：
+采用准备回调返回的上下文后，程序先接纳消息并同步工具声明。context.tools 包含可执行函数，模型使用名称、说明和参数 schema；Pi 将工具声明变化写入 system 消息，随后随 transcript 进入模型适配。请求前的消息追加路径如下，这是内层循环的源码节选：
 
 ```ts
 for (const message of declareToolChanges(currentContext, [...preparedMessages, ...pendingMessages])) {
@@ -259,7 +259,7 @@ if (config.beforeToolCall) {
   const beforeResult = await config.beforeToolCall({
     assistantMessage, toolCall, args: validatedArgs, context: currentContext,
   }, signal);
-  // 省略：取消检查；被拦截时返回 immediate，而不是继续执行。
+  // 省略：取消检查；被拦截时返回 immediate。
   if (beforeResult?.block) {
     const result = createErrorToolResult(beforeResult.reason || "Tool execution was blocked");
     if (beforeResult.terminate === true) result.terminate = true;
@@ -337,7 +337,7 @@ if (event.type === "message_end") {
 
 响应和工具结果已完成，消息也经事件处理接回历史。此时程序检查这一 turn 后面还有没有工作。工具结果会促成下一次请求，steering 可以加入新要求，`finishTurn` 也可以要求继续或结束。先理解正常分支，再看必要的中断条件。
 
-上图按真实控制变量画状态转移：`hasMoreToolCalls` 表示工具批次是否允许自然续跑，`pendingMessages` 暂存本轮待接纳输入，`explicitContinuation` 记录尚未被自然续跑满足的继续要求。图按这些实际字段和条件表示控制流。图中判断顺序比单独记住“有工具就继续”更有用。
+上图按真实控制变量画状态转移：`hasMoreToolCalls` 表示工具批次是否允许自然续跑，`pendingMessages` 暂存本轮待接纳输入，`explicitContinuation` 记录尚未被自然续跑满足的继续要求。图中判断顺序比单独记住“有工具就继续”更有用。
 
 | 当前轮次的结果或控制 | 程序走向 | 案例中的含义 |
 |---|---|---|

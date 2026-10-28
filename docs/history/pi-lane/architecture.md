@@ -37,7 +37,7 @@ Worker 打开 Session，注入运行策略与服务，再通过 Harness 取得�
 | 当前位置 | 上层 | 下层 | 状态归属 |
 |---|---|---|---|
 | Lane 命令 | Controller / Harness 使用者 | Session.mutate 与 planner | commit 后采用 Lane.state |
-| Drive 分派 | Lane 当前工作 | phase procedures | 检查当前 operation，不自立第二套权威存储 |
+| Drive 分派 | Lane 当前工作 | phase procedures | 检查当前 operation，不另建第二套权威存储 |
 | effect procedure | Drive | model/tool | intent 前后分开；outcome 未知须恢复 |
 
 createAgentHarness 恢复 Session 并返回 open operations，本身不启动模型、工具、hook 或计时副作用。命令接纳进入 Session mutation，planner 形成提交决定；mutator.commit 完成后更新 Lane.state，再发相应事件。

@@ -6,7 +6,7 @@
 </callout>
 
 <callout emoji="💡">
-**代码定位说明：**源码引用格式 `[仓库标签] 仓内完整相对路径:行号`，三仓根（本地平级 clone）：**[langchain]**=`/Users/bytedance/WorkSpace/Project/Community/langchain`；**[langgraph]**=`/Users/bytedance/WorkSpace/Project/Community/langgraph`；**[deerflow]**=`/Users/bytedance/WorkSpace/Project/Community/deer-flow`。
+**代码定位说明：**源码引用格式 `[仓库标签] 仓内完整相对路径:行号`，三仓根（`<source-root>` 代表自行选择的源码目录）：**[langchain]**=`<source-root>/langchain`；**[langgraph]**=`<source-root>/langgraph`；**[deerflow]**=`<source-root>/deer-flow`。
 </callout>
 
 # 零、全景：五个 Stage 在一次调用里各占哪一环

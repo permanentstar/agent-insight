@@ -320,14 +320,14 @@ LangGraph + Middleware"]
 # 附录 · 学习文档索引
 
 <callout emoji="📚">
-**用法：**后续每完成一个学习阶段，我都会单独新建一篇飞书文档，并持续回链到这里。你只需要按这里的顺序往下学。
+**用法：**按下表顺序学习各阶段。原私人文档链接已移除，保留主题说明；需要在线文档时，可按同目录对应阶段的归档内容自行重建。
 </callout>
 
-| 阶段 | 主题 | 文档链接 | 状态 |
+| 阶段 | 主题 | 文档说明 | 归档状态 |
 |-|-|-|-|
-| **Stage 1** | Runnable 与 LCEL 地基 | [Stage 1 · Runnable 与 LCEL 地基](https://bytedance.sg.larkoffice.com/docx/P94qdE2oDojY3sxRIexl7HfRgMh) | 已创建 |
-| Stage 2 | 核心组件：Messages / ChatModel / Prompt / Parser / Tool | [Stage 2 · Messages / Model / Tool](https://bytedance.sg.larkoffice.com/docx/ZUaodnOiyoVhqnxFSCil6WNwgPc) | 已创建 |
-| Stage 3 | 检索与 RAG：Embeddings / VectorStore / Retriever | [Stage 3 · RAG 两条路线](https://bytedance.sg.larkoffice.com/docx/O4psdEnero209exQAqglgGD0gle) | 已创建 |
-| Stage 4 | LangGraph / Agent / Middleware | [Stage 4 · LangGraph 与 Agent 内核](https://bytedance.sg.larkoffice.com/docx/SCrtdpuzIoskhkxKa8PlyHjvgJU) | 已创建 |
-| Stage 5 | LangSmith：追踪 / 评估 / 生产化 | [Stage 5 · LangSmith 与可观测性](https://bytedance.sg.larkoffice.com/docx/IHLZdOHe8oJGjmxdUWvl04sTgSf) | 已创建 |
-| Stage 6 | 源码深读与 Partner 集成 | [Stage 6 · 源码深读与 Partner 集成](https://bytedance.sg.larkoffice.com/docx/ZHEydaUV0otoonxx9CqlaORfgvh) | 已创建 |
+| **Stage 1** | Runnable 与 LCEL 地基 | Stage 1 · Runnable 与 LCEL 地基 | 已保留同主题归档 |
+| Stage 2 | 核心组件：Messages / ChatModel / Prompt / Parser / Tool | Stage 2 · Messages / Model / Tool | 已保留同主题归档 |
+| Stage 3 | 检索与 RAG：Embeddings / VectorStore / Retriever | Stage 3 · RAG 两条路线 | 已保留同主题归档 |
+| Stage 4 | LangGraph / Agent / Middleware | Stage 4 · LangGraph 与 Agent 内核 | 已保留同主题归档 |
+| Stage 5 | LangSmith：追踪 / 评估 / 生产化 | Stage 5 · LangSmith 与可观测性 | 已保留同主题归档 |
+| Stage 6 | 源码深读与 Partner 集成 | Stage 6 · 源码深读与 Partner 集成 | 已保留同主题归档 |

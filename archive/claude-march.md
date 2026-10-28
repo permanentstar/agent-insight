@@ -2,7 +2,7 @@
 
 <callout emoji="💡">
 本文基于仓库快照做只读技术分析，目标是帮助快速理解 Claude Code 的工程架构、模块职责与核心执行链路。
-仓库路径：/Users/bytedance/WorkSpace/Project/Company/claude-code-leak-by-bytedance
+源码定位：以 Claude Code 仓库根目录为起点，后文使用仓库相对路径。
 分析范围：entrypoints/commands/tools/query/services/context/memdir/bridge 等核心模块。
 </callout>
 
@@ -922,7 +922,7 @@ flowchart TD
 
 ## 13.4 tool result budget 与 snip 的角色
 
-<grid><column width-ratio="0.500000"><callout emoji="✅"><p><b>tool result budget</b> 解决的是“单条太肥”，不是“全局太长”。</p></callout><whiteboard token="SdkBwXvCWhfsCnbAAqcl9HtwgQh" type="mermaid">flowchart LR
+<grid><column width-ratio="0.500000"><callout emoji="✅"><p><b>tool result budget</b> 解决的是“单条太肥”，不是“全局太长”。</p></callout><whiteboard type="mermaid">flowchart LR
       A[tool_result 很大] --&gt; B[写入 session/tool-results 文件]
       B --&gt; C[生成 preview / file reference]
       C --&gt; D[替换原始 content]

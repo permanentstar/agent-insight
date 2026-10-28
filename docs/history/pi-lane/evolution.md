@@ -119,8 +119,8 @@ if (record.state.status === "running") {
 
 ## 哪些动机有说明，哪些属于本书归纳
 
-官方发布说明将长时间运行、不同交互入口及终端之外的应用列为 durable 的目标，同时明确保留 coding agent 的定位。这支持“用途扩展需要新的运行底座”的解释，不能证明普通 CLI 已经切换。[Pi 1.0 发布说明](https://earendil.com/posts/pi-1-0/)、[Pi Durable 设计说明](https://earendil.com/posts/pi-durable/)。
+官方发布说明将长时间运行、不同交互入口及终端之外的应用列为 durable 的目标，同时明确保留 coding agent 的定位。Durable 承接长期运行与多宿主的工作；普通 CLI 的装配入口仍沿用 AgentSession。[Pi 1.0 发布说明](https://earendil.com/posts/pi-1-0/)、[Pi Durable 设计说明](https://earendil.com/posts/pi-durable/)。
 
 “为什么具体放弃 Lane”仍缺少完整的上游决策记录。旧 runtime-simplification 文档说明作者此前在削减复杂度；Pico5 规范则讨论移除固定 rewindable/sticky、namespace router、semantic view events 与手工 Chord bridge，改用类型化 Document、结构化 conversation watch 和统一 Submission。这些可以支撑接口变化，但不能还原全部决策动机。
 
-“通用 Task 有助于把 Agent 能力接入业务服务”是本书基于上述机制的归纳。模型仍可按观察自由选择动作，程序则为已接纳的工作建立状态、等待、取消与恢复契约；业务规则由应用提供。跨框架的共性与组合条件在[业务系统承接篇](../../comparisons/agent-in-business.md)展开，这里保留 Pi 自身的机制证据与取舍。
+“通用 Task 有助于把 Agent 能力接入业务服务”是本书基于上述机制的归纳。模型仍可按观察自由选择动作，程序则为已接纳的工作建立状态、等待、取消与恢复契约；业务规则由应用提供。跨框架的共性与组合条件在[业务系统篇](../../comparisons/agent-in-business.md)展开，这里保留 Pi 自身的机制证据与取舍。

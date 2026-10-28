@@ -47,7 +47,7 @@ LangChain 不是把每个 middleware 整体当成一个串行节点执行，而�
 
 # 一次 run 的执行图
 
-<whiteboard token="X2bbwXZ45h7perbp9n8lWHlJgDb"></whiteboard>
+> 图示重建说明（私人画板已移除）：一次 run 先经过 before_agent，再按需要重复 before_model、模型调用、after_model 与工具调用；正常收尾经 after_agent。按本节的 hook 顺序和短路条件重建。
 
 方括号表示“该槽位可能不产生实例”，竖线后的文字给出标准示例状态或构建条件；它并不等于默认关闭。Custom 和 Extension 的具体 hook 无法在 composition root 预知；它们会在自己的类实现了相应方法时插入上述位置。若一个 run 含多个 model↔tool 往返，BM、WM、AM、WT 会重复，BA 只执行一次；AA 仅在路由进入 exit node 时执行。
 
@@ -92,7 +92,7 @@ create_agent(..., middleware=middlewares)
 
 **baseline 实例数：**以仓库产品示例配置为基础，并明确选择非视觉 model、`is_plan_mode=false`、`subagent_enabled=false`、无 deferred MCP、无 Guardrail、无 Custom/Extension 时，实际列表是 25 个实例：
 
-<whiteboard token="SwSBwoWUhhlqN5bJANpl8VZNgLb"></whiteboard>
+> 图示重建说明（私人画板已移除）：按下文的槽位总表和本节给定配置筛选实际 middleware，再按组装顺序排列；图示只对应此处说明的 25 个实例场景。
 
 条件项会改变实例数：视觉 model +1；plan mode +1；subagent mode +1；deferred MCP 通常 +1～2；Custom/Extension 各可展开 0..N。所以下文 #33 只表示它位于“第 33 个槽位”，不保证运行时数组下标为 32。
 
@@ -201,7 +201,7 @@ WM 是 around 栈。进入阶段正序变换 ModelRequest；返回阶段反序�
 
 AM 的反序不是形式细节：它先定义“谁先看到并改写 AIMessage”。但这不自动等于最终 `stop_reason` 的保留优先级；后者取决于各 middleware 是覆盖写还是仅空时写。固定内置链为：
 
-<whiteboard token="Mma9wAbrVhorJTbJXeyl0BgXgog"></whiteboard>
+> 图示重建说明（私人画板已移除）：按注册列表反序展示 after_model：先处理 Safety 与其他 guard，再由 DurableContext 捕获修改后的调用集合；stop_reason 的保留条件见后文表格。
 
 - Safety 最先清理危险 tool_calls，后面的 guard 看到的是修复后的 AIMessage。
 - TokenBudget hard stop 清空 tool_calls 后，Loop/SubagentLimit 通常不会再触发；因此同一步多重越界时预算优先。

@@ -12,7 +12,7 @@ verified_scope: "默认组合根、SDK 注入与主要对象生命周期已静�
 
 # AgentSession：层次、构造与生命周期
 
-Pi 将交互产品的会话管理、模型执行循环和历史存储分开。学习它时，先回答一个问题：用户提交“读取需求，修改导出逻辑，再运行验证”，究竟哪个对象负责把这份任务推进下去？答案是 AgentSession 组织产品行为，Agent 驱动当前执行，SessionManager 记录过去；三者合作完成工作。
+Pi 将交互产品的会话管理、模型执行循环和历史存储分开。学习它时，先回答一个问题：用户提交“读取需求，修改导出逻辑，再运行验证”，究竟哪个对象负责把这份任务推进下去？答案是 AgentSession 组织产品行为，Agent 驱动当前执行，SessionManager 保存历史；三者合作完成工作。
 
 ![CLI 或 SDK 组合 AgentSession；AgentSession 调用 Agent 和模型工具，同时读写独立的 SessionManager 历史](../../assets/pi-session.svg)
 
@@ -49,7 +49,7 @@ SDK 的 `createAgentSession` 首先确定 cwd：显式参数优先，其次采�
 
 接着，它采用或创建 ModelRuntime、SettingsManager、SessionManager、ResourceLoader。默认 ResourceLoader 会加载资源。然后调用 `buildSessionContext`，读取当前历史分支，恢复消息和模型／thinking 选择；显式设置、历史选择与默认设置之间按源码优先级决策。这样创建出来的 Agent 才有正确的起点。
 
-最后，SDK 创建 Agent，将执行所需的 model、转换函数、streamFunction 等能力接进去，再把 Agent 和各服务注入 AgentSession。**组合根的作用是决定对象如何协作，构造时还没有开始模型任务。** 这段顺序来自 [createAgentSession 的目录、服务与历史准备](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/sdk.ts#L191)，其关键执行路径就在下面。
+最后，SDK 创建 Agent，将执行所需的 model、转换函数、streamFunction 等能力接进去，再把 Agent 和各服务注入 AgentSession。**组合根的作用是决定对象如何协作，构造时还没有开始模型任务。** 这段顺序来自 [createAgentSession 的目录、服务与历史准备](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/sdk.ts#L191)。
 
 下面是 `sdk.ts` 中 `createAgentSession` 的流程骨架，保留真实对象和调用顺序；省略模型选择细节、请求缓存和可选配置，不能独立运行。先看历史消息怎样交给 Agent，再看服务怎样交给 AgentSession：
 
@@ -175,7 +175,7 @@ if (this._initialActiveToolNames === undefined) this._restoreToolsFromTranscript
 
 上面的订阅和安装语句来自 [AgentSession 构造函数的运行绑定段](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L511)。它们分别解决不同问题：订阅把执行事件交给产品和历史；tool hooks 在真实工具前后接入扩展；request projection 决定当次请求视图；boundary hook 决定轮次结束后的继续要求；`_buildRuntime` 装配当前扩展 runner。
 
-看一个最小例子就能理解“安装”与“执行”的差别：`_installAgentToolHooks` 只赋值两个回调，并没有在构造期执行工具。
+例如，`_installAgentToolHooks` 只赋值两个回调，并没有在构造期执行工具。
 
 ```ts
 private _installAgentToolHooks(): void {
@@ -187,7 +187,7 @@ private _installAgentToolHooks(): void {
 
 之后 agent-loop 准备一项真实工具调用，才会 await `beforeToolCall(context)`；工具执行完成后再调用 afterToolCall。回调怎样读取当前 runner，在[扩展章的工具插入点](extensions.md#工具调用前后的两个插入点)继续展开；这里的安装实现可在 [AgentSession 为 Agent 设置工具回调](https://github.com/earendil-works/pi/blob/f1b2e77f5b13b2a199b1052cb79c235451afe7d7/packages/coding-agent/src/core/agent-session.ts#L652)核查。
 
-这些回调会在后续运行时使用。第三步看同一对象如何承接任务，第四步再看更换活动会话的生命周期。
+第三步看同一对象如何承接任务，第四步再看更换活动会话的生命周期。
 
 ## 第三步：启动运行，结束后接收下一项任务
 

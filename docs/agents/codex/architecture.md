@@ -21,7 +21,7 @@ Codex 开源 core 把活跃线程、一次用户轮次、一次模型请求和�
 
 | 步骤 | 当前范围 | 输出 |
 |---|---|---|
-| 1. 构造线程 | ThreadManager 与 Session | 长活线程及 SessionIo |
+| 1. 构造线程 | ThreadManager 与 Session | 长期存活的线程及 SessionIo |
 | 2. 接纳操作 | Op 分派与 SessionTask | TurnContext、当前任务和取消控制 |
 | 3. 请求采样 | 同一 Turn 中的一次 Step | 模型响应，携带动作请求 |
 | 4. 工具调用 | ToolRouter 与 runtime | 实际结果及反馈资料 |
@@ -31,7 +31,7 @@ Codex 开源 core 把活跃线程、一次用户轮次、一次模型请求和�
 
 | 概念 | 层次与职责 | 创建者 / 生命周期 | 状态边界 |
 |---|---|---|---|
-| ThreadManager | 宿主接入 core 的活跃线程管理 | 宿主构造并传入共享服务 | 管理活对象，不等于全部历史文件 |
+| ThreadManager | 宿主接入 core 的活跃线程管理 | 宿主构造并传入共享服务 | 管理运行中的对象，不等于全部历史文件 |
 | CodexThread | 双向操作/事件门面 | manager 创建或加载 | 持有 Arc Session 与 SessionIo |
 | Session / SessionIo | 线程运行状态及队列接口 | Session::spawn 建立 | 历史、服务、active_turn 与输入队列在内存 |
 | SessionTask | 一次受控运行任务 | Session.start_task 安装并持取消 token | Regular 等任务类型；不是通用 durable Task 记录 |
@@ -79,7 +79,7 @@ ThreadManager 的 spawn_thread 调 Session::spawn，注入配置、认证、模�
 
 ## 第三步：捕获 Step，组织当次模型请求
 
-下面保留 run_turn 的控制骨架，省略预算、重试、hook 细节，是教学伪代码而非可编译 Rust：
+run_turn 依次准备请求、取得模型响应、执行工具并决定是否继续；以下按该顺序展开，省略预算、重试和 hook 处理：
 
 ```rust
 loop {
@@ -178,7 +178,7 @@ session.send_event(turn.as_ref(), EventMsg::PlanUpdate(args)).await;
 | 修改和验证反馈 | 用户目标与新约束仍属于该项工作 | 后续 Step 按观察推进 |
 | 正常收口 | 无反馈和待输入需要继续，Stop hooks 通过 | 当前任务结束；Thread 可接后续 Turn |
 
-这条轨迹回答一个设计问题：为什么既有长活 Session，又有 TurnContext 和 StepContext？Session 持有跨轮的历史和服务，TurnContext 绑定这次用户工作，StepContext 固定一次请求的选择。这样动态输入和配置可以在后续边界采用，而不让同一请求中的“公布工具”和“执行工具”各自读取不同配置。[接纳与快照控制](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L418)。
+这条轨迹回答一个设计问题：为什么既有长期存活的 Session，又有 TurnContext 和 StepContext？Session 持有跨轮的历史和服务，TurnContext 绑定这次用户工作，StepContext 固定一次请求的选择。这样动态输入和配置可以在后续边界采用，而不让同一请求中的“公布工具”和“执行工具”各自读取不同配置。[接纳与快照控制](https://github.com/openai/codex/blob/2351d9e1b608e6f9d9a3699b71d7eb39ee41cfa4/codex-rs/core/src/session/turn.rs#L418)。
 
 自然语言补充影响模型理解目标，程序队列影响采用时点，两者不能合成一个“模型自动看到最新输入”。相似问题在 AgentSession 由 steering/followUp 和请求边界解释；Codex 的具体 Op、任务和输入接纳路径仍按 core 实现阅读。
 
@@ -207,6 +207,6 @@ session.send_event(turn.as_ref(), EventMsg::PlanUpdate(args)).await;
 
 ## 快照与执行边界的设计取舍
 
-TurnContext/StepContext 让长活线程与动态模型/工具配置能够共存，代价是读源码时不能把这些 context 都当成同一对象。code mode、插件、MCP、子 Agent 和远端 environment 各有组合入口，应沿 router/handler 继续下钻。会话历史恢复与工作续跑也是不同问题：前者依赖历史重建，后者需要对应任务类型的持久记录和执行器。
+TurnContext/StepContext 让长期存活的线程与动态模型/工具配置能够共存，代价是读源码时不能把这些 context 都当成同一对象。code mode、插件、MCP、子 Agent 和远端 environment 各有组合入口，应沿 router/handler 深入阅读。会话历史恢复与工作续跑也是不同问题：前者依赖历史重建，后者需要对应任务类型的持久记录和执行器。
 
 [任务组织与运行配置](official-practices.md)把使用问题与执行机制对应起来。开源 core、app-server 和桌面宿主承担不同职责，core 的实现不能直接代替宿主契约。

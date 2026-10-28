@@ -6,10 +6,10 @@
 </callout>
 
 <callout emoji="💡">
-**代码定位说明（全文源码引用规范）：**下文每条源码引用都写成 `[仓库标签] 仓内完整相对路径:行号`，三个仓库根如下（本地平级 clone）：
-**[langchain]** = `/Users/bytedance/WorkSpace/Project/Community/langchain`
-**[langgraph]** = `/Users/bytedance/WorkSpace/Project/Community/langgraph`
-**[deerflow]** = `/Users/bytedance/WorkSpace/Project/Community/deer-flow`
+**代码定位说明（全文源码引用规范）：**下文每条源码引用都写成 `[仓库标签] 仓内完整相对路径:行号`，三个仓库根如下（`<source-root>` 代表自行选择的源码目录）：
+**[langchain]** = `<source-root>/langchain`
+**[langgraph]** = `<source-root>/langgraph`
+**[deerflow]** = `<source-root>/deer-flow`
 例：`[deerflow] ``backend/packages/harness/deerflow/runtime/checkpoint_state.py:61` 即从 deer-flow 仓根按该相对路径打开第 61 行。
 </callout>
 

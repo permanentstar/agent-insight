@@ -7,7 +7,7 @@ baselines: ["claude-source-20260331"]
 sources: ["claude-march"]
 depends_on: ["claude-migrated"]
 evidence: ["source", "historical-document"]
-verified_scope: "固定源码的 query、工具权限、压缩及相关宿主路径已静态核验；feature gate 引用的缺失模块保持未知，未运行目标或私有依赖。"
+verified_scope: "固定源码的 transcript 关联、query、工具权限、压缩及相关宿主路径已静态核验；feature gate 引用的缺失模块保持未知，未运行目标或私有依赖。"
 ---
 
 # Claude Code：压缩与记忆层次
@@ -20,6 +20,26 @@ compact 包含多种处理：有的改变本地消息，有的只改变 API 请�
 本章先沿当前请求走三步：治理结果与历史视图，按需要取得会话摘要，重建下一请求可用的资料。后台记忆是与这条主线相交的生产路径，放在主流程后解释。先看处理层表，便能知道后面的“压缩”究竟改了哪份资料。
 
 ## 第一步：在请求边界治理结果与历史视图
+
+### 存储结构：会话身份、消息祖先和工具配对 {#storage-model}
+
+![冻结 Claude 源码的 transcript 里消息以 uuid 和 parentUuid 组成链，sessionId 标识会话，tool_use 与 tool_result 通过各自调用字段配对；compact boundary 的 parentUuid 为空并用 logicalParentUuid 保留来历，索引与其他记录不作为普通对话直接发送](../../assets/claude-storage-model.svg)
+
+固定源码的会话 JSONL 包含多种 `Entry`。对话部分的 `TranscriptMessage` 在原消息上增加 `sessionId/timestamp/cwd/version` 等会话资料，以及 `parentUuid/isSidechain` 等链关系；`uuid` 是消息身份，`parentUuid` 决定祖先关系，`agentId` 可标记 sidechain 的 Agent。标题、文件历史、内容替换等 Entry 有自己的结构，不能都当成对话链节点。[消息与其他 Entry 类型](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/types/logs.ts#L221)、[可进入 transcript 的消息类别](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/utils/sessionStorage.ts#L131)。
+
+沿读取 CSV 源码的正常任务，设会话为 S1；下面按字段节选列出一次工具交换和随后发生的压缩。短 ID 是教学别名，内容、时间和附件省略；boundary 后的实际保留段仍按后文的压缩规则确定。
+
+| 消息 uuid | `parentUuid` | 类型与内容 | 另外的关联 |
+|---|---|---|---|
+| U1 | null | user：修复 CSV | `sessionId=S1` |
+| A1 | U1 | assistant：`tool_use.id=r1` 的读取 | 同一 session |
+| U2 | A1 | user 内容中的 `tool_result.tool_use_id=r1` | 动作结果按 r1 配对；U2 仍有独立消息身份 |
+| B1 | null | system：compact boundary | `logicalParentUuid=U2` 保留压缩前来历 |
+| M1 | B1 | 压缩后的 summary 消息 | M1 是消息别名，`sessionId` 仍为 S1 |
+
+`insertMessageChain` 对工具结果可用 `sourceToolAssistantUUID` 选择父消息；对压缩边界则写 `parentUuid=null`，另存 logicalParentUuid。因此 B1 在普通祖先链上开启新段，来历关系仍能追到 U2；恢复需解释边界及其他记录，不能只按物理行序把 U1/A1/U2/B1/M1 全发给模型。工具调用 ID r1 连接动作与结果，不能替代消息父链。[链关系的实际写入](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/utils/sessionStorage.ts#L993)。
+
+后面的各类 compact 处理的是这份历史或其请求视图。会话摘要文件、长期 memory 文件和 transcript 是不同资料源；本文只对已读固定源码说明结构，缺失模块的算法仍保持未知。
 
 | 处理层 | 输入 / 输出与 owner | 是否在此生成 LLM 摘要 | 算法与作用范围 |
 |---|---|---|---|
@@ -74,9 +94,9 @@ for (const message of postCompactMessages) {
 messagesForQuery = postCompactMessages
 ```
 
-第一段输出规范次序，第二段同时连接会话消费者与当前模型请求。hookResults 来自压缩后的 SessionStart hook；PostCompact 的 userDisplayMessage 另行合并到显示信息，不能把两者都看作模型消息。完整压缩过程还负责摘要生成、附件重建及 pre/post hook；这里省略触发、预算计数与错误恢复。[查看重建顺序](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/services/compact/compact.ts#L330)、[查看 query 的采用位置](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/query.ts#L528)。
+第一段给出消息排列，第二段同时连接会话消费者与当前模型请求。hookResults 来自压缩后的 SessionStart hook；PostCompact 的 userDisplayMessage 另行合并到显示信息，不能把两者都看作模型消息。完整压缩过程还负责摘要生成、附件重建及 pre/post hook；这里省略触发、预算计数与错误恢复。[查看重建顺序](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/services/compact/compact.ts#L330)、[查看 query 的采用位置](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/query.ts#L528)。
 
-例如已读源码并做过一次修改，压缩需要保留“用户目标、已改路径、验证事实、尚未完成事项”，近期工具交换则由保留段补足。下一次 query 才能知道应继续验证，而非重复调查。这里表达摘要应服务的学习目标，不承诺每次压缩都会无损保存全部事实。[查看正式压缩与上下文重建的研究顺序](https://github.com/permanentstar/agent-insight/blob/9ecf6e00b17caa5c8930c538978b208300d3b19c/archive/claude-march.md#L1120)。
+例如已读源码并做过一次修改，压缩需要保留“用户目标、已改路径、验证事实、尚未完成事项”，近期工具交换则由保留段补足。下一次 query 据此继续验证；具体代码和近期结果从保留段取得。[查看正式压缩与上下文重建的研究顺序](https://github.com/permanentstar/agent-insight/blob/9ecf6e00b17caa5c8930c538978b208300d3b19c/archive/claude-march.md#L1120)。
 
 主流程到这里已经闭合：旧资料经治理或摘要变成新的请求输入。接下来解释摘要或长期知识怎样由后台工作产生，以及它们在哪个边界被主请求采用。
 
@@ -89,7 +109,7 @@ messagesForQuery = postCompactMessages
 | Extract Memories | turn 结束后抽取 → durable/auto memory | 跨 session 的信息积累，和当前 compact 没有同一同步边界 |
 | Dream / AutoDream | 长期 memory 集合 → 整理后的索引/内容 | 条件启用后的后台治理，不是主 query 压缩 |
 
-当前 turn 的预取在 query 启动，工具反馈后只消费已完成结果；selector 使用模型 sideQuery。[预取启动](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/query.ts#L297)、[后续采用](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/query.ts#L1592)、[记忆选择](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/memdir/findRelevantMemories.ts#L98)。recall 用模型 side-query 选择文件，不是 embedding 检索；能力均受 feature/settings gates 控制。功能入口存在与 feature/settings gates 放行是不同条件；客户端的记忆机制也不能直接扩展到其他产品界面。
+当前 turn 的预取在 query 启动，工具反馈后只消费已完成结果；selector 使用模型 sideQuery。[预取启动](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/query.ts#L297)、[后续采用](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/query.ts#L1592)、[记忆选择](https://github.com/permanentstar/claude-code-source-leak/blob/9f51e71641c1472293ebe4a7968b44455c00f0ba/src/memdir/findRelevantMemories.ts#L98)。recall 用模型 side-query 选择文件，不是 embedding 检索；只有 feature/settings gates 放行时，相应能力才会生效。功能入口存在并不表示已经放行，客户端的记忆机制也不能直接扩展到其他产品界面。
 
 ## 失败与取舍
 
@@ -98,6 +118,6 @@ messagesForQuery = postCompactMessages
 | 首轮直答且 recall 返回慢 | 主请求不等 side-query，本轮可能无该记忆 | 不能说每次回答都已检索全部长期记忆 |
 | cached microcompact 生效 | 本地历史可保持不变 | 不能用文件变小证明或否认请求减重 |
 | contextCollapse 缺实现 | 只确认调用边界和视图职责 | 不补成确定的 LLM/非 LLM 算法 |
-| full compact 成功 | 重建短上下文继续工作 | 不能证明摘要无信息损失或工具效果可重放 |
+| full compact 成功 | 重建短上下文继续工作 | 检查摘要中的待办和来源；工具重跑按效果契约处理 |
 
-分层治理允许局部瘦身先于整段摘要，后台工作也可缩短关键请求路径；其代价是本地历史、请求视图和记忆新鲜度不再是同一状态。比较时应先选定测量对象，再谈成本和一致性。测量性能或信息保留时，需要分别固定这些状态与覆盖范围。
+分层处理允许先缩减局部内容，再生成整段摘要，后台工作也可缩短关键请求路径；其代价是本地历史、请求视图和记忆新鲜度不再是同一状态。比较时应先选定测量对象，再谈成本和一致性。测量性能或信息保留时，需要分别固定这些状态与覆盖范围。

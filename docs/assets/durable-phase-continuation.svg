@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="710" viewBox="0 0 1000 710" role="img" aria-labelledby="title desc">
+<title id="title">阶段接续：留在原调用，还是重新认领</title>
+<desc id="desc">prepare 保存 request 后在原 invocation 继续；等待工具时结束 invocation；工具终态发布后重新认领，再进入 tools 阶段。</desc>
+<rect width="1000" height="710" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#334155"/></marker></defs>
+<text x="32" y="40" font-family="system-ui,sans-serif" font-size="25" font-weight="700" fill="#172554">阶段接续：留在原调用，还是重新认领</text>
+<rect x="40" y="85" width="420" height="110" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="58" y="116" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">当前 invocation 执行 prepare</text>
+<text x="58" y="146" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">准备模型、提示词与 cutoff</text>
+<text x="58" y="173" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">提交 running / request</text>
+<rect x="540" y="85" width="420" height="110" rx="10" fill="#eff6ff" stroke="#475569" stroke-width="2"/>
+<text x="558" y="116" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">同一个 invocation 执行 request</text>
+<text x="558" y="146" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">handler 返回，step 取得当前 Task</text>
+<text x="558" y="173" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">按 checkpoint.phase 请求模型</text>
+<polyline points="460,140 535,140" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<text x="480" y="122" font-family="system-ui,sans-serif" font-size="16" font-weight="400" fill="#172554">继续</text>
+<rect x="540" y="265" width="420" height="110" rx="10" fill="#fff7ed" stroke="#475569" stroke-width="2"/>
+<text x="558" y="296" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">模型要求工具，先保存等待</text>
+<text x="558" y="326" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">创建 ToolTask；生成保存 waiting/tools</text>
+<text x="558" y="353" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">step 返回 undefined，当前调用结束</text>
+<polyline points="750,195 750,260" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<rect x="40" y="265" width="420" height="110" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="58" y="296" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">ToolTask 完成并提交终态</text>
+<text x="58" y="326" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">保存工具观察和 outcome</text>
+<text x="58" y="353" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">Task 变化触发等待者重新检查</text>
+<polyline points="540,320 465,320" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<text x="480" y="303" font-family="system-ui,sans-serif" font-size="16" font-weight="400" fill="#172554">执行</text>
+<rect x="40" y="445" width="420" height="110" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="58" y="476" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">生成重新取得执行资格</text>
+<text x="58" y="506" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">提交 running/tools</text>
+<text x="58" y="533" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">新 invocation 从 tools 读取观察</text>
+<polyline points="250,375 250,440" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<rect x="540" y="445" width="420" height="110" rx="10" fill="#f0fdf4" stroke="#475569" stroke-width="2"/>
+<text x="558" y="476" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">当前生成结束，后继生成接手</text>
+<text x="558" y="506" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">同批保存 G1 终态、创建 G2/prepare</text>
+<text x="558" y="533" font-family="system-ui,sans-serif" font-size="17" font-weight="400" fill="#172554">G2 由 Scheduler 认领后准备请求</text>
+<polyline points="460,500 535,500" fill="none" stroke="#334155" stroke-width="2.3" marker-end="url(#arrow)"/>
+<text x="480" y="482" font-family="system-ui,sans-serif" font-size="16" font-weight="400" fill="#172554">移交</text>
+<rect x="40" y="610" width="920" height="65" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+<text x="58" y="641" font-family="system-ui,sans-serif" font-size="20" font-weight="700" fill="#172554">最终回答路径直接保存 terminal/outcome，step 随后结束本次调用</text>
+</svg>

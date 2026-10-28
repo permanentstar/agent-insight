@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="title desc">
+  <title id="title">Claude 冻结源码：transcript 的关联</title>
+  <desc id="desc">消息父链、工具配对与压缩来历是三种关系；此图不代表当前产品实现。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0 0L10 4L0 8Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="560" fill="#ffffff"/>
+  <g font-family="system-ui, sans-serif" fill="#0f172a">
+    <text x="35" y="38" font-size="24" font-weight="700">Claude 冻结源码：transcript 的关联</text>
+    <text x="35" y="68" font-size="16">消息父链、工具配对与压缩来历是三种关系；此图不代表当前产品实现。</text>
+    <path d="M345 165H395" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="332.0" y="133" width="76" height="23" fill="#ffffff"/>
+    <text x="370" y="150" font-size="15" text-anchor="middle">消息次序</text>
+    <path d="M705 165H755" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="692.0" y="133" width="76" height="23" fill="#ffffff"/>
+    <text x="730" y="150" font-size="15" text-anchor="middle">消息次序</text>
+    <path d="M550 355V285H910V225" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="605.0" y="262" width="220" height="23" fill="#ffffff"/>
+    <text x="715" y="279" font-size="15" text-anchor="middle">logicalParentUuid 追溯旧段</text>
+    <path d="M705 410H755" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="35" y="105" width="310" height="120" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="134" font-size="19" font-weight="650">U1：用户目标</text>
+    <text x="50" y="161" font-size="16">uuid=U1；sessionId=S1</text>
+    <text x="50" y="185" font-size="16">parentUuid=null</text>
+    <text x="50" y="209" font-size="16">修复 CSV</text>
+    <rect x="395" y="105" width="310" height="120" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="410" y="134" font-size="19" font-weight="650">A1：assistant</text>
+    <text x="410" y="161" font-size="16">uuid=A1；parentUuid=U1</text>
+    <text x="410" y="185" font-size="16">tool_use.id=r1</text>
+    <text x="410" y="209" font-size="16">请求读取源码</text>
+    <rect x="755" y="105" width="310" height="120" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="770" y="134" font-size="19" font-weight="650">U2：工具结果</text>
+    <text x="770" y="161" font-size="16">uuid=U2；parentUuid=A1</text>
+    <text x="770" y="185" font-size="16">tool_result.tool_use_id=r1</text>
+    <text x="770" y="209" font-size="16">user 消息承载结果</text>
+    <rect x="35" y="355" width="310" height="110" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="384" font-size="19" font-weight="650">其他 Entry</text>
+    <text x="50" y="411" font-size="16">标题、文件历史、替换资料等</text>
+    <text x="50" y="435" font-size="16">各有结构，不全是消息链节点</text>
+    <rect x="395" y="355" width="310" height="110" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="410" y="384" font-size="19" font-weight="650">B1：compact boundary</text>
+    <text x="410" y="411" font-size="16">parentUuid=null</text>
+    <text x="410" y="435" font-size="16">logicalParentUuid=U2</text>
+    <rect x="755" y="355" width="310" height="110" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="770" y="384" font-size="19" font-weight="650">M1：摘要消息</text>
+    <text x="770" y="411" font-size="16">parentUuid=B1；sessionId=S1</text>
+    <text x="770" y="435" font-size="16">再接保留段、附件与 hook 资料</text>
+    <text x="35" y="520" font-size="16">示意 ID 均为短别名；持久链与重建请求要分别解释，不能直接发送全部 JSONL 行。</text>
+  </g>
+</svg>

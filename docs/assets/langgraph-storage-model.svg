@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="590" viewBox="0 0 1100 590" role="img" aria-labelledby="title desc">
+  <title id="title">LangGraph：恢复点与数据装配</title>
+  <desc id="desc">以 InMemorySaver 解释三个映射；这是内存后端布局，不是框架统一 SQL schema。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0 0L10 4L0 8Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="590" fill="#ffffff"/>
+  <g font-family="system-ui, sans-serif" fill="#0f172a">
+    <text x="35" y="38" font-size="24" font-weight="700">LangGraph：恢复点与数据装配</text>
+    <text x="35" y="68" font-size="16">以 InMemorySaver 解释三个映射；这是内存后端布局，不是框架统一 SQL schema。</text>
+    <path d="M345 167H395" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M705 167H755" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="692.0" y="130" width="76" height="23" fill="#ffffff"/>
+    <text x="730" y="147" font-size="15" text-anchor="middle">通道版本</text>
+    <path d="M190 230V355" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M550 230V355" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M910 230V295H630V355" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="752.0" y="269" width="106" height="23" fill="#ffffff"/>
+    <text x="805" y="286" font-size="15" text-anchor="middle">按版本读取值</text>
+    <path d="M345 417H395" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M705 417H755" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="35" y="105" width="310" height="125" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="134" font-size="19" font-weight="650">恢复身份 config.configurable</text>
+    <text x="50" y="161" font-size="16">thread_id = csv</text>
+    <text x="50" y="185" font-size="16">checkpoint_ns = 空字符串</text>
+    <text x="50" y="209" font-size="16">checkpoint_id = K2</text>
+    <rect x="395" y="105" width="310" height="125" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="410" y="134" font-size="19" font-weight="650">storage 中的 K2</text>
+    <text x="410" y="161" font-size="16">checkpoint + metadata</text>
+    <text x="410" y="185" font-size="16">channel_versions / versions_seen</text>
+    <text x="410" y="209" font-size="16">父 checkpoint_id = K1</text>
+    <rect x="755" y="105" width="310" height="125" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="770" y="134" font-size="19" font-weight="650">blobs 中的通道值</text>
+    <text x="770" y="161" font-size="16">thread + namespace</text>
+    <text x="770" y="185" font-size="16">channel + version</text>
+    <text x="770" y="209" font-size="16">值按类型序列化</text>
+    <rect x="35" y="355" width="310" height="125" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="384" font-size="19" font-weight="650">writes 中的任务输出</text>
+    <text x="50" y="411" font-size="16">thread + namespace + K2</text>
+    <text x="50" y="435" font-size="16">再按 task_id + write_idx 区分</text>
+    <text x="50" y="459" font-size="16">未合并的 pending writes</text>
+    <rect x="395" y="355" width="310" height="125" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="410" y="384" font-size="19" font-weight="650">CheckpointTuple</text>
+    <text x="410" y="411" font-size="16">config / checkpoint / metadata</text>
+    <text x="410" y="435" font-size="16">parent_config / pending_writes</text>
+    <text x="410" y="459" font-size="16">channel_values 由 blobs 拼回</text>
+    <rect x="755" y="355" width="310" height="125" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="770" y="384" font-size="19" font-weight="650">PregelLoop / runner</text>
+    <text x="770" y="411" font-size="16">采用已存任务输出</text>
+    <text x="770" y="435" font-size="16">执行剩余任务，按 reducer 合并</text>
+    <text x="770" y="459" font-size="16">形成下一 checkpoint</text>
+    <text x="35" y="548" font-size="16">K1/K2 与版本名为教学别名；真实任务选择还要消费内部触发通道与图定义。</text>
+  </g>
+</svg>

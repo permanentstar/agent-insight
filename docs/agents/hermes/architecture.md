@@ -53,7 +53,7 @@ Hermes 的共用编排门面是 AIAgent，但其生命周期由宿主决定：CL
 | 工具阶段 | run_tool_round → AIAgent._execute_tool_calls | 分段串行/并行；结果反馈给下一 iteration |
 | 最终收口 | finalize_turn → export_current_turn_boundary | 返回结果及边界；失败 turn 可另补 durable closer |
 
-依据：[原生循环](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1547)。`api_mode == codex_app_server` 是明显旁路：可把完整 turn 交给 Codex 子进程，不走上述每个本地模型/工具阶段。该旁路将整轮执行交给 Codex。
+依据：[原生循环](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/conversation_loop.py#L1547)。`api_mode == codex_app_server` 是明显旁路：可把完整 turn 交给 Codex 子进程，不走上述每个本地模型/工具阶段。
 
 ## 第一步：初始化 Turn，再沿阶段推进
 
@@ -146,7 +146,7 @@ AIAgent 被 Gateway 复用时，本次 _LoopState 和 turn 相关局部资料仍
 
 ## 第二步至第四步：请求适配与实际工具调用
 
-ProviderTransport 的契约把消息、工具、kwargs 和 NormalizedResponse 处理集中在协议层；provider 选择、凭据与模型元数据另有责任。这比让每个 loop 分支直接理解所有 API 更容易替换，但 fallback、streaming 与 app-server 旁路仍要单独追。
+ProviderTransport 的契约把消息、工具、kwargs 和 NormalizedResponse 处理集中在协议层；provider 选择、凭据与模型元数据另行处理。这比让每个 loop 分支直接理解所有 API 更容易替换，但 fallback、streaming 与 app-server 旁路仍要单独追。
 
 工具执行有两层：agent/tool_executor 处理一轮调用的分段、并发、interrupt 和结果顺序；model_tools.handle_function_call / _execute_tool 再经执行 middleware 到 registry.dispatch 或 connector dispatch。并行 executor 的结果按原调用次序回填；并发安全的判定是具体策略，不能只凭“读工具”名字推断。依据：[分段门面](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/run_agent.py#L1294)、[并行执行](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/tool_executor.py#L1563)、[handler 分派](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/model_tools.py#L822)、[transport 契约](https://github.com/NousResearch/hermes-agent/blob/8bff64d6ed3414a66976bfa8ab72c14b6bca2a6f/agent/transports/base.py#L12)。
 

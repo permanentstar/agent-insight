@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="title desc">
+  <title id="title">Codex：rollout 类型与活动历史</title>
+  <desc id="desc">线格式与领域类型分开；rollout 行不等于模型消息。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0 0L10 4L0 8Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="560" fill="#ffffff"/>
+  <g font-family="system-ui, sans-serif" fill="#0f172a">
+    <text x="35" y="38" font-size="24" font-weight="700">Codex：rollout 类型与活动历史</text>
+    <text x="35" y="68" font-size="16">线格式与领域类型分开；rollout 行不等于模型消息。</text>
+    <path d="M345 165H395" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M705 165H755" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M550 225V355" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M395 200H190V355" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M345 410H395" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <path d="M705 410H755" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+    <rect x="35" y="105" width="310" height="120" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="134" font-size="19" font-weight="650">RolloutLine / JSONL</text>
+    <text x="50" y="161" font-size="16">timestamp / ordinal?</text>
+    <text x="50" y="185" font-size="16">展开后的 RolloutItem</text>
+    <text x="50" y="209" font-size="16">thread 与 rollout 各有身份</text>
+    <rect x="395" y="105" width="310" height="120" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="410" y="134" font-size="19" font-weight="650">异构 RolloutItem</text>
+    <text x="410" y="161" font-size="16">SessionMeta / ResponseItem</text>
+    <text x="410" y="185" font-size="16">TurnContext / Compacted</text>
+    <text x="410" y="209" font-size="16">EventMsg / WorldState 等</text>
+    <rect x="755" y="105" width="310" height="120" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="770" y="134" font-size="19" font-weight="650">ResponseItemEnvelope</text>
+    <text x="770" y="161" font-size="16">item + 宿主 metadata</text>
+    <text x="770" y="185" font-size="16">工具动作 call_id=r1</text>
+    <text x="770" y="209" font-size="16">工具结果也引用 call_id=r1</text>
+    <rect x="35" y="355" width="310" height="110" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="50" y="384" font-size="19" font-weight="650">CompactedItem</text>
+    <text x="50" y="411" font-size="16">message / replacement_history?</text>
+    <text x="50" y="435" font-size="16">压缩与恢复 metadata 等</text>
+    <rect x="395" y="355" width="310" height="110" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="410" y="384" font-size="19" font-weight="650">恢复与 ContextManager</text>
+    <text x="410" y="411" font-size="16">解释类型和压缩记录</text>
+    <text x="410" y="435" font-size="16">重建、截断或替换活动 history</text>
+    <rect x="755" y="355" width="310" height="110" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+    <text x="770" y="384" font-size="19" font-weight="650">模型请求</text>
+    <text x="770" y="411" font-size="16">history.for_prompt</text>
+    <text x="770" y="435" font-size="16">使用整理后的历史及当次基线</text>
+    <text x="35" y="520" font-size="16">入队、writer 确认与活动 history 的采用各有边界；旧日志可与新历史并存。</text>
+  </g>
+</svg>

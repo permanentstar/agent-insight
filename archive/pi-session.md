@@ -473,7 +473,7 @@ JSONL / SQLite backend]:::experimental
 | 远程服务边界 | 实验性远程架构 | Gateway ASGI service |
 | 安全与工具治理 | 安全与硬约束 | guardrail / sandbox audit middleware |
 
-DeerFlow 对照依据：<cite doc-id="R6dXduhz3oQjV8x6DEultC9Mglg" file-type="docx" title="Deer Flow Harness 学习路线与源码解析" type="doc"></cite>、<cite doc-id="RNHDd1PBKo7jdtxyAvKliVVlgl6" file-type="docx" title="DeerFlow Agent 架构与运行机制：源码学习笔记" type="doc"></cite>、<cite doc-id="JYDQdjzm4oMdxIxvB5vlaYDHg1f" file-type="docx" title="DeerFlow Lead Agent Middleware 执行链：顺序、Hook、作用域与跨层影响" type="doc"></cite>、<cite doc-id="X2nMdop4hoPl3RxAqt8lsVeKgy2" file-type="docx" title="DeerFlow Agent Prompt 设计方法论：分层、标签与作用域" type="doc"></cite>。
+DeerFlow 对照依据：《Deer Flow Harness 学习路线与源码解析》、《DeerFlow Agent 架构与运行机制：源码学习笔记》、《DeerFlow Lead Agent Middleware 执行链：顺序、Hook、作用域与跨层影响》、《DeerFlow Agent Prompt 设计方法论：分层、标签与作用域》。
 
 # 启动链：组合根、构造顺序与对象 owner
 
